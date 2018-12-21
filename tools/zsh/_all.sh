@@ -2,10 +2,11 @@
 ## Completion for tests/scripts/all.sh in Mbed TLS.
 
 _all_sh () {
-  local line opt spec specs
+  local components line opt spec specs
+  components=()
   specs=()
   for line in "${(@M)${(@f)$(_call_program help $words[1] --help)}:# #-*}"; do
-    line=${line## ##}
+    line=${line##[ ]##}
     opt=(${(s:|:)${line%%[= ]*}})
     spec=
     line=${line#"${line%%[= ]*}"}
@@ -21,10 +22,16 @@ _all_sh () {
     elif [[ $opt[1] == '-s' || $opt[1] == '--seed' ]]; then
       spec=":seed:"
     fi
-    line=${line##[^ ]# ##}
+    line=${line##[^ ]#[ ]##}
     spec="[$line]${spec}"
     specs+=($^opt$spec)
+    if ((${#${(M)opt:#--list-components}})); then
+      components=("${(@M)${(@f)$(_call_program list-components $words[1] --list-components)}}")
+    fi
   done
+  if (($#components)); then
+    specs+=("*:component:($components)")
+  fi
   _arguments : $specs
 }
 
