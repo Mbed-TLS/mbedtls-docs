@@ -250,6 +250,8 @@ information about the function called by this test case."
      (1 font-lock-function-name-face)
      (2 font-lock-keyword-face))
     (":" (0 font-lock-keyword-face))
+    (".\\{66\\}\\(.+\\)"
+     (1 font-lock-warning-face))
     )
   "Value of `font-lock-keywords' in Mbed TLS test data mode.")
 
