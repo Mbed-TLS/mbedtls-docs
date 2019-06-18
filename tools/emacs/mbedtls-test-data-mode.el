@@ -203,22 +203,39 @@ information about the function called by this test case."
                       0)))
           (mbedtls-test-data-show-function-information function-info pos))))))
 
-(defun mbedtls-test-data-visit-function-definition ()
-  "Visit the function definition for the current test case."
-  (interactive "@")
+(defun mbedtls-test-data-visit-function-definition (&optional arg)
+  "Visit the function definition for the current test case.
+
+With just \\[universal-argument] or a numerical prefix argument between 1 and 4,
+visit in another window with `switch-to-buffer-other-window'. With two
+\\[universal-argument] or a numerical prefix argument larger than 4, visit
+in another frame with `switch-to-buffer-other-frame'. With a negative prefix
+argument, don't display the function definition, only load the file and set
+point in the buffer visiting it."
+  (interactive "@p")
   (let ((function-name (mbedtls-test-data-get-function-name-at-point)))
     (if function-name
-        (let ((buffer (mbedtls-test-data-visit-function-file nil nil t)))
-          (switch-to-buffer buffer)
-          (push-mark)
-          (goto-char (point-min))
-          (save-match-data
-            (search-forward-regexp (concat "^\\w[^\n()]*\\s-"
-                                           function-name
-                                           "\\s-*("))
-            (backward-char)
-            (forward-sexp)
-            (forward-line)))
+        (let ((buffer (mbedtls-test-data-visit-function-file))
+              (switch-function (cond
+                                ((null arg) 'switch-to-buffer)
+                                ((symbolp arg) arg)
+                                ((and (integerp arg) (> arg 4))
+                                 'switch-to-buffer-other-frame)
+                                ((and (integerp arg) (> arg 1))
+                                 'switch-to-buffer-other-window)
+                                ((and (integerp arg) (< arg 0)) 'ignore)
+                                (t 'switch-to-buffer))))
+          (with-current-buffer buffer
+            (funcall switch-function buffer)
+            (push-mark)
+            (goto-char (point-min))
+            (save-match-data
+              (search-forward-regexp (concat "^\\w[^\n()]*\\s-"
+                                             function-name
+                                             "\\s-*("))
+              (backward-char)
+              (forward-sexp)
+              (forward-line))))
       (message "Unable to determine the test case function name"))))
 
 (defun mbedtls-test-data-copy-to-top ()
