@@ -1,4 +1,4 @@
-#compdef all.sh
+#compdef all.sh tests_all
 ## Completion for tests/scripts/all.sh in Mbed TLS.
 
 _all_sh () {
