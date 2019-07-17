@@ -51,6 +51,62 @@ _environment_options = [
 
 _submodule_names = ['crypto']
 
+class SourceFile:
+    def __init__(self, root, submodule, inner_path):
+        self.root = root
+        self.submodule = submodule
+        self.inner_path = inner_path
+
+    def sort_key(self):
+        # Compare by inner path first, then by submodule.
+        # The empty submodule comes last.
+        return (self.inner_path,
+                not self.submodule, self.submodule)
+
+    def __lt__(self, other):
+        if self.root != other.root:
+            raise TypeError("Cannot compare source files under different rootss"
+                            , self, other)
+        return self.sort_key() < other.sort_key()
+
+    def relative_path(self):
+        return os.path.join(self.submodule, self.inner_path)
+
+    def real_path(self):
+        return os.path.join(self.root, self.submodule, self.inner_path)
+
+    def make_path(self):
+        if self.submodule:
+            return '/'.join(['$(SOURCE_DIR)', self.submodule, self.inner_path])
+        else:
+            return '$(SOURCE_DIR)/' + self.inner_path
+
+    def base(self):
+        return os.path.splitext(self.inner_path)[0]
+
+    def target(self, extension):
+        return self.base() + extension
+
+def source_files(root, pattern):
+    all_sources = {}
+    for submodule in _submodule_names + ['']:
+        submodule_root = os.path.join(root, submodule)
+        start = len(submodule_root)
+        if submodule:
+            start += 1
+        abs_pattern = os.path.join(submodule_root, pattern)
+        sources = [src[start:] for src in glob.glob(abs_pattern)]
+        for source_name in sources:
+            src = SourceFile(root, submodule, source_name)
+            base = src.base()
+            # Skip generated files that may be present in the source tree.
+            if base.endswith('_generated'):
+                continue
+            # Skip files that were seen in an earlier submodule.
+            if base not in all_sources:
+                all_sources[base] = src
+    return sorted(all_sources.values())
+
 class ClassicTestGenerator:
     def __init__(self, options):
         self.options = options
@@ -321,11 +377,12 @@ class MakefileMaker:
                     '-I include',
                     self.include_path_options('library/*'))
         # Enumerate modules and emit the rules to build them
-        modules = self.list_source_files('library', '*.c')
-        for module in sorted(modules.keys()):
-            o_file = module + self.object_extension
-            c_file = '$(SOURCE_DIR)/' + modules[module]
-            self.target(o_file, self.c_with_dependencies(modules[module]),
+        modules = source_files(self.options.source, 'library/*.c')
+        for module in modules:
+            o_file = module.target(self.object_extension)
+            c_file = module.make_path()
+            self.target(o_file,
+                        self.c_with_dependencies(module.relative_path()),
                         [sjoin('$(CC)',
                                 '$(WARNING_CFLAGS)',
                                '$(CFLAGS)',
@@ -337,8 +394,8 @@ class MakefileMaker:
         # Enumerate libraries and the rules to build them
         for lib in self._potential_libraries:
             contents[lib] = []
-        for module in sorted(modules.keys()):
-            contents[self.library_of(module)].append(module)
+        for module in modules:
+            contents[self.library_of(module.base())].append(module.base())
         libraries = [lib for lib in self._potential_libraries
                      if contents[lib]]
         for lib in libraries:
@@ -449,12 +506,13 @@ class MakefileMaker:
                     self.include_path_options('programs/*/*'))
         self.assign('PROGRAMS_LDFLAGS',
                     '-L library')
-        programs = self.list_source_files('', 'programs/*/*.c')
+        programs = source_files(self.options.source, 'programs/*/*.c')
         executables = []
-        for base in sorted(programs.keys()):
-            self.program_subsection(base, programs[base], executables)
-        dirs = itertools.groupby(sorted(programs.values()), os.path.dirname)
-        for subdir, _ in dirs:
+        for src in programs:
+            self.program_subsection(src.base(), src.relative_path(),
+                                    executables)
+        dirs = set(os.path.dirname(src.base()) for src in programs)
+        for subdir in sorted(dirs):
             self.target(subdir + '/seedfile', ['tests/seedfile'],
                         ['cp tests/seedfile $@'])
         self.assign('programs', *executables)
