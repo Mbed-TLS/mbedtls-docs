@@ -1,0 +1,691 @@
+#!/usr/bin/env python3
+"""Generate a makefile for Mbed Crypto or Mbed TLS.
+"""
+
+import argparse
+import glob
+import itertools
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+def sjoin(*args):
+    return ' '.join(args)
+
+def append_to_value(d, key, *values):
+    lst = d.setdefault(key, [])
+    lst += values
+
+class MakefileMaker:
+    def __init__(self, options, source_path):
+        self.options = options
+        if self.options.indirect_extensions:
+            self.executable_extension = '$(EXEXT)'
+            self.library_extension = '$(LIBEXT)'
+            self.object_extension = '$(OBJEXT)'
+            self.shared_library_extension = '$(DLEXT)'
+        else:
+            self.executable_extension = self.options.executable_extension
+            self.library_extension = self.options.library_extension
+            self.object_extension = self.options.object_extension
+            self.shared_library_extension = self.options.shared_library_extension
+        if self.options.cpp_mg is None:
+            self.options.cpp_mg = self.options.cc + ' -MM'
+        self.source_path = source_path
+        self.out = None
+        self.libraries = None
+        self.help = {'help': 'Show this help.'}
+        self.clean = []
+        # Unset fields that are only meaningful at certain later times.
+        # Setting them here makes Pylint happy, but having set them here
+        # makes it harder to diagnose if some method is buggy and attempts
+        # to use a field whose value isn't actually known.
+        del self.libraries # Set when generating the library targets
+        del self.out # Set only while writing the output file
+
+    def list_source_files(self, directory, pattern):
+        sources = glob.glob(os.path.join(self.options.source,
+                                         directory, pattern))
+        start = len(self.options.source) + 1
+        return sorted([src[start:] for src in sources])
+
+    def line(self, text):
+        self.out.write(text + '\n')
+
+    def words(self, *words):
+        self.line(' '.join(words))
+
+    def format(self, template, *args):
+        self.line(template.format(*args))
+
+    def comment(self, template, *args):
+        self.format('## ' + template, *args)
+
+    def target(self, name, dependencies, commands,
+               help=None, phony=False, short=None):
+        for dep in dependencies:
+            self.format('{}: {}', name, dep)
+        if not dependencies:
+            self.format('{}:', name)
+        if short is not None:
+            self.format('\t@$(ECHO_IF_QUIET) "  {}"', short)
+        for com in commands:
+            self.format('\t{}{}',
+                        ('' if short is None else '$(Q)'),
+                        com.replace('\n', ' \\\n\t'))
+        if help is not None:
+            self.help[name] = help
+        if phony:
+            self.format('.PHONY: {}', name)
+
+    def settings_section(self):
+        self.comment('Path settings')
+        self.words('SOURCE_DIR =', self.source_path)
+        self.words('SOURCE_DIR_FROM_TESTS = ../$(SOURCE_DIR)')
+        self.line('')
+        self.comment('Tool settings')
+        self.words('AR =', self.options.ar)
+        self.words('ARFLAGS =', self.options.arflags)
+        self.words('CC =', self.options.cc)
+        self.words('CFLAGS =', self.options.cflags)
+        self.words('WARNING_CFLAGS =', self.options.warning_cflags)
+        self.words('LDFLAGS =', self.options.ldflags)
+        self.words('PERL =', self.options.perl)
+        self.words('PYTHON =', self.options.python)
+        self.words('RM =', self.options.rm)
+        self.line('')
+        self.comment('Configuration')
+        if self.options.indirect_extensions:
+            self.line('DLEXT = ' + self.options.shared_library_extension)
+            self.line('LIBEXT = ' + self.options.library_extension)
+            self.line('OBJEXT = ' + self.options.object_extension)
+            self.line('EXEXT =' + self.options.executable_extension)
+        self.line('')
+        self.comment('Internal variables')
+        self.line('AUX_ECHO_IF_QUIET_ = :')
+        self.line('AUX_Q_ =')
+        self.line('AUX_ECHO_IF_QUIET_$(V) = echo')
+        self.line('AUX_Q_$(V) = @')
+        self.line('ECHO_IF_QUIET = $(AUX_ECHO_IF_QUIET_)')
+        self.line('Q = $(AUX_Q_)')
+
+    def ensure_file(self, filename, created_list):
+        path = os.path.join(self.options.dir, filename)
+        if os.path.exists(path):
+            return
+        created_list.append(path)
+        open(path, 'w').close()
+
+    def c_dependencies(self, filenames, prefix,
+                       ensure_dependencies=None,
+                       postprocess=None):
+        cmd = re.split(r'\s+', self.options.cpp_mg.strip())
+        cmd += ['-I', 'include/mbedtls'] # for "config.h"
+        cmd += ['-I', 'include'] # for "mbedtls/config.h"
+        cmd += ['-I', 'source/include']
+        cmd += ['-I', os.path.dirname(filenames[0])]
+        cmd += ['-I', 'source/library']
+        cmd += ['source/' + filename for filename in filenames]
+        files_to_remove = []
+        try:
+            if ensure_dependencies is not None:
+                ensure_dependencies(prefix, files_to_remove)
+            dependencies_b = subprocess.check_output(cmd, cwd=self.options.dir)
+        finally:
+            for filename in files_to_remove:
+                if os.path.exists(filename):
+                    os.remove(filename)
+        dependencies = re.sub(r'[\t ]*\\\n[\t ]*', r' ',
+                              dependencies_b.decode('ascii'))
+        for deps in dependencies.rstrip('\n').split('\n'):
+            deps = re.sub(r'[^ ]*/\.\./source/', r'source/', deps)
+            self.out.write(prefix + deps.strip() + '\n')
+
+    def tests_c_dependencies(self, function_files):
+        with tempfile.TemporaryDirectory(dir=self.options.dir) as tmpdir:
+            for function_file in sorted(function_files.keys()):
+                c_files = [os.path.basename(c_file)
+                           for c_file in function_files[function_file]]
+                for c_file in c_files:
+                    with open(os.path.join(tmpdir, c_file), 'w') as out:
+                        for part in (['tests/suites/{}.function'.format(base)
+                                      for base in ['helpers',
+                                                   'host_test',
+                                                   #'main_test',
+                                      ]] +
+                                     [function_file]):
+                            out.write('#include "../source/{}"\n'.format(part))
+            #TODO: need to postprocess to remove tmpdir and change .o to exe
+            self.c_dependencies(glob.glob(os.path.join(tmpdir, '*')), 'tests/')
+
+    _potential_libraries = ['crypto', 'x509', 'tls']
+    @staticmethod
+    def library_of(module):
+        module = os.path.basename(module)
+        if module.startswith('x509') or \
+           module in ['certs', 'pkcs11']:
+            return 'x509'
+        elif module.startswith('ssl') or \
+             module in ['debug', 'net', 'net_sockets']:
+            return 'tls'
+        else:
+            return 'crypto'
+
+    def library_section(self):
+        self.comment('Library targets')
+        self.words('LIBRARY_CFLAGS =',
+                   '-I include/mbedtls', # must come first, for "config.h"
+                   '-I include',
+                   '-I $(SOURCE_DIR)/library',
+                   '-I $(SOURCE_DIR)/include')
+        # Enumerate modules and emit the rules to build them
+        source_files = self.list_source_files('library', '*.c')
+        modules = [os.path.splitext(source)[0] for source in source_files]
+        for module in modules:
+            o_file = module + self.object_extension
+            c_file = '$(SOURCE_DIR)/' + module + '.c'
+            self.target(o_file, [c_file],
+                        [sjoin('$(CC)',
+                                '$(WARNING_CFLAGS)',
+                               '$(CFLAGS)',
+                               '$(LIBRARY_CFLAGS)',
+                               '-o $@',
+                               '-c', c_file)],
+                        short=('CC    ' + c_file))
+        self.c_dependencies(source_files, 'library/')
+        contents = {}
+        # Enumerate libraries and the rules to build them
+        for lib in self._potential_libraries:
+            contents[lib] = []
+        for module in modules:
+            contents[self.library_of(module)].append(module)
+        libraries = [lib for lib in reversed(self._potential_libraries)
+                     if contents[lib]]
+        for lib in libraries:
+            self.format('libmbed{}_modules = {}', lib, ' '.join(contents[lib]))
+            self.format('libmbed{}_objects = $(libmbed{}_modules:={})',
+                        lib, lib, self.object_extension)
+            self.target('library/libmbed{}{}'.format(lib, self.library_extension),
+                        ['$(libmbed{}_objects)'.format(lib)],
+                        ['$(AR) $(ARFLAGS) $@ $(libmbed{}_objects)'.format(lib)],
+                        short='AR    $@')
+        self.libraries = ['library/libmbed{}{}'.format(lib, self.library_extension)
+                          for lib in libraries]
+        self.target('lib', self.libraries,
+                    [],
+                    help='Build the static libraries.',
+                    phony=True)
+        self.clean.append(sjoin(*['library/*' + ext
+                                  for ext in (self.library_extension,
+                                              self.object_extension,
+                                              self.shared_library_extension)]))
+
+    @staticmethod
+    def dash_l_lib(lib):
+        base = os.path.splitext(os.path.basename(lib))[0]
+        if base.startswith('lib'):
+            base = base[3:]
+        if not base.startswith('mbed'):
+            base = 'mbed' + base
+        return '-l' + base
+
+    _auxiliary_objects = {
+        'programs/ssl/ssl_client2': ['programs/ssl/query_config'],
+        'programs/ssl/ssl_server2': ['programs/ssl/query_config'],
+        'programs/test/query_compile_time_config': ['programs/ssl/query_config'],
+    }
+    _auxiliary_sources = set([obj
+                              for _main, objs in _auxiliary_objects.items()
+                              for obj in objs])
+
+    @staticmethod
+    def program_uses_lib(app, lib):
+        basename = os.path.basename(app)
+        subdir = os.path.basename(os.path.dirname(app))
+        if lib == 'crypto':
+            return True
+        elif lib == 'x509':
+            return (subdir in ['ssl', 'x509'] or
+                    (subdir == 'test' and basename == 'selftest'))
+        elif lib == 'tls':
+            return (subdir == 'ssl' or
+                    (subdir == 'x509' and basename == 'cert_app') or
+                    basename.endswith('_client') or
+                    basename.endswith('_server') or
+                    basename.endswith('_proxy'))
+
+    def ensure_programs_dependencies(self, prefix, files_to_remove):
+        if prefix == 'programs/psa/':
+            self.ensure_file('programs/psa/psa_constant_names_generated.c',
+                             files_to_remove)
+
+    def program_subsection(self, source_file, executables):
+        base = os.path.splitext(source_file)[0]
+        object_file = base + self.object_extension
+        source_path = '$(SOURCE_DIR)/' + source_file
+        self.target(object_file, [source_path],
+                    [sjoin('$(CC)',
+                           '$(WARNING_CFLAGS)',
+                           '$(CFLAGS)',
+                           '$(PROGRAMS_CFLAGS)',
+                           '-c', source_path,
+                           '-o $@')],
+                    short='CC    $@')
+        if base in self._auxiliary_sources:
+            return
+        exe_file = base + self.executable_extension
+        object_deps = [dep + self.object_extension
+                       for dep in self._auxiliary_objects.get(base, [])]
+        libs = [lib for lib in reversed(self._potential_libraries)
+                if self.program_uses_lib(base, lib)]
+        lib_files = ['library/libmbed{}{}'.format(lib, self.library_extension)
+                     for lib in libs]
+        dash_l_libs = [self.dash_l_lib(lib) for lib in libs]
+        self.target(exe_file, [object_file] + object_deps + lib_files,
+                    [sjoin('$(CC)',
+                           object_file,
+                           sjoin(*object_deps),
+                           '$(LDFLAGS)',
+                           '$(PROGRAMS_LDFLAGS)',
+                           sjoin(*dash_l_libs),
+                           '-o $@')],
+                    short='LD    $@')
+        executables.append(exe_file)
+
+    def programs_section(self):
+        self.comment('Sample programs')
+        self.words('PROGRAMS_CFLAGS =',
+                   '-I include',
+                   '-I $(SOURCE_DIR)/library',
+                   '-I $(SOURCE_DIR)/include')
+        self.words('PROGRAMS_LDFLAGS =',
+                   '-L library')
+        sources = self.list_source_files('', 'programs/*/*.c')
+        executables = []
+        for source_file in sources:
+            self.program_subsection(source_file, executables)
+        def ensure_dependencies(*args):
+            return self.ensure_programs_dependencies(*args)
+        for subdir, files in itertools.groupby(sources, os.path.dirname):
+            self.target(subdir + '/seedfile', ['tests/seedfile'],
+                        ['cp tests/seedfile $@'])
+            self.c_dependencies(list(files), subdir + '/',
+                                ensure_dependencies=ensure_dependencies)
+        self.words('programs =', *executables)
+        self.target('programs', ['$(programs)'],
+                    [],
+                    help='Build the sample programs.',
+                    phony=True)
+        self.clean.append('programs/*/*{} $(programs)'
+                          .format(self.object_extension))
+
+    def test_subsection(self, data_file, executables, function_files):
+        base = os.path.splitext(os.path.basename(data_file))[0]
+        try:
+            function_base = base[:base.index('.')]
+        except ValueError:
+            function_base = base
+        function_file = os.path.join(os.path.dirname(data_file),
+                                     function_base + '.function')
+        c_file = os.path.join('tests', base + '.c')
+        datax_file = os.path.join('tests', base + '.datax')
+        exe_file = os.path.join('tests', base + self.executable_extension)
+        self.target(sjoin(c_file, datax_file),
+                    ['$(SOURCE_DIR)/' + function_file,
+                     '$(SOURCE_DIR)/' + data_file,
+                     'test_host_generate_deps'],
+                    [sjoin('cd tests &&',
+                           '$(PYTHON) $(SOURCE_DIR_FROM_TESTS)/tests/scripts/generate_test_code.py',
+                           '-f $(SOURCE_DIR_FROM_TESTS)/' + function_file,
+                           '-d $(SOURCE_DIR_FROM_TESTS)/' + data_file,
+                           '-t $(SOURCE_DIR_FROM_TESTS)/tests/suites/main_test.function',
+                           '-p $(SOURCE_DIR_FROM_TESTS)/tests/suites/host_test.function',
+                           '--helpers-file $(SOURCE_DIR_FROM_TESTS)/tests/suites/helpers.function',
+                           '-s $(SOURCE_DIR_FROM_TESTS)/tests/suites',
+                           '-o .')],
+                    short='Gen  $@')
+        self.target(exe_file, [c_file, '$(lib)', 'test_host_build_deps'],
+                    [sjoin('$(CC)',
+                           '$(WARNING_CFLAGS)',
+                           '$(CFLAGS)',
+                           '$(TESTS_CFLAGS)',
+                           c_file,
+                           '$(LDFLAGS)',
+                           '$(TESTS_LDFLAGS)',
+                           '$(test_libs)',
+                           '-o $@')],
+                    short='CC    $@')
+        executables.append(exe_file)
+        self.target(base + '.run', [exe_file, 'tests/seedfile'],
+                    ['cd tests && ./' + os.path.basename(exe_file)],
+                    phony=True)
+        append_to_value(function_files, function_file, c_file)
+
+    def tests_section(self):
+        self.comment('Test targets')
+        self.words('TESTS_CFLAGS = -Wno-unused-function',
+                   '-I include',
+                   '-I $(SOURCE_DIR)/library',
+                   '-I $(SOURCE_DIR)/include',
+                   '-I $(SOURCE_DIR)/tests')
+        self.words('TESTS_LDFLAGS =',
+                   '-L library')
+        self.words('test_libs =',
+                   *[self.dash_l_lib(lib) for lib in self.libraries])
+        self.target('test_common_generate_deps',
+                    ['$(SOURCE_DIR)/tests/suites/helpers.function',
+                     '$(SOURCE_DIR)/tests/suites/main_test.function'],
+                    [], phony=True)
+        self.target('test_host_generate_deps',
+                    ['test_common_generate_deps',
+                     '$(SOURCE_DIR)/tests/suites/host_test.function'],
+                    [], phony=True)
+        self.target('test_target_generate_deps',
+                    ['test_common_generate_deps',
+                     '$(SOURCE_DIR)/tests/suites/target_test.function'],
+                    [], phony=True)
+        self.target('test_host_build_deps', [], #TODO
+                    [], phony=True)
+        data_files = self.list_source_files('tests/suites', '*.data')
+        function_files = {}
+        executables = []
+        for data_file in data_files:
+            self.test_subsection(data_file, executables, function_files)
+        self.tests_c_dependencies(function_files)
+        self.words('test_apps =', *executables)
+        self.target('tests', ['$(test_apps)'],
+                    [],
+                    help='Build the host tests.',
+                    phony=True)
+        self.target('tests/seedfile', [],
+                    ['dd bs=64 count=1 </dev/urandom >$@'])
+        self.target('check', ['$(test_apps)', 'tests/seedfile'],
+                    ['cd tests && $(PERL) scripts/run-test-suites.pl --skip=$(SKIP_TEST_SUITES)'],
+                    help='Run all the test suites.',
+                    phony=True)
+        self.clean.append('tests/*.c tests/*.datax $(test_apps)')
+
+    def help_lines(self):
+        return ['{} - {}'.format(name, self.help[name])
+                for name in sorted(self.help.keys())]
+
+    def output_all(self):
+        self.comment('Generated by {}', ' '.join(sys.argv))
+        self.comment('Do not edit this file! All modifications will be lost.')
+        self.line('')
+        self.settings_section()
+        self.line('')
+        self.target('default', ['all'], [], phony=True)
+        self.line('')
+        self.target('all', ['lib', 'programs', 'tests'], [], phony=True)
+        self.line('')
+        self.target('pwd', [], ['pwd'], phony=True, short='PWD') # for testing
+        self.line('')
+        self.library_section()
+        self.line('')
+        self.programs_section()
+        self.line('')
+        self.tests_section()
+        self.line('')
+        self.target('clean', [],
+                    ['$(RM) ' + patterns for patterns in self.clean],
+                    help='Remove all generated files.',
+                    short='RM    {generated files}',
+                    phony=True)
+        self.line('')
+        self.target('help', [],
+                    ['@echo "{}"'.format(line) for line in self.help_lines()],
+                    phony=True)
+        self.line('')
+        self.comment('End of generated file.')
+
+    def generate(self):
+        destination = os.path.join(self.options.dir, 'Makefile')
+        temp_file = destination + '.new'
+        with open(temp_file, 'w') as out:
+            try:
+                self.out = out
+                self.output_all()
+            finally:
+                del self.out
+        os.replace(temp_file, destination)
+
+class ConfigMaker:
+    def __init__(self, options):
+        self.options = options
+        self.source_file = options.config_file
+        if self.source_file is None:
+            self.source_file = os.path.join(options.source,
+                                            'include', 'mbedtls', 'config.h')
+            self.source_file_path = 'source/include/mbedtls/config.h'
+        else:
+            self.source_file_path = os.path.abspath(source_file)
+        self.target_file = os.path.join(options.dir,
+                                        'include', 'mbedtls', 'config.h')
+
+    def start(self):
+        raise NotImplementedError
+
+    def set(self, name, value):
+        raise Exception("Configuration method {} does not support setting options"
+                        .format(options.config_mode))
+
+    def unset(self, name):
+        raise Exception("Configuration method {} does not support unsetting options"
+                        .format(options.config_mode))
+
+    def batch(self, name):
+        raise Exception("Configuration method {} does not support batch-setting options"
+                        .format(options.config_mode))
+
+    def finish(self):
+        raise NotImplementedError
+
+    def run(self):
+        self.start()
+        if self.options.config_name is not None:
+            self.batch(self.options.config_name)
+        for spec in self.options.config_unset:
+            for name in re.split(r'[\t ,]+'):
+                self.unset(name)
+        for spec in self.options.config_set:
+            m = re.match(r'(?P<name>[0-9A-Z_a-z]+)' +
+                         r'(?P<args>\([\t ,0-9A-Z_a-z]*\))?' +
+                         r'(?P<sep>[=,]?)', spec)
+            if m is None or \
+               (m.group('args') is not None and m.group('sep') == ',') :
+                raise Exception("Invalid argument to --config-set")
+            if m.group('sep') == ',':
+                for name in spec.split(','):
+                    self.set(name)
+            else:
+                name = spec[:m.start('sep')]
+                value = spec[m.end('sep'):]
+                self.set(name, value)
+        self.finish()
+_config_classes = {}
+
+class ConfigCopy(ConfigMaker):
+    def start(self):
+        shutil.copyfile(self.source_file, self.target_file)
+
+    def run_config_script(self, *args):
+        subprocess.check_call(['perl', 'scripts/config.pl'] + list(args),
+                              cwd=self.options.dir)
+
+    def set(self, name, value):
+        if value is None:
+            self.run_config_script('set', name)
+        else:
+            self.run_config_script('set', name, value)
+
+    def unset(self, name):
+        self.run_config_script('unset', name)
+
+    def batch(self, name):
+        self.run_config_script(name)
+
+    def finish(self):
+        pass
+_config_classes['copy'] = ConfigCopy
+
+class ConfigInclude(ConfigMaker):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.lines = []
+
+    def start(self):
+        source_path = self.source_file_path
+        if not os.path.isabs(source_path):
+            source_path = os.path.join(os.pardir, os.pardir, source_path)
+        self.lines.append('#ifndef MBEDTLS_CHECK_CONFIG_H')
+        self.lines.append('#include "{}"'.format(source_path))
+        self.lines.append('')
+
+    def set(self, name, value):
+        if value is None:
+            self.lines.append('#define ' + name)
+        else:
+            self.lines.append('#define ' + name + ' ' + value)
+
+    def unset(self, name):
+        self.lines.append('#undef ' + name)
+
+    def finish(self):
+        self.lines.append('')
+        self.lines.append('#undef MBEDTLS_CHECK_CONFIG_H')
+        self.lines.append('#include "mbedtls/check_config.h"')
+        self.lines.append('#endif')
+        with open(self.target_file, 'w') as out:
+            for line in self.lines:
+                out.write(line + '\n')
+_config_classes['include'] = ConfigInclude
+
+class BuildTreeMaker:
+    def __init__(self, options):
+        self.options = options
+        self.source_path = os.path.abspath(options.source)
+        self.makefile = MakefileMaker(options, 'source')
+        if options.config_mode is None:
+            if options.config_name is None:
+                options.config_mode = 'include'
+            else:
+                options.config_mode = 'copy'
+        self.config = _config_classes[options.config_mode](options)
+
+    def programs_subdirs(self):
+        top = self.options.source
+        return [os.path.basename(d)
+                for d in glob.glob(os.path.join(top, 'programs', '*'))
+                if os.path.isdir(d)]
+
+    def run(self):
+        for subdir in ([['include', 'mbedtls'], ['library'], ['tests']] +
+                       [['programs', d] for d in self.programs_subdirs()]):
+            path = os.path.join(self.options.dir, *subdir)
+            if not os.path.exists(path):
+                os.makedirs(path)
+        source_link = os.path.join(self.options.dir, 'source')
+        if not os.path.samefile(self.options.source, self.options.dir) and \
+           not os.path.exists(source_link):
+            os.symlink(self.source_path, source_link)
+        for link in [['scripts'],
+                     ['tests', 'compat.sh'],
+                     ['tests', 'data_files'],
+                     ['tests', 'scripts'],
+                     ['tests', 'ssl-opt.sh']]:
+            if os.path.exists(os.path.join(self.options.source, *link)):
+                link_path = os.path.join(self.options.dir, *link)
+                if not os.path.exists(link_path):
+                    os.symlink(os.path.join(*([os.pardir] * (len(link) - 1) +
+                                              ['source'] + link)),
+                               link_path)
+        self.makefile.generate()
+        self.config.run()
+
+def arg_type_bool(arg):
+    if not isinstance(arg, str):
+        return arg
+    arg = arg.lower()
+    if arg in ['1', 't', 'true', 'y', 'yes']:
+        return True
+    elif arg in ['0', 'f', 'false', 'n', 'no']:
+        return False
+    else:
+        raise argparse.ArgumentTypeError('invalid boolean value: ' + repr(arg))
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--ar',
+                        default=os.getenv('AR', 'ar'),
+                        help='Archive building tool (AR)')
+    parser.add_argument('--arflags',
+                        default=os.getenv('ARFLAGS', '-src'),
+                        help='Options to pass to ${AR} (e.g. "rcs") (ARFLAGS)')
+    parser.add_argument('--cc',
+                        default=os.getenv('CC', 'cc'),
+                        help='C compiler (CC)')
+    parser.add_argument('--cflags',
+                        default=os.getenv('CFLAGS', '-Os'),
+                        help='Options to always pass to ${CC} when compiling (CFLAGS)')
+    parser.add_argument('--config-file',
+                        help='Base config.h to use')
+    parser.add_argument('--config-mode',
+                        choices=_config_classes.keys(),
+                        help='What to do with config.h')
+    parser.add_argument('--config-name',
+                        help='Configuration to set with scripts/config.pl')
+    parser.add_argument('--config-set',
+                        action='append', default=[],
+                        help='Additional symbol to set in config.h')
+    parser.add_argument('--config-unset',
+                        action='append', default=[],
+                        help='Symbol to unset in config.h')
+    parser.add_argument('--cpp-mg',
+                        help='C preprocessor command to generate dependencies (default: ${CC} -MM)')
+    parser.add_argument('--dir', '-d',
+                        default=os.curdir,
+                        help='Build directory to create')
+    parser.add_argument('--executable-extension',
+                        default='',
+                        help='File extension for executables')
+    parser.add_argument('--indirect-extensions',
+                        type=arg_type_bool, default=False,
+                        help='Whether to use makefile variable for file extensions')
+    parser.add_argument('--ldflags',
+                        default=os.getenv('LDFLAGS', ''),
+                        help='Options to always pass to ${CC} when linking (CFLAGS)')
+    parser.add_argument('--library-extension',
+                        default='.a',
+                        help='File extension for static libraries')
+    parser.add_argument('--object-extension',
+                        help='File extension for object files',
+                        default='.o')
+    parser.add_argument('--perl',
+                        default=os.getenv('PERL', 'perl'),
+                        help='Perl interpreter (PERL)')
+    parser.add_argument('--python',
+                        default=os.getenv('PYTHON', 'python3'),
+                        help='Python3 interpreter (PYTHON3)')
+    parser.add_argument('--rm',
+                        default=os.getenv('RM', 'rm -f'),
+                        help='Program to remove files (e.g. "rm -f") (RM)')
+    parser.add_argument('--shared-library-extension',
+                        help='File extension for shared libraries',
+                        default='.so')
+    parser.add_argument('--source', '-s',
+                        help='Root directory of the source tree',
+                        default=os.curdir)
+    parser.add_argument('--warning-cflags',
+                        default=os.getenv('WARNING_CFLAGS',
+                                          '-Wall -Wextra -Werror'),
+                        help='Options to always pass to ${CC} (WARNING_CFLAGS)')
+    options = parser.parse_args()
+    builder = BuildTreeMaker(options)
+    builder.run()
+
+if __name__ == '__main__':
+    main()
