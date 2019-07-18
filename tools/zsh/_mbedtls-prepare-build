@@ -1,0 +1,76 @@
+#compdef mbedtls-prepare-build
+
+_mbedtls_prepare_build_symbols () {
+  local -a identifiers
+  identifiers=("${(@f)$(sed -n 's!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p' $source_dir/include/mbedtls/config.h 2>/dev/null)}")
+  if ((!$#identifiers)); then return 1; fi
+  _values -s , 'config.h symbols' $identifiers
+}
+
+_mbedtls_prepare_build () {
+  local context state state_descr line
+  typeset -A opt_args
+  local ret=0
+  local prefix spec specs
+  local source_dir=. args
+  specs=()
+  args=($words[2,-1])
+
+  while (($#args)); do
+    case $args[1] in
+      (-s|--source) if (($#args >= 2)); then source_dir=$args[2]; fi;;
+      (--*=*) :;;
+      -*) if (($#args >= 2)); then shift args; fi;;
+    esac
+    shift args
+  done
+
+  for line in "${(@f)${$(export COLUMNS=9999;
+                         _call_program help $words[1] --help)//$'\n    '/  }}"; do
+    # 1=opt1 3=?arg1 5=?opt2 7=descr
+    if [[ $line =~ "  (-[^ ]+)( ([^- ][^ ]*))?(, (-[^ ]+)( [^- ][^ ]*)?)*  +(.*)" ]]; then
+      spec="[${match[7]//\]/\\\]}]"
+      if [[ -n $match[3] ]]; then
+        spec="=$spec:$match[3]:->${match[1]}"
+      fi
+      case $match[1] in
+        (--config-set|--config-unset|--var) prefix='*';;
+        (*) prefix=;;
+      esac
+      if [[ -n $match[5] ]]; then
+        specs+=($prefix{$match[1],$match[5]}$spec)
+      else
+        specs+=($prefix$match[1]$spec)
+      fi
+    fi
+  done
+  line=
+  _arguments $specs
+
+  case $state in
+    (--ar|--cc|--cp|--perl|--python|--rm|--valgrind)
+      _call_function ret _command_names -e;;
+    (--config-file)
+      _call_function ret _files -g "*.h";;
+    (--config-name)
+      local -a config_names
+      config_names=(
+        'baremetal:All features for bare metal platforms'
+        'full:All features'
+        'realfull:Uncomment all #define'\'''
+      )
+      _call_function ret _describe -t config_name 'Preset configuration name' config_names;;
+    (--config-set|--config-unset)
+      _call_function ret _mbedtls_prepare_build_symbols;;
+    (--dir|--source)
+      _call_function ret _dirs;;
+  esac
+  return $ret
+}
+
+_mbedtls_prepare_build "$@"
+
+# Local Variables:
+# mode: sh
+# sh-shell: zsh
+# End:
