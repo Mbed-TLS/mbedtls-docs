@@ -1,5 +1,5 @@
-#compdef config.pl
-## Completion for scripts/config.pl in Mbed TLS.
+#compdef config.pl config.py
+## Completion for scripts/config.pl and scripts/config.pl in Mbed TLS.
 
 _config_pl_symbols () {
   local -a identifiers
