@@ -1202,6 +1202,30 @@ _preset_options = {
     'full': argparse.Namespace(
         _help='Full configuration',
         config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+    ),
+    'full-asan': argparse.Namespace(
+        _help='Full configuration with GCC+ASan+UBSan',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='gcc',
+        CFLAGS='-O',
+        COMMON_FLAGS='-fsanitize=address,undefined -fno-common -g3',
+    ),
+    'full-debug': argparse.Namespace(
+        _help='Full configuration, debug build',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CFLAGS='-O0',
+        COMMON_FLAGS='-g3',
+    ),
+    'full-thumb': argparse.Namespace(
+        _help='Full configuration for arm-linux-gnueabi',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='arm-linux-gnueabi-gcc',
+        CFLAGS='-Os',
+        COMMON_FLAGS='-mthumb',
     ),
     'm0plus': argparse.Namespace(
         _help='Baremetal configuration for Cortex-M0+ target',
@@ -1218,6 +1242,12 @@ _preset_options = {
         CC='clang',
         CFLAGS='-O',
         COMMON_FLAGS='-fsanitize=memory -g3',
+    ),
+    'thumb': argparse.Namespace(
+        _help='Default configuration for arm-linux-gnueabi',
+        CC='arm-linux-gnueabi-gcc',
+        CFLAGS='-Os',
+        COMMON_FLAGS='-mthumb',
     ),
     'valgrind': argparse.Namespace(
         _help='Build for Valgrind, current configuration',
