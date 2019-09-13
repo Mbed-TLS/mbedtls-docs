@@ -1181,11 +1181,11 @@ it's the documentation of the preset.
 _preset_options = {
     '': {}, # empty preset = use defaults
     'asan': argparse.Namespace(
-        _help='Clang with Asan, current configuration',
+        _help='Clang with ASan+UBSan, current configuration',
         config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
         CC='clang',
         CFLAGS='-O',
-        COMMON_FLAGS='-fsanitize=address -fno-common -g3',
+        COMMON_FLAGS='-fsanitize=address,undefined -fno-common -g3',
     ),
     'coverage': argparse.Namespace(
         _help='Build with coverage instrumentation',
