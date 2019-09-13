@@ -555,6 +555,22 @@ class MakefileMaker:
                            for c_file in c_files])
         return ['$(SOURCE_DIR)/' + filename for filename in sorted(deps)]
 
+    def object_target(self, section, src, extra):
+        c_file = src.make_path()
+        o_file = src.target(self.object_extension)
+        dependencies = self.c_with_dependencies(src.relative_path())
+        self.target(o_file,
+                    dependencies,
+                    [sjoin('$(CC)',
+                           '$(WARNING_CFLAGS)',
+                           '$(COMMON_FLAGS)',
+                           '$(CFLAGS)',
+                           ' '.join(['$({}_CFLAGS)'.format(section)] +
+                                    extra),
+                           '-o $@',
+                           '-c', c_file)],
+                    short=('CC    ' + c_file))
+
     _potential_libraries = ['crypto', 'x509', 'tls']
 
     @staticmethod
@@ -588,18 +604,7 @@ class MakefileMaker:
         # Enumerate modules and emit the rules to build them
         modules = list_source_files(self.options.source, 'library/*.c')
         for module in modules:
-            o_file = module.target(self.object_extension)
-            c_file = module.make_path()
-            self.target(o_file,
-                        self.c_with_dependencies(module.relative_path()),
-                        [sjoin('$(CC)',
-                               '$(WARNING_CFLAGS)',
-                               '$(COMMON_FLAGS)',
-                               '$(CFLAGS)',
-                               '$(LIBRARY_CFLAGS)',
-                               '-o $@',
-                               '-c', c_file)],
-                        short=('CC    ' + c_file))
+            self.object_target('LIBRARY', module, [])
         contents = {}
         # Enumerate libraries and the rules to build them
         for lib in self._potential_libraries:
@@ -706,17 +711,9 @@ class MakefileMaker:
                         [script_path],
                         short='Gen   $@')
             self.clean.append(base + '_generated.c')
-        self.target(object_file,
-                    self.c_with_dependencies(src.relative_path()),
-                    [sjoin('$(CC)',
-                           '$(WARNING_CFLAGS)',
-                           '$(COMMON_FLAGS)',
-                           '$(CFLAGS)',
-                           '$(PROGRAMS_CFLAGS)',
-                           '-I', src.target_dir(), # for generated files
-                           '-c', source_path,
-                           '-o $@')],
-                    short='CC    $@')
+        extra_includes = ['-I', src.target_dir()] # for generated files
+        object_file = src.target(self.object_extension)
+        self.object_target('PROGRAMS', src, extra_includes)
         if base in self._auxiliary_sources:
             return
         exe_file = src.target(self.executable_extension)
