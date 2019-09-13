@@ -660,28 +660,26 @@ class MakefileMaker:
                               for _main, objs in _auxiliary_objects.items()
                               for obj in objs])
 
-    def program_uses_lib(self, app, lib):
-        """Test whether the sample program app uses lib.
+    def program_libraries(self, app):
+        """Return the list of libraries that app uses.
 
         app is the base of the main file of a sample program (directory
         without the submodule part and basename of the file).
-        lib is the core part of the library name (no extension or "libmbed"
-        prefix).
+
+        Return the list of library base names in their dependency order
+        (e.g. ["crypto", "x509", "tls"]).
         """
         basename = os.path.basename(app)
         subdir = os.path.basename(os.path.dirname(app))
-        if lib == 'crypto':
-            return True
-        elif lib == 'x509':
-            return (subdir in ['ssl', 'x509'] or
-                    (subdir == 'test' and basename == 'selftest' and
-                     self.source_exists('library/x509.c')))
-        elif lib == 'tls':
-            return (subdir == 'ssl' or
-                    (subdir == 'x509' and basename == 'cert_app') or
-                    basename.endswith('_client') or
-                    basename.endswith('_server') or
-                    basename.endswith('_proxy'))
+        if (subdir == 'ssl' or basename.startswith('ssl') or
+            basename in {'cert_app', 'dh_client', 'dh_server', 'udp_proxy'}
+        ):
+            return ['crypto', 'x509', 'tls']
+        if (subdir == 'x509' or
+            (basename == 'selftest' and self.source_exists('library/x509.c'))
+        ):
+            return ['crypto', 'x509']
+        return ['crypto']
 
     def program_subsection(self, src, executables):
         """Emit the makefile rules for the given sample program.
@@ -725,8 +723,7 @@ class MakefileMaker:
         object_deps = [dep + self.object_extension
                        for dep in self._auxiliary_objects.get(base, [])
                        if self.source_exists(dep + '.c')]
-        libs = [lib for lib in reversed(self._potential_libraries)
-                if self.program_uses_lib(base, lib)]
+        libs = list(reversed(self.program_libraries(base)))
         lib_files = ['library/libmbed{}{}'.format(lib, self.library_extension)
                      for lib in libs]
         dash_l_libs = [self.dash_l_lib(lib) for lib in libs]
