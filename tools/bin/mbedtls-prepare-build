@@ -961,7 +961,7 @@ class ConfigMaker:
         """Builder-specific method which is called first."""
         raise NotImplementedError
 
-    def set(self, name, value):
+    def set(self, name, value=None):
         """Builder-specific method to set name to value."""
         raise Exception("Configuration method {} does not support setting options"
                         .format(options.config_mode))
@@ -1017,7 +1017,7 @@ class ConfigCopy(ConfigMaker):
                '-f', os.path.abspath(self.target_file)] + list(args)
         subprocess.check_call(cmd, cwd=self.options.dir)
 
-    def set(self, name, value):
+    def set(self, name, value=None):
         if value is None:
             self.run_config_script('set', name)
         else:
@@ -1048,7 +1048,7 @@ class ConfigInclude(ConfigMaker):
         self.lines.append('#include "{}"'.format(source_path))
         self.lines.append('')
 
-    def set(self, name, value):
+    def set(self, name, value=None):
         if value:
             self.lines.append('#define ' + name + ' ' + value)
         else:
