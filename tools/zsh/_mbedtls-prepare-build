@@ -2,7 +2,7 @@
 
 _mbedtls_prepare_build_symbols () {
   local -a identifiers
-  identifiers=("${(@f)$(sed -n 's!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p' $source_dir/include/mbedtls/config.h 2>/dev/null)}")
+  identifiers=("${(@f)$(_call_program _config_pl_symbols sed -n \''s!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p'\' \$source_dir/include/mbedtls/config.h)}")
   if ((!$#identifiers)); then return 1; fi
   _values -s , 'config.h symbols' $identifiers
 }

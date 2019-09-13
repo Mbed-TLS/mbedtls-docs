@@ -3,8 +3,7 @@
 
 _config_pl_symbols () {
   local -a identifiers
-  #identifiers=("${(@f)$(_call_program get_symbols sed -n 's!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p' $config_h)}")
-  identifiers=("${(@f)$(sed -n 's!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p' $config_h)}")
+  identifiers=("${(@f)$(_call_program _config_pl_symbols sed -n \''s!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p'\' \$config_h)}")
   _describe -t symbols 'config.h symbols' identifiers
 }
 
