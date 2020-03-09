@@ -642,6 +642,10 @@ class MakefileMaker:
             base = 'mbed' + base
         return '-l' + base
 
+    _query_config = [
+        'programs/ssl/query_config', # in Mbed TLS up to 2.21
+        'programs/test/query_config', # in Mbed Crypto
+    ]
     """Auxiliary files used by sample programs.
 
     This is a map from the base of the file containing the main()
@@ -651,12 +655,9 @@ class MakefileMaker:
     basename of the file. Non-existing files are ignored.
     """
     _auxiliary_objects = {
-        'programs/ssl/ssl_client2': ['programs/ssl/query_config'],
-        'programs/ssl/ssl_server2': ['programs/ssl/query_config'],
-        'programs/test/query_compile_time_config': [
-            'programs/ssl/query_config', # in Mbed TLS
-            'programs/test/query_config', # in Mbed Crypto
-        ],
+        'programs/ssl/ssl_client2': _query_config,
+        'programs/ssl/ssl_server2': _query_config,
+        'programs/test/query_compile_time_config': _query_config,
     }
     """List of bases of source files that are an auxiliary object for
     some sample program.
