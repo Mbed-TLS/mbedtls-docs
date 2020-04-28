@@ -691,6 +691,14 @@ class MakefileMaker:
             return ['crypto', 'x509']
         return ['crypto']
 
+    def add_run_target(self, program, executable=None):
+        if executable is None:
+            executable = program + self.executable_extension
+        self.target(program + '.run',
+                    [executable],
+                    ['$(RUN) ' + executable + ' $(RUNS)'],
+                    phony=True)
+
     def program_subsection(self, src, executables):
         """Emit the makefile rules for the given sample program.
 
@@ -764,6 +772,7 @@ class MakefileMaker:
                     phony=True)
         self.clean.append('programs/*/*{} $(programs)'
                           .format(self.object_extension))
+        self.add_run_target('programs/test/selftest')
         # TODO: *_demo.sh
 
     def test_subsection(self, src, executables):
