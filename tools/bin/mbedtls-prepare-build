@@ -285,11 +285,13 @@ class MakefileMaker:
         if self.options.indirect_extensions:
             self.executable_extension = '$(EXEXT)'
             self.library_extension = '$(LIBEXT)'
+            self.assembly_extension = '$(ASMEXT)'
             self.object_extension = '$(OBJEXT)'
             self.shared_library_extension = '$(DLEXT)'
         else:
             self.executable_extension = self.options.executable_extension
             self.library_extension = self.options.library_extension
+            self.assembly_extension = self.options.assembly_extension
             self.object_extension = self.options.object_extension
             self.shared_library_extension = self.options.shared_library_extension
         self.source_path = source_path
@@ -441,6 +443,7 @@ class MakefileMaker:
         self.line('')
         self.comment('Configuration')
         if self.options.indirect_extensions:
+            self.line('ASMEXT = ' + self.options.assembly_extension)
             self.line('OBJEXT = ' + self.options.object_extension)
             self.line('LIBEXT = ' + self.options.library_extension)
             self.line('DLEXT = ' + self.options.shared_library_extension)
@@ -561,19 +564,22 @@ class MakefileMaker:
 
     def object_target(self, section, src, extra):
         c_file = src.make_path()
-        o_file = src.target(self.object_extension)
         dependencies = self.c_with_dependencies(src.relative_path())
-        self.target(o_file,
-                    dependencies,
-                    [sjoin('$(CC)',
-                           '$(WARNING_CFLAGS)',
-                           '$(COMMON_FLAGS)',
-                           '$(CFLAGS)',
-                           ' '.join(['$({}_CFLAGS)'.format(section)] +
-                                    extra),
-                           '-o $@',
-                           '-c', c_file)],
-                    short=('CC    ' + c_file))
+        for short, switch, extension in [
+                ('CC -S ', '-S', self.assembly_extension),
+                ('CC    ', '-c', self.object_extension),
+        ]:
+            self.target(src.target(extension),
+                        dependencies,
+                        [sjoin('$(CC)',
+                               '$(WARNING_CFLAGS)',
+                               '$(COMMON_FLAGS)',
+                               '$(CFLAGS)',
+                               ' '.join(['$({}_CFLAGS)'.format(section)] +
+                                        extra),
+                               '-o $@',
+                               switch, c_file)],
+                        short=(short + c_file))
 
     _potential_libraries = ['crypto', 'x509', 'tls']
 
@@ -1274,6 +1280,7 @@ _default_options = {
     'executable_extension': '',
     'indirect_extensions': False,
     'library_extension': '.a',
+    'assembly_extension': '.s',
     'object_extension': '.o',
     'shared_library_extension': '.so',
     'source': os.curdir,
@@ -1341,6 +1348,8 @@ def main():
         parser.add_argument(envopt.option,
                             dest=envopt.attr,
                             help='{} ({})'.format(envopt.help, envopt.var))
+    parser.add_argument('--assembly-extension',
+                        help='File extension for assembly files')
     parser.add_argument('--config-file',
                         help='Base config.h to use')
     parser.add_argument('--config-mode',
