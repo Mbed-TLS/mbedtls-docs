@@ -773,8 +773,6 @@ class MakefileMaker:
         the list executables, unless src refers to an auxiliary file.
         """
         base = src.base()
-        object_file = src.target(self.object_extension)
-        source_path = src.make_path()
         if os.path.basename(base) == 'psa_constant_names':
             script_path = self.crypto_file_path('scripts/generate_psa_constants.py')
             self.target(base + '_generated.c',
