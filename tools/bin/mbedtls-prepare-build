@@ -68,6 +68,8 @@ _environment_options = [
                       'Options to always pass to ${CC} when compiling'),
     EnvironmentOption('COMMON_FLAGS', '',
                       'Options to always pass to ${CC} when compiling or linking'),
+    EnvironmentOption('DLLFLAGS', '-shared',
+                      'Options to pass to ${CC} when building a shared library'),
     EnvironmentOption('LDFLAGS', '',
                       'Options to always pass to ${CC} when linking'),
     EnvironmentOption('PERL', 'perl',
@@ -297,7 +299,7 @@ class MakefileMaker:
             self.shared_library_extension = self.options.shared_library_extension
         self.source_path = source_path
         self.out = None
-        self.libraries = None
+        self.static_libraries = None
         self.help = {}
         self.clean = []
         self.dependency_cache = {}
@@ -311,7 +313,7 @@ class MakefileMaker:
         # Setting them here makes Pylint happy, but having set them here
         # makes it harder to diagnose if some method is buggy and attempts
         # to use a field whose value isn't actually known.
-        del self.libraries # Set when generating the library targets
+        del self.static_libraries # Set when generating the library targets
         del self.out # Set only while writing the output file
 
     def get_file_submodule(self, filename):
@@ -604,6 +606,16 @@ class MakefileMaker:
         else:
             return 'crypto'
 
+    @staticmethod
+    def dash_l_lib(lib):
+        """Return the -l option to link with the specified library."""
+        base = os.path.splitext(os.path.basename(lib))[0]
+        if base.startswith('lib'):
+            base = base[3:]
+        if not base.startswith('mbed'):
+            base = 'mbed' + base
+        return '-l' + base
+
     def library_section(self):
         """Generate the section of the makefile for the library directory.
 
@@ -631,30 +643,47 @@ class MakefileMaker:
             self.format('libmbed{}_modules = {}', lib, ' '.join(contents[lib]))
             self.format('libmbed{}_objects = $(libmbed{}_modules:={})',
                         lib, lib, self.object_extension)
-            self.target('library/libmbed{}{}'.format(lib, self.library_extension),
-                        ['$(libmbed{}_objects)'.format(lib)],
-                        ['$(AR) $(ARFLAGS) $@ $(libmbed{}_objects)'.format(lib)],
+        self.static_libraries = []
+        shared_libraries = []
+        for idx, lib in enumerate(libraries):
+            objects = '$(libmbed{}_objects)'.format(lib)
+            static = 'library/libmbed{}{}'.format(lib, self.library_extension)
+            shared = 'library/libmbed{}{}'.format(lib, self.shared_library_extension)
+            self.static_libraries.append(static)
+            shared_libraries.append(shared)
+            self.target(static, [objects],
+                        ['$(AR) $(ARFLAGS) $@ ' + objects],
                         short='AR    $@')
-        self.libraries = ['library/libmbed{}{}'.format(lib, self.library_extension)
-                          for lib in libraries]
-        self.target('lib', self.libraries,
+            dependent_libraries = libraries[:idx]
+            if dependent_libraries:
+                dash_l_dependent = ('-L . ' +
+                                 sjoin(*[self.dash_l_lib(lib)
+                                         for lib in dependent_libraries]))
+            else:
+                dash_l_dependent = ''
+            self.target(shared, [objects] + ['library/libmbed{}{}'
+                                             .format(lib, self.shared_library_extension)
+                                             for lib in dependent_libraries],
+                        [sjoin('$(CC)',
+                               '$(COMMON_FLAGS)',
+                               '$(LDFLAGS)',
+                               '$(DLLFLAGS)',
+                               '-o $@',
+                               dash_l_dependent,
+                               objects)],
+                        short='LD    $@')
+        self.target('lib', self.static_libraries,
                     [],
                     help='Build the static libraries.',
+                    phony=True)
+        self.target('dll', shared_libraries,
+                    [],
+                    help='Build the shared libraries.',
                     phony=True)
         self.clean.append(sjoin(*['library/*' + ext
                                   for ext in (self.library_extension,
                                               self.object_extension,
                                               self.shared_library_extension)]))
-
-    @staticmethod
-    def dash_l_lib(lib):
-        """Return the -l option to link with the specified library."""
-        base = os.path.splitext(os.path.basename(lib))[0]
-        if base.startswith('lib'):
-            base = base[3:]
-        if not base.startswith('mbed'):
-            base = 'mbed' + base
-        return '-l' + base
 
     _query_config = [
         'programs/ssl/query_config', # in Mbed TLS up to 2.21
@@ -881,8 +910,8 @@ class MakefileMaker:
         self.assign('TESTS_LDFLAGS',
                     '-L library')
         self.assign('test_libs',
-                    *[self.dash_l_lib(lib) for lib in reversed(self.libraries)])
-        self.assign('test_build_deps', *self.libraries)
+                    *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
+        self.assign('test_build_deps', *self.static_libraries)
         data_files = list_source_files(self.options.source, 'tests/suites/*.data')
         executables = []
         for src in data_files:
