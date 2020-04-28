@@ -707,6 +707,20 @@ class MakefileMaker:
             return ['crypto', 'x509']
         return ['crypto']
 
+    def extra_link_flags(self, app):
+        """Return the list of extra link flags for app.
+
+        app is the base of the main file of a sample program (directory
+        without the submodule part and basename of the file).
+
+        Return a list of strings to insert on the command line when
+        linking app.
+        """
+        flags = []
+        if 'thread' in app:
+            flags.append('-lpthread')
+        return flags
+
     def add_run_target(self, program, executable=None):
         if executable is None:
             executable = program + self.executable_extension
@@ -760,7 +774,7 @@ class MakefileMaker:
                            '$(COMMON_FLAGS)',
                            '$(LDFLAGS)',
                            '$(PROGRAMS_LDFLAGS)',
-                           sjoin(*dash_l_libs),
+                           sjoin(*(dash_l_libs + self.extra_link_flags(base))),
                            '-o $@')],
                     short='LD    $@')
         executables.append(exe_file)
