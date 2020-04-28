@@ -32,16 +32,28 @@ _mbedtls_prepare_build () {
     # 1=opt1 3=?arg1 5=?opt2 7=descr
     if [[ $state == 'options' &&
           $line =~ '  (-[^ ]+)( ([^- ][^ ]*))?(, (-[^ ]+)( [^- ][^ ]*)?)*  +(.*)' ]]; then
-      spec="[${match[7]//\]/\\\]}]"
+      spec="[${${match[7]//\]/\\\]}//:/\\:}]"
       if [[ -n $match[3] ]]; then
         spec="=$spec:$match[3]:->${match[1]}"
       fi
       case $match[1] in
         (--config-set|--config-unset|--var) prefix='*';;
-        (*) prefix=;;
+        (*) prefix="($match[1] $match[5])";;
       esac
       if [[ -n $match[5] ]]; then
-        specs+=($prefix{$match[1],$match[5]}$spec)
+        if [[ -n $spec ]]; then
+          if [[ $match[1] == --* ]]; then
+            match[1]="$match[1]="
+          else
+            match[1]="$match[1]+"
+          fi
+          if [[ $match[5] == --* ]]; then
+            match[5]="$match[5]="
+          else
+            match[5]="$match[5]+"
+          fi
+        fi
+        specs+=($prefix{$match[1],$match[5]}${spec#\=})
       else
         specs+=($prefix$match[1]$spec)
       fi
@@ -53,6 +65,7 @@ _mbedtls_prepare_build () {
     fi
   done
   line=
+  s=($specs)
   _arguments $specs
 
   case $state in
