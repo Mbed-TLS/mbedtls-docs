@@ -60,6 +60,13 @@ _mbedtls_prepare_build () {
       _call_function ret _command_names -e;;
     (--config-file)
       _call_function ret _files -g "*.h";;
+    (--config-mode)
+      local -a config_modes
+      config_modes=(
+        'copy:Copy config.h'
+        'include:#include ${SOURCE_DIR}/config.h'
+      )
+      _call_function ret _describe -t config_mode 'Handling of config.h' config_modes;;
     (--config-name)
       local -a config_names
       config_names=(
