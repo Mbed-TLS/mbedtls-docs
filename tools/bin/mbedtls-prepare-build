@@ -672,9 +672,18 @@ class MakefileMaker:
     """List of bases of source files that are an auxiliary object for
     some sample program.
     """
-    _auxiliary_sources = set([obj
-                              for _main, objs in _auxiliary_objects.items()
-                              for obj in objs])
+    _auxiliary_sources = (frozenset(obj
+                                    for objs in _auxiliary_objects.values()
+                                    for obj in objs)
+                          .union({
+                              'programs/fuzz/common', 'programs/fuzz/onefile',
+                          }))
+
+    def auxiliary_objects(self, base):
+        if base.startswith('programs/fuzz'):
+            return ['programs/fuzz/common', 'programs/fuzz/onefile']
+        else:
+            return self._auxiliary_objects.get(base, [])
 
     def program_libraries(self, app):
         """Return the list of libraries that app uses.
@@ -688,6 +697,7 @@ class MakefileMaker:
         basename = os.path.basename(app)
         subdir = os.path.basename(os.path.dirname(app))
         if (subdir == 'ssl' or basename.startswith('ssl') or
+            subdir == 'fuzz' or
             basename in {'cert_app', 'dh_client', 'dh_server', 'udp_proxy'}
         ):
             return ['crypto', 'x509', 'tls']
@@ -737,7 +747,7 @@ class MakefileMaker:
             return
         exe_file = src.target(self.executable_extension)
         object_deps = [dep + self.object_extension
-                       for dep in self._auxiliary_objects.get(base, [])
+                       for dep in self.auxiliary_objects(base)
                        if self.source_exists(dep + '.c')]
         libs = list(reversed(self.program_libraries(base)))
         lib_files = ['library/libmbed{}{}'.format(lib, self.library_extension)
