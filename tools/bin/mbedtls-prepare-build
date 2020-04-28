@@ -511,6 +511,7 @@ class MakefileMaker:
             return self.dependency_cache[c_file]
         if c_file in stack:
             return set()
+        stack |= {c_file}
         include_path = ([os.path.dirname(c_file)] + self.include_path(c_file))
         dependencies = set()
         extra = set()
@@ -528,8 +529,8 @@ class MakefileMaker:
                 else:
                     if filename.endswith('.c'):
                         extra.add(os.path.dirname(c_file) + '/' + filename)
-        for dep in dependencies:
-            dependencies |= self.collect_c_dependencies(dep, stack | {dep})
+        for dep in frozenset(dependencies):
+            dependencies |= self.collect_c_dependencies(dep, stack)
         dependencies |= extra
         self.dependency_cache[c_file] = dependencies
         return dependencies
