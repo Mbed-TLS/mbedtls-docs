@@ -1098,7 +1098,10 @@ class ConfigInclude(ConfigMaker):
     def finish(self):
         self.lines.append('')
         self.lines.append('#undef MBEDTLS_CHECK_CONFIG_H')
+        # Avoid a redefinition of this typedef
+        self.lines.append('#define mbedtls_iso_c_forbids_empty_translation_units mbedtls_iso_c_forbids_empty_translation_units2')
         self.lines.append('#include "mbedtls/check_config.h"')
+        self.lines.append('#undef mbedtls_iso_c_forbids_empty_translation_units')
         self.lines.append('#endif')
         with open(self.target_file, 'w') as out:
             for line in self.lines:
