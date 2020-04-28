@@ -995,7 +995,7 @@ class ConfigMaker:
             if not options.in_tree_build:
                 self.source_file_path = 'source/' + self.source_file_path
         else:
-            self.source_file_path = os.path.abspath(source_file)
+            self.source_file_path = os.path.abspath(self.source_file)
         self.target_file = os.path.join(options.dir,
                                         'include', 'mbedtls', 'config.h')
 
