@@ -71,7 +71,7 @@ _mbedtls_prepare_build () {
     (--config-set|--config-unset)
       _call_function ret _mbedtls_prepare_build_symbols;;
     (--dir|--source)
-      _call_function ret _dirs;;
+      _call_function ret _files -/;;
     (--preset)
       _call_function ret _describe -t preset 'Preset build name' presets;;
   esac
