@@ -76,6 +76,10 @@ _environment_options = [
                       'Python3 interpreter'),
     EnvironmentOption('RM', 'rm -f',
                       'Program to remove files (e.g. "rm -f")'),
+    EnvironmentOption('RUN', '',
+                      'Command prefix before executable programs'),
+    EnvironmentOption('RUNS', '',
+                      'Command suffix after executable programs'),
     EnvironmentOption('VALGRIND', 'valgrind',
                       'Path to valgrind'),
     EnvironmentOption('VALGRIND_FLAGS', sjoin('-q',
@@ -811,7 +815,7 @@ class MakefileMaker:
         # so is the .datax file.
         self.target('tests/' + base + '.run',
                     [exe_file, 'tests/seedfile'],
-                    ['cd tests && ./' + exe_basename],
+                    ['cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)'],
                     short='RUN   tests/' + exe_basename,
                     phony=True)
         valgrind_log = 'MemoryChecker.{}.log'.format(base)
