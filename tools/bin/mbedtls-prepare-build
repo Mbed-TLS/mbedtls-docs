@@ -1223,7 +1223,7 @@ _preset_options = {
         config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
         CC='clang',
         CFLAGS='-O',
-        COMMON_FLAGS='-fsanitize=address,undefined -fno-common -g3',
+        COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
     ),
     'coverage': argparse.Namespace(
         _help='Build with coverage instrumentation',
