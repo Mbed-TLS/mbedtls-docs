@@ -507,6 +507,15 @@ class MakefileMaker:
         self.dependency_cache[c_file] = dependencies
         return dependencies
 
+    def is_generated(self, filename):
+        """Whether the specified C file is generated.
+
+        Implemented with heuristics based on the name.
+        """
+        if '_generated.' in filename:
+            return True
+        return False
+
     def c_with_dependencies(self, c_file):
         """A list of C dependencies in makefile syntax.
 
@@ -520,7 +529,7 @@ class MakefileMaker:
         # it gets used instead of the one generated in the build directory.
         deps = self.collect_c_dependencies(c_file)
         return [(self.get_file_submodule(filename)[1]
-                 if '_generated.' in filename else
+                 if self.is_generated(filename) else
                  '$(SOURCE_DIR)/' + filename)
                 for filename in sorted(deps) + [c_file]]
 
@@ -586,8 +595,7 @@ class MakefileMaker:
             base = 'mbed' + base
         return '-l' + base
 
-    @staticmethod
-    def list_source_files(root, pattern):
+    def list_source_files(self, root, pattern):
         """List the source files matching the specified pattern.
 
         Look for the specified wildcard pattern under all submodules, including
@@ -610,7 +618,7 @@ class MakefileMaker:
                 src = SourceFile(root, submodule, source_name)
                 base = src.base()
                 # Skip generated files that may be present in the source tree.
-                if base.endswith('_generated'):
+                if self.is_generated(src.relative_path()):
                     continue
                 # Skip files that were seen in an earlier submodule.
                 if base not in all_sources:
