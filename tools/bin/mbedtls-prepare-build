@@ -162,36 +162,6 @@ class SourceFile:
         """A build target for this source file, with the specified extension."""
         return self.base() + extension
 
-def list_source_files(root, pattern):
-    """List the source files matching the specified pattern.
-
-    Look for the specified wildcard pattern under all submodules, including
-    the root tree. If a given file name is present in multiple submodules,
-    only the earliest matching submodule is kept, with the root tree being
-    looked up last.
-
-    This function returns a sorted list of SourceFile objects.
-    """
-    # FIXME: for error.c at least, we need the root, not the submodule.
-    all_sources = {}
-    for submodule in _submodule_names + ['']:
-        submodule_root = os.path.join(root, submodule)
-        start = len(submodule_root)
-        if submodule:
-            start += 1
-        abs_pattern = os.path.join(submodule_root, pattern)
-        sources = [src[start:] for src in glob.glob(abs_pattern)]
-        for source_name in sources:
-            src = SourceFile(root, submodule, source_name)
-            base = src.base()
-            # Skip generated files that may be present in the source tree.
-            if base.endswith('_generated'):
-                continue
-            # Skip files that were seen in an earlier submodule.
-            if base not in all_sources:
-                all_sources[base] = src
-    return sorted(all_sources.values())
-
 class ClassicTestGenerator:
     """Test generator script description for the classic (<<2.13) test generator
     (generate_code.pl)."""
@@ -616,6 +586,37 @@ class MakefileMaker:
             base = 'mbed' + base
         return '-l' + base
 
+    @staticmethod
+    def list_source_files(root, pattern):
+        """List the source files matching the specified pattern.
+
+        Look for the specified wildcard pattern under all submodules, including
+        the root tree. If a given file name is present in multiple submodules,
+        only the earliest matching submodule is kept, with the root tree being
+        looked up last.
+
+        This function returns a sorted list of SourceFile objects.
+        """
+        # FIXME: for error.c at least, we need the root, not the submodule.
+        all_sources = {}
+        for submodule in _submodule_names + ['']:
+            submodule_root = os.path.join(root, submodule)
+            start = len(submodule_root)
+            if submodule:
+                start += 1
+            abs_pattern = os.path.join(submodule_root, pattern)
+            sources = [src[start:] for src in glob.glob(abs_pattern)]
+            for source_name in sources:
+                src = SourceFile(root, submodule, source_name)
+                base = src.base()
+                # Skip generated files that may be present in the source tree.
+                if base.endswith('_generated'):
+                    continue
+                # Skip files that were seen in an earlier submodule.
+                if base not in all_sources:
+                    all_sources[base] = src
+        return sorted(all_sources.values())
+
     def library_section(self):
         """Generate the section of the makefile for the library directory.
 
@@ -628,7 +629,7 @@ class MakefileMaker:
                     '-I include',
                     self.include_path_options('library/*'))
         # Enumerate modules and emit the rules to build them
-        modules = list_source_files(self.options.source, 'library/*.c')
+        modules = self.list_source_files(self.options.source, 'library/*.c')
         for module in modules:
             self.object_target('LIBRARY', module, [])
         contents = {}
@@ -818,7 +819,7 @@ class MakefileMaker:
                     self.include_path_options('programs/*/*'))
         self.assign('PROGRAMS_LDFLAGS',
                     '-L library')
-        programs = list_source_files(self.options.source, 'programs/*/*.c')
+        programs = self.list_source_files(self.options.source, 'programs/*/*.c')
         executables = []
         for src in programs:
             self.program_subsection(src, executables)
@@ -910,7 +911,8 @@ class MakefileMaker:
         self.assign('test_libs',
                     *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
         self.assign('test_build_deps', *self.static_libraries)
-        data_files = list_source_files(self.options.source, 'tests/suites/*.data')
+        data_files = self.list_source_files(self.options.source,
+                                            'tests/suites/*.data')
         executables = []
         for src in data_files:
             self.test_subsection(src, executables)
