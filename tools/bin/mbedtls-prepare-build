@@ -122,7 +122,7 @@ class SourceFile:
 
     def __lt__(self, other):
         if self.root != other.root:
-            raise TypeError("Cannot compare source files under different rootss"
+            raise TypeError("Cannot compare source files under different roots"
                             , self, other)
         return self.sort_key() < other.sort_key()
 
@@ -1187,7 +1187,7 @@ class BuildTreeMaker:
         self.config = _config_classes[options.config_mode](options)
 
     def programs_subdirs(self):
-        """Create subdirectories for sample programs."""
+        """Detect subdirectories for sample programs."""
         tops = ([self.options.source] +
                 [os.path.join(self.options.source, submodule)
                  for submodule in _submodule_names])
