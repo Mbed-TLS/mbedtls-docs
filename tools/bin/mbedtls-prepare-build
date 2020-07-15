@@ -446,6 +446,8 @@ class MakefileMaker:
         subdirs = ['include', 'include/mbedtls', 'library']
         if base.startswith('tests'):
             subdirs.append('tests')
+            if self.source_exists('tests/include'):
+                subdirs.append('tests/include')
         for subdir in subdirs:
             if submodule is None:
                 dirs += [os.path.join(submodule, subdir)
@@ -883,6 +885,7 @@ class MakefileMaker:
                            c_file,
                            '$(LDFLAGS)',
                            '$(TESTS_LDFLAGS)',
+                           '$(test_common_objects)',
                            '$(test_libs)',
                            '-o $@')],
                     short='CC    $@')
@@ -916,9 +919,18 @@ class MakefileMaker:
                     self.include_path_options('tests/*'))
         self.assign('TESTS_LDFLAGS',
                     '-L library')
+        tests_common_sources = self.list_source_files(self.options.source,
+                                                      'tests/src/*.c')
+        tests_common_objects = []
+        for src in tests_common_sources:
+            self.object_target('TESTS', src, [])
+            object_file = src.target(self.object_extension)
+            tests_common_objects.append(object_file)
+        self.assign('test_common_objects', *tests_common_objects)
         self.assign('test_libs',
                     *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
-        self.assign('test_build_deps', *self.static_libraries)
+        self.assign('test_build_deps',
+                    '$(test_common_objects)', *self.static_libraries)
         data_files = self.list_source_files(self.options.source,
                                             'tests/suites/*.data')
         executables = []
@@ -1236,7 +1248,7 @@ class BuildTreeMaker:
         """Go ahead and prepate the build tree."""
         for subdir in ([['include', 'mbedtls'],
                         ['library'],
-                        ['tests']] +
+                        ['tests', 'src']] +
                        [['programs', d] for d in self.programs_subdirs()]):
             self.make_subdir(subdir)
         source_link = os.path.join(self.options.dir, 'source')
