@@ -5,7 +5,7 @@ We gratefully accept contributions from the community.
 
 As with any open source project, contributions will be reviewed by the project team and community and may need some modifications to be accepted.
 
-The documentation in this repository only undergoes a light review. Incomplete documentation is better than none, and we encourage gradual improvements.
+The documentation in this repository only undergoes a light review. Please contribute any documentation that you think could be useful, even if it's incomplete. We encourage quick, iterative improvements.
 
 Making a Contribution
 ---------------------
