@@ -229,6 +229,7 @@ point in the buffer visiting it. In any case, return the function file buffer."
             (funcall switch-function buffer)
             (push-mark)
             (goto-char (point-min))
+            (search-forward-regexp "^ */\\*+ *BEGIN_CASE\\b")
             (save-match-data
               (search-forward-regexp (concat "^\\w[^\n()]*\\s-"
                                              function-name
