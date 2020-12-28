@@ -211,7 +211,7 @@ visit in another window with `switch-to-buffer-other-window'. With two
 \\[universal-argument] or a numerical prefix argument larger than 4, visit
 in another frame with `switch-to-buffer-other-frame'. With a negative prefix
 argument, don't display the function definition, only load the file and set
-point in the buffer visiting it."
+point in the buffer visiting it. In any case, return the function file buffer."
   (interactive "@p")
   (let ((function-name (mbedtls-test-data-get-function-name-at-point)))
     (if function-name
@@ -235,7 +235,8 @@ point in the buffer visiting it."
                                              "\\s-*("))
               (backward-char)
               (forward-sexp)
-              (forward-line))))
+              (forward-line))
+            buffer))
       (message "Unable to determine the test case function name"))))
 
 (defun mbedtls-test-data-copy-to-top ()
