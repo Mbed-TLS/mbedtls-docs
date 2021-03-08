@@ -21,6 +21,14 @@ The module supports negative numbers, which are generally not relevant for crypt
 
 We would like to replace it with a module that performs constant-time arithmetic on numbers modulo N, without any dynamic allocation. As this requires an extensive change of the API of the bignum module, this is a major endeavor involving significant changes to asymmetric crypto modules.
 
+### Replacing ALT implementations by PSA drivers
+
+It is currently possible to replace some of the library modules and functions by alternative implementations by defining a symbol `MBEDTLS_xxx_ALT` and linking with a custom implementation of the corresponding functions. This is typically useful when the custom implementations calls cryptographic acceleration hardware.
+
+The design of the ALT interfaces is cumbersome, especially when replacing a whole module. The ALT implementer must respect the semantics of the original functions, and cannot easily reuse part of the exiting code (for example, to perform padding). This limits the evolution possibilities of the library since changes of semantics that are backward-compatible for applications usually break ALT implementations.
+
+In Mbed TLS 3.0, existing ALT implementations continue to work, since PSA drivers are not fully implemented yet. However, it is likely that no new ALT possibility will be added. Once PSA drivers are ready for production, ALT implementations will be deprecated, likely to be removed in Mbed TLS 4.0.
+
 ## API design
 
 ### Secure by default, hard to misuse
