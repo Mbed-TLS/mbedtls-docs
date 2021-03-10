@@ -816,6 +816,10 @@ class MakefileMaker:
                     [executable],
                     ['$(RUN) ' + executable + ' $(RUNS)'],
                     phony=True)
+        self.target(program + '.gmon',
+                    [executable],
+                    ['$(RUN) ' + executable + ' $(RUNS)',
+                     'mv gmon.out $@'])
 
     def program_subsection(self, src, executables):
         """Emit the makefile rules for the given sample program.
@@ -965,6 +969,11 @@ class MakefileMaker:
                     ['cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)'],
                     short='RUN   tests/' + exe_basename,
                     phony=True)
+        self.target('tests/' + base + '.gmon',
+                    [exe_file, 'tests/seedfile'],
+                    ['cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)',
+                     'mv tests/gmon.out $@'],
+                    short='RUN   tests/' + exe_basename)
         valgrind_log_basename = 'MemoryChecker.{}.log'.format(base)
         valgrind_log = '$(VALGRIND_LOG_DIR_FROM_TESTS)/' + valgrind_log_basename
         self.target('tests/' + base + '.valgrind',
