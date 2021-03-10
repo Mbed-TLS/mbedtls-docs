@@ -383,8 +383,46 @@ class MakefileMaker:
         else:
             self.line(' \\\n\t\t'.join(parts))
 
+    _glob2re_re = re.compile(r'[.^$*+?{}\|()]')
+    @staticmethod
+    def _glob2re_repl(m):
+        if m.group(0) == '*':
+            return '[^/]*'
+        elif m.group(0) == '?':
+            return '[^/]'
+        else:
+            return '\\' + m.group(0)
+    @classmethod
+    def glob2re(cls, pattern):
+        # Simple glob pattern to regex translator. Does not support
+        # character sets properly, which is ok because we don't use them.
+        # We don't use fnmatch or PurePath.match because they let
+        # '*' and '?' match '/'.
+        return re.sub(cls._glob2re_re, cls._glob2re_repl, pattern)
+
+    def is_already_cleaned(self, name):
+        if not self.clean:
+            return False
+        regex = ''.join(['\A(?:',
+                         '|'.join([self.glob2re(pattern)
+                                   for patterns in self.clean
+                                   for pattern in patterns.split()]),
+                         ')\Z'])
+        return re.match(regex, name)
+
+    def add_clean(self, *elements):
+        """Add one or more element to the list of things to clean.
+
+        These can be file paths or wildcard patterns. They can contain
+        macro expansions.
+
+        Elements that are added in the same call to this function are grouped
+        together for cosmetic purposes.
+        """
+        self.clean.append(' '.join(elements))
+
     def target(self, name, dependencies, commands,
-               help=None, phony=False, short=None):
+               help=None, phony=False, clean=None, short=None):
         """Generate a makefile rule.
 
         * name: the target(s) of the rule. This is a string. If there are
@@ -394,6 +432,10 @@ class MakefileMaker:
         * help: documentation to show for this target in "make help".
           If this is omitted, the target is not listed in "make help".
         * phony: if true, declare this target as phony.
+        * clean: if true, add this target to the list of things to clean.
+          This parameter only has an effect on non-phony targets.
+          By default, add this target to the list of things to clean unless
+          it's already there, possibly via a wildcard pattern.
         * short: if this is specified, the command(s) in the recipe
           will not be shown in the make transcript, and instead the
           make transcript will display this string.
@@ -409,6 +451,18 @@ class MakefileMaker:
             self.help[name] = help
         if phony:
             self.format('.PHONY: {}', name)
+        else:
+            if clean is None:
+                # TODO: is_already_cleaned is slow, and only works as intended
+                # if the pattern is added before the specific item, which
+                # isn't very natural. Maybe instead I should do an elimination
+                # pass at the end, to remove redundant entries. Or maybe
+                # just don't worry about it: the only purpose is to avoid
+                # having "rm foo.bar" if there's also "rm *.bar", and that's
+                # cosmetic.
+                clean = True #not self.is_already_cleaned(name)
+            if clean:
+                self.add_clean(name)
 
     def environment_option_subsection(self):
         """Generate the assignments to customizable options."""
@@ -681,6 +735,11 @@ class MakefileMaker:
                     '-I include',
                     self.include_path_options('library/*'),
                     '$(LIBRARY_EXTRA_CFLAGS)')
+        self.add_clean(*['library/*' + ext
+                         for ext in (self.assembly_extension,
+                                     self.library_extension,
+                                     self.object_extension,
+                                     self.shared_library_extension)])
         # Enumerate modules and emit the rules to build them
         modules = self.list_source_files(self.options.source, 'library/*.c')
         for module in modules:
@@ -734,10 +793,6 @@ class MakefileMaker:
                     [],
                     help='Build the shared libraries.',
                     phony=True)
-        self.clean.append(sjoin(*['library/*' + ext
-                                  for ext in (self.library_extension,
-                                              self.object_extension,
-                                              self.shared_library_extension)]))
 
     _query_config = [
         'programs/ssl/query_config', # in Mbed TLS up to 2.21
@@ -868,6 +923,7 @@ class MakefileMaker:
                            '$(PROGRAMS_LDFLAGS)',
                            sjoin(*(dash_l_libs + self.extra_link_flags(base))),
                            '-o $@')],
+                    clean=False,
                     short='LD    $@')
         executables.append(exe_file)
 
@@ -881,6 +937,9 @@ class MakefileMaker:
         self.assign('PROGRAMS_LDFLAGS',
                     '-L library',
                     '$(PROGRAMS_EXTRA_LDFLAGS)')
+        self.add_clean(*['programs/*/*' + ext
+                         for ext in (self.assembly_extension,
+                                     self.object_extension)])
         programs = self.list_source_files(self.options.source, 'programs/*/*.c')
         executables = []
         for src in programs:
@@ -888,14 +947,14 @@ class MakefileMaker:
         dirs = set(src.target_dir() for src in programs)
         for subdir in sorted(dirs):
             self.target(subdir + '/seedfile', ['tests/seedfile'],
-                        ['$(CP) tests/seedfile $@'])
+                        ['$(CP) tests/seedfile $@'],
+                        clean=False)
         self.assign('programs', *executables)
         self.target('programs', ['$(programs)'],
                     [],
                     help='Build the sample programs.',
                     phony=True)
-        self.clean.append('programs/*/*{} $(programs)'
-                          .format(self.object_extension))
+        self.add_clean('$(programs)')
         self.add_run_target('programs/test/selftest')
         # TODO: *_demo.sh
 
@@ -957,6 +1016,7 @@ class MakefileMaker:
                            '$(test_common_objects)',
                            '$(test_libs)',
                            '-o $@')],
+                    clean=False,
                     short='CC    $@')
         executables.append(exe_file)
         # Strictly speaking, the .run target also depends on the .datax
@@ -1002,6 +1062,11 @@ class MakefileMaker:
                     *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
         self.assign('test_build_deps',
                     '$(test_common_objects)', *self.static_libraries)
+        self.add_clean(*['tests' + sub + '/*' + ext
+                         for sub in ('', '/*')
+                         for ext in (self.assembly_extension,
+                                     self.object_extension)])
+        self.add_clean('tests/*.c', 'tests/*.datax')
         data_files = self.list_source_files(self.options.source,
                                             'tests/suites/*.data')
         executables = []
@@ -1032,7 +1097,7 @@ class MakefileMaker:
                     phony=True)
         self.help['tests/test_suite_%.run'] = 'Run one test suite.'
         self.help['tests/test_suite_%.valgrind'] = 'Run one test suite with valgrind.'
-        self.clean.append('tests/*.c tests/*.datax $(test_apps)')
+        self.add_clean('$(test_apps)')
         # TODO: test_psa_constant_names.py
 
     def help_lines(self):
