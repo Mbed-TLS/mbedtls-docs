@@ -1335,6 +1335,7 @@ class BuildTreeMaker:
             os.symlink(self.source_path, source_link)
         for link in [['include', 'psa'], # hack for psa_constant_names.py
                      ['scripts'],
+                     ['tests', 'configs'],
                      ['tests', 'compat.sh'],
                      ['tests', 'data_files'],
                      ['tests', 'scripts'],
