@@ -948,13 +948,15 @@ class MakefileMaker:
                     ['cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)'],
                     short='RUN   tests/' + exe_basename,
                     phony=True)
-        valgrind_log = 'MemoryChecker.{}.log'.format(base)
+        valgrind_log_basename = 'MemoryChecker.{}.log'.format(base)
+        valgrind_log = '$(VALGRIND_LOG_DIR_FROM_TESTS)/' + valgrind_log_basename
         self.target('tests/' + base + '.valgrind',
                     [exe_file, 'tests/seedfile'],
                     [sjoin('cd tests &&',
                            '$(VALGRIND) $(VALGRIND_FLAGS)',
-                           '--log-file=$(VALGRIND_LOG_DIR_FROM_TESTS)/' + valgrind_log,
-                           './' + exe_basename)],
+                           '--log-file=' + valgrind_log,
+                            './' + exe_basename),
+                     sjoin('cd tests && ! grep . ' + valgrind_log)],
                     short='VALGRIND tests/' + exe_basename,
                     phony=True)
 
@@ -993,6 +995,12 @@ class MakefileMaker:
                     [],
                     help='Run all the test suites.',
                     short='',
+                    phony=True)
+        self.target('test.valgrind',
+                    ['$(test_apps:$(EXEXT)=.valgrind)',
+                     'tests/seedfile'],
+                    [],
+                    help='Run all the test suites with Valgrind.',
                     phony=True)
         self.help['tests/test_suite_%.run'] = 'Run one test suite.'
         self.help['tests/test_suite_%.valgrind'] = 'Run one test suite with valgrind.'
@@ -1391,7 +1399,7 @@ _preset_options = {
         # valgrind when you run e.g. `make check`
         _help='Build for Valgrind, current configuration',
         config_unset=['MBEDTLS_AESNI_C'],
-        CFLAGS='-O3',
+        CFLAGS='-g -O3',
     ),
 }
 
