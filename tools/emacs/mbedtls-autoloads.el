@@ -12,6 +12,9 @@
   "Major mode to edit Mbed TLS test data files."
   t)
 
+;; .function files are C code
+(add-to-list 'auto-mode-alist '("/suites/[^/]+\\.function\\'" . c-mode))
+
 (provide 'mbedtls-autoloads)
 
 ;;; That's all.
