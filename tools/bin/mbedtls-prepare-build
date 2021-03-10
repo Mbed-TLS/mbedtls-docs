@@ -504,7 +504,7 @@ class MakefileMaker:
         extra = set()
         with open(os.path.join(self.options.source, c_file)) as stream:
             for line in stream:
-                m = re.match(r'#include "(.*)"', line)
+                m = re.match(r'#include ["<](.*)[">]', line)
                 if m is None:
                     continue
                 filename = m.group(1)
