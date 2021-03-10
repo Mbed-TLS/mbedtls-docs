@@ -444,7 +444,7 @@ class MakefileMaker:
         dirs = []
         submodule, base = self.get_file_submodule(filename)
         subdirs = ['include', 'include/mbedtls', 'library']
-        if base.startswith('tests'):
+        if base.startswith('tests') or base.startswith('programs'):
             subdirs.append('tests')
             if self.source_exists('tests/include'):
                 subdirs.append('tests/include')
@@ -805,11 +805,13 @@ class MakefileMaker:
         object_deps = [dep + self.object_extension
                        for dep in self.auxiliary_objects(base)
                        if self.source_exists(dep + '.c')]
+        object_deps.append('$(test_common_objects)')
         libs = list(reversed(self.program_libraries(base)))
         lib_files = ['library/libmbed{}{}'.format(lib, self.library_extension)
                      for lib in libs]
         dash_l_libs = [self.dash_l_lib(lib) for lib in libs]
-        self.target(exe_file, [object_file] + object_deps + lib_files,
+        self.target(exe_file,
+                    [object_file] + object_deps + lib_files,
                     [sjoin('$(CC)',
                            object_file,
                            sjoin(*object_deps),
@@ -847,6 +849,22 @@ class MakefileMaker:
         self.add_run_target('programs/test/selftest')
         # TODO: *_demo.sh
 
+    def define_tests_common_objects(self):
+        """Emit the definition of tests_common_objects.
+
+        These objects are needed for unit tests and for sample programs
+        (or at least for some programs in some configurations), so this
+        definition must come before both targets for programs and tests.
+        """
+        tests_common_sources = self.list_source_files(self.options.source,
+                                                      'tests/src/*.c')
+        tests_common_objects = []
+        for src in tests_common_sources:
+            self.object_target('TESTS', src, [])
+            object_file = src.target(self.object_extension)
+            tests_common_objects.append(object_file)
+        self.assign('test_common_objects', *tests_common_objects)
+
     def test_subsection(self, src, executables):
         """Emit the makefile rules to build one test suite.
 
@@ -882,6 +900,7 @@ class MakefileMaker:
                            '$(COMMON_FLAGS)',
                            '$(CFLAGS)',
                            '$(TESTS_CFLAGS)',
+                           '$(TESTS_EXTRA_OBJECTS)',
                            c_file,
                            '$(LDFLAGS)',
                            '$(TESTS_LDFLAGS)',
@@ -919,14 +938,7 @@ class MakefileMaker:
                     self.include_path_options('tests/*'))
         self.assign('TESTS_LDFLAGS',
                     '-L library')
-        tests_common_sources = self.list_source_files(self.options.source,
-                                                      'tests/src/*.c')
-        tests_common_objects = []
-        for src in tests_common_sources:
-            self.object_target('TESTS', src, [])
-            object_file = src.target(self.object_extension)
-            tests_common_objects.append(object_file)
-        self.assign('test_common_objects', *tests_common_objects)
+        self.assign('TESTS_EXTRA_OBJECTS')
         self.assign('test_libs',
                     *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
         self.assign('test_build_deps',
@@ -990,6 +1002,8 @@ class MakefileMaker:
         self.target('pwd', [], ['pwd'], phony=True, short='PWD') # for testing
         self.line('')
         self.library_section()
+        self.line('')
+        self.define_tests_common_objects()
         self.line('')
         self.programs_section()
         self.line('')
