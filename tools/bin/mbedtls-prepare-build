@@ -70,10 +70,20 @@ _environment_options = [
                       'Options to always pass to ${CC} when compiling or linking'),
     EnvironmentOption('DLLFLAGS', '-shared',
                       'Options to pass to ${CC} when building a shared library'),
+    # TODO: allow linking extra libraries. This requires passing -l options
+    # _after_ the objects to link. But LDFLAGS and xxx_EXTRA_LDFLAGS are
+    # currently passed before. Should they be moved after? Or should there be
+    # different variables?
     EnvironmentOption('LDFLAGS', '',
                       'Options to always pass to ${CC} when linking'),
+    EnvironmentOption('LIBRARY_EXTRA_CFLAGS', '',
+                      'Options to pass to ${CC} when compiling library sources'),
     EnvironmentOption('PERL', 'perl',
                       'Perl interpreter'),
+    EnvironmentOption('PROGRAMS_EXTRA_CFLAGS', '',
+                      'Options to pass to ${CC} when compiling sample programs'),
+    EnvironmentOption('PROGRAMS_EXTRA_LDFLAGS', '',
+                      'Options to pass to ${CC} when linking sample programs'),
     EnvironmentOption('PYTHON', 'python3',
                       'Python3 interpreter'),
     EnvironmentOption('RM', 'rm -f',
@@ -82,6 +92,10 @@ _environment_options = [
                       'Command prefix before executable programs'),
     EnvironmentOption('RUNS', '',
                       'Command suffix after executable programs'),
+    EnvironmentOption('TESTS_EXTRA_CFLAGS', '',
+                      'Options to pass to ${CC} when compiling unit tests'),
+    EnvironmentOption('TESTS_EXTRA_LDFLAGS', '',
+                      'Options to pass to ${CC} when linking unit tests'),
     EnvironmentOption('VALGRIND', 'valgrind',
                       'Path to valgrind'),
     EnvironmentOption('VALGRIND_FLAGS', sjoin('-q',
@@ -665,7 +679,8 @@ class MakefileMaker:
         self.assign('LIBRARY_CFLAGS',
                     '-I include/mbedtls', # must come first, for "config.h"
                     '-I include',
-                    self.include_path_options('library/*'))
+                    self.include_path_options('library/*'),
+                    '$(LIBRARY_EXTRA_CFLAGS)')
         # Enumerate modules and emit the rules to build them
         modules = self.list_source_files(self.options.source, 'library/*.c')
         for module in modules:
@@ -857,9 +872,11 @@ class MakefileMaker:
         self.comment('Sample programs')
         self.assign('PROGRAMS_CFLAGS',
                     '-I include',
-                    self.include_path_options('programs/*/*'))
+                    self.include_path_options('programs/*/*'),
+                    '$(PROGRAMS_EXTRA_CFLAGS)')
         self.assign('PROGRAMS_LDFLAGS',
-                    '-L library')
+                    '-L library',
+                    '$(PROGRAMS_EXTRA_LDFLAGS)')
         programs = self.list_source_files(self.options.source, 'programs/*/*.c')
         executables = []
         for src in programs:
@@ -966,9 +983,11 @@ class MakefileMaker:
         self.assign('TESTS_CFLAGS',
                     '-Wno-unused-function',
                     '-I include',
-                    self.include_path_options('tests/*'))
+                    self.include_path_options('tests/*'),
+                    '$(TESTS_EXTRA_CFLAGS)')
         self.assign('TESTS_LDFLAGS',
-                    '-L library')
+                    '-L library',
+                    '$(TESTS_EXTRA_LDFLAGS)')
         self.assign('TESTS_EXTRA_OBJECTS')
         self.assign('test_libs',
                     *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
