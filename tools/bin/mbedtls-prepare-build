@@ -273,6 +273,15 @@ class MakefileMaker:
         MakefileMaker(options, source_path).generate()
     """
 
+    PSA_CRYPTO_DRIVER_WRAPPERS_DEPENDENCIES = frozenset([
+        'include/psa/crypto_driver_common.h',
+        'include/psa/crypto_platform.h',
+        'include/psa/crypto_types.h',
+        'include/psa/crypto_values.h',
+        'library/psa_crypto_core.h',
+        'library/psa_crypto_driver_wrappers.h',
+    ])
+
     def __init__(self, options, source_path):
         """Initialize a makefile generator.
 
@@ -299,7 +308,12 @@ class MakefileMaker:
         self.static_libraries = None
         self.help = {}
         self.clean = []
-        self.dependency_cache = {}
+        self.dependency_cache = {
+            # TODO: arrange to find dependencies of this generated file.
+            # They're hard-coded for now, but that won't work if the
+            # dependencies change over time.
+            'library/psa_crypto_driver_wrappers.c': self.PSA_CRYPTO_DRIVER_WRAPPERS_DEPENDENCIES,
+        }
         self.submodules = [submodule for submodule in _submodule_names
                            if self.source_exists(submodule)]
         if self.source_exists('tests/scripts/generate_test_code.py'):
@@ -692,6 +706,17 @@ class MakefileMaker:
             base = 'mbed' + base
         return '-l' + base
 
+    def psa_crypto_driver_wrappers_subsection(self, contents):
+        generated = 'library/psa_crypto_driver_wrappers.c'
+        script_path = self.crypto_file_path('scripts/psa_crypto_driver_wrappers.py')
+        sources = [self.crypto_file_path(drv)
+                   for drv in self.options.psa_driver]
+        contents['crypto'].append(os.path.splitext(generated)[0])
+        self.target(generated,
+                    [script_path] + sources,
+                    [sjoin(script_path, '-o $@', *sources)])
+        self.object_target('LIBRARY', GeneratedFile(generated), [])
+
     def list_source_files(self, root, pattern):
         """List the source files matching the specified pattern.
 
@@ -750,6 +775,8 @@ class MakefileMaker:
             contents[lib] = []
         for module in modules:
             contents[self.library_of(module.base())].append(module.base())
+        if self.options.psa_driver:
+            self.psa_crypto_driver_wrappers_subsection(contents)
         libraries = [lib for lib in self._potential_libraries
                      if contents[lib]]
         for lib in libraries:
@@ -1607,6 +1634,9 @@ def main():
     parser.add_argument('--preset', '-p',
                         choices = sorted(_preset_options.keys()),
                         help='Apply a preset configuration before processing other options')
+    parser.add_argument('--psa-driver',
+                        action='append', default=[],
+                        help='PSA crypto driver description file')
     parser.add_argument('--shared-library-extension',
                         help='File extension for shared libraries')
     parser.add_argument('--source', '-s',
