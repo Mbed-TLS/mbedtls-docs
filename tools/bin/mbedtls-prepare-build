@@ -162,6 +162,19 @@ class SourceFile:
         """A build target for this source file, with the specified extension."""
         return self.base() + extension
 
+class GeneratedFile(SourceFile):
+    """A generated file which can be used as an intermediate source file.
+
+    These objects behave like SourceFile objects, but they designate a file
+    inside the build tree rather than a file inside the source tree.
+    """
+
+    def __init__(self, path):
+        super().__init__('.', '', path)
+
+    def make_path(self):
+        return self.inner_path
+
 class ClassicTestGenerator:
     """Test generator script description for the classic (<<2.13) test generator
     (generate_code.pl)."""
@@ -516,7 +529,21 @@ class MakefileMaker:
         """
         if '_generated.' in filename:
             return True
+        if 'psa_crypto_driver_wrappers.c' in filename:
+            # TODO: not in the preliminary work, but upcoming
+            return False
+            #return True
         return False
+
+    def is_include_only(self, filename):
+        """Whether the specified C file is only meant for use in "#include" directive.
+
+        Implemented with heuristics based on the name.
+        """
+        return os.path.basename(filename) in {
+            'psa_constant_names_generated.c',
+            'ssl_test_common_source.c',
+        }
 
     def c_with_dependencies(self, c_file):
         """A list of C dependencies in makefile syntax.
@@ -619,8 +646,9 @@ class MakefileMaker:
             for source_name in sources:
                 src = SourceFile(root, submodule, source_name)
                 base = src.base()
-                # Skip generated files that may be present in the source tree.
-                if self.is_generated(src.relative_path()):
+                # Skip .c files that are only meant to be #include'd
+                # in other files, and can't be compiled on their own.
+                if self.is_include_only(src.relative_path()):
                     continue
                 # Skip files that were seen in an earlier submodule.
                 if base not in all_sources:
@@ -796,7 +824,7 @@ class MakefileMaker:
                                            'crypto_values.h']]),
                         [script_path],
                         short='Gen   $@')
-            self.clean.append(base + '_generated.c')
+            self.add_clean(base + '_generated.c')
         extra_includes = ['-I', src.target_dir()] # for generated files
         object_file = src.target(self.object_extension)
         self.object_target('PROGRAMS', src, extra_includes)
