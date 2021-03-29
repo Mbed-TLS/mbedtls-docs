@@ -1,5 +1,5 @@
-This directory contains various tools that are only of interest to
-developers of Mbed TLS.
+This directory contains various tools that may be of interest to
+developers who contribute to Mbed TLS.
 
 Most files in this directory were originally written for the author's
 personal use and have only had a very small amount of review. They might
