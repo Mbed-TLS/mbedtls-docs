@@ -35,6 +35,8 @@ Our [coding standards](https://tls.mbed.org/kb/development/mbedtls-coding-standa
 
 In order to facilitate automation, the coding standards should be revised to remove inconsistencies such as putting spaces inside parentheses *except* for `#if defined(XXX)`.
 
+Many new Mbed TLS developers may also find our coding standards to be a barrier to entry as they are unusual when compared to many other open source C libraries. The coding standards should be revised to reduce the disparity between other commonly used coding styles.
+
 ## API design
 
 ### Secure by default, hard to misuse
