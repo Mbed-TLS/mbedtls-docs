@@ -29,6 +29,14 @@ The design of the ALT interfaces is cumbersome, especially when replacing a whol
 
 In Mbed TLS 3.0, existing ALT implementations continue to work, since PSA drivers are not fully implemented yet. However, it is likely that no new ALT possibility will be added. Once PSA drivers are ready for production, ALT implementations will be deprecated, likely to be removed in Mbed TLS 4.0.
 
+### Automated and standardised code styling
+
+Our [coding standards](https://tls.mbed.org/kb/development/mbedtls-coding-standards) are currently enforced by manual code reviews which can lead to inconsistencies across the code base and places the burden on reviewers to spot these errors. It would be much more effective and efficient to automate the enforcement of the coding standards so that non-compliance is found and reported via an appropriate error.
+
+In order to facilitate automation, the coding standards should be revised to remove inconsistencies such as putting spaces inside parentheses *except* for `#if defined(XXX)`.
+
+Many new Mbed TLS developers may also find our coding standards to be a barrier to entry as they are unusual when compared to many other open source C libraries. The coding standards should be revised to reduce the disparity between other commonly used coding styles.
+
 ## API design
 
 ### Secure by default, hard to misuse
