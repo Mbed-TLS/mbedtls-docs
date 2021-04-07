@@ -1,0 +1,1653 @@
+#!/usr/bin/env python3
+"""Generate a makefile for Mbed Crypto or Mbed TLS.
+"""
+
+import argparse
+import glob
+import itertools
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+def sjoin(*args):
+    """Join the arguments (strings) with a single space between each."""
+    return ' '.join(args)
+
+def append_to_value(d, key, *values):
+    """Append to a value in a dictionary.
+
+    Append values to d[key]. Create an empty list if d[key] does not exist.
+    """
+    lst = d.setdefault(key, [])
+    lst += values
+
+def are_same_existing_files(*files):
+    for file1 in files:
+        if not os.path.exists(file1):
+            return False
+    for file1 in files[1:]:
+        if not os.path.samefile(files[0], file1):
+            return False
+    return True
+
+class EnvironmentOption:
+    """A description of options that set makefile variables.
+
+    Such an option has the following fields:
+    * var: the variable name (e.g. 'FOO_BAR').
+    * option: the command line option for this script (e.g. '--foo-bar').
+    * attr: the attribute name in the options object.
+    * help: help text for the option and the variable.
+    * default: a default value if the variable is not in the environment.
+    """
+
+    def __init__(self, var, default='', help=None,
+                 option=None):
+        self.var = var
+        self.attr = var
+        self.option = ('--' + var.lower().replace('_', '-')
+                       if option is None else option)
+        self.default = default
+        self.help = help
+
+"""A list of makefile variables that can be set through command line options.
+"""
+_environment_options = [
+    EnvironmentOption('AR', 'ar',
+                      'Archive building tool'),
+    EnvironmentOption('ARFLAGS', '-src',
+                      'Options to pass to ${AR} (e.g. "rcs")'),
+    EnvironmentOption('CC', 'cc',
+                      'C compiler'),
+    EnvironmentOption('CP', 'cp',
+                      'Program to copy files (e.g. "cp")'),
+    EnvironmentOption('CFLAGS', '-Os',
+                      'Options to always pass to ${CC} when compiling'),
+    EnvironmentOption('COMMON_FLAGS', '',
+                      'Options to always pass to ${CC} when compiling or linking'),
+    EnvironmentOption('DLLFLAGS', '-shared',
+                      'Options to pass to ${CC} when building a shared library'),
+    # TODO: allow linking extra libraries. This requires passing -l options
+    # _after_ the objects to link. But LDFLAGS and xxx_EXTRA_LDFLAGS are
+    # currently passed before. Should they be moved after? Or should there be
+    # different variables?
+    EnvironmentOption('LDFLAGS', '',
+                      'Options to always pass to ${CC} when linking'),
+    EnvironmentOption('LIBRARY_EXTRA_CFLAGS', '',
+                      'Options to pass to ${CC} when compiling library sources'),
+    EnvironmentOption('PERL', 'perl',
+                      'Perl interpreter'),
+    EnvironmentOption('PROGRAMS_EXTRA_CFLAGS', '',
+                      'Options to pass to ${CC} when compiling sample programs'),
+    EnvironmentOption('PROGRAMS_EXTRA_LDFLAGS', '',
+                      'Options to pass to ${CC} when linking sample programs'),
+    EnvironmentOption('PYTHON', 'python3',
+                      'Python3 interpreter'),
+    EnvironmentOption('RM', 'rm -f',
+                      'Program to remove files (e.g. "rm -f")'),
+    EnvironmentOption('RUN', '',
+                      'Command prefix before executable programs'),
+    EnvironmentOption('RUNS', '',
+                      'Command suffix after executable programs'),
+    EnvironmentOption('TESTS_EXTRA_CFLAGS', '',
+                      'Options to pass to ${CC} when compiling unit tests'),
+    EnvironmentOption('TESTS_EXTRA_LDFLAGS', '',
+                      'Options to pass to ${CC} when linking unit tests'),
+    EnvironmentOption('VALGRIND', 'valgrind',
+                      'Path to valgrind'),
+    EnvironmentOption('VALGRIND_FLAGS', sjoin('-q',
+                                              '--tool=memcheck',
+                                              '--leak-check=yes',
+                                              '--show-reachable=yes',
+                                              '--num-callers=50'),
+                      'Options to pass to ${VALGRIND}'),
+    EnvironmentOption('WARNING_CFLAGS', '-Wall -Wextra -Werror',
+                      'Options to always pass to ${CC}'),
+]
+
+"""The list of potential submodules.
+
+A submodule is a subdirectory of the source tree which has the same
+general structure as the source tree.
+"""
+_submodule_names = ['crypto']
+
+class SourceFile:
+    """A description of a file path in the source tree.
+
+    Each file path is broken down into three parts: the root of the source
+    tree, the path to the submodule (the empty string for files that are
+    not in a submodule), and the path inside the submodule.
+    """
+
+    def __init__(self, root, submodule, inner_path):
+        self.root = root
+        self.submodule = submodule
+        self.inner_path = inner_path
+
+    def sort_key(self):
+        # Compare by inner path first, then by submodule.
+        # The empty submodule comes last.
+        return (self.inner_path,
+                not self.submodule, self.submodule)
+
+    def __lt__(self, other):
+        if self.root != other.root:
+            raise TypeError("Cannot compare source files under different roots"
+                            , self, other)
+        return self.sort_key() < other.sort_key()
+
+    def relative_path(self):
+        """Path to the file from the root of the source tree."""
+        return os.path.join(self.submodule, self.inner_path)
+
+    def source_dir(self):
+        """Path to the directory containing the file, from the root of the
+        source tree."""
+        return os.path.dirname(self.relative_path())
+
+    def real_path(self):
+        """A path at which the file can be opened during makefile generation."""
+        return os.path.join(self.root, self.submodule, self.inner_path)
+
+    def make_path(self):
+        """A path to the file that is valid in the makefile."""
+        if self.submodule:
+            return '/'.join(['$(SOURCE_DIR)', self.submodule, self.inner_path])
+        else:
+            return '$(SOURCE_DIR)/' + self.inner_path
+
+    def target_dir(self):
+        """The target directory for build products of this source file.
+
+        This is the path to the directory containing the source file
+        inside the submodule.
+        """
+        return os.path.dirname(self.inner_path)
+
+    def base(self):
+        """The path to the file inside the submodule, without the extension."""
+        return os.path.splitext(self.inner_path)[0]
+
+    def target(self, extension):
+        """A build target for this source file, with the specified extension."""
+        return self.base() + extension
+
+class GeneratedFile(SourceFile):
+    """A generated file which can be used as an intermediate source file.
+
+    These objects behave like SourceFile objects, but they designate a file
+    inside the build tree rather than a file inside the source tree.
+    """
+
+    def __init__(self, path):
+        super().__init__('.', '', path)
+
+    def make_path(self):
+        return self.inner_path
+
+class ClassicTestGenerator:
+    """Test generator script description for the classic (<<2.13) test generator
+    (generate_code.pl)."""
+
+    def __init__(self, options):
+        self.options = options
+
+    @staticmethod
+    def target(c_file):
+        return c_file
+
+    @staticmethod
+    def script(_source_dir):
+        return 'tests/scripts/generate_code.pl'
+
+    @staticmethod
+    def function_files(function_file):
+        return ['tests/suites/helpers.function',
+                'tests/suites/main_test.function',
+                function_file]
+
+    @staticmethod
+    def command(function_file, data_file):
+        source_dir = os.path.dirname(function_file)
+        if source_dir != os.path.dirname(data_file):
+            raise Exception('Function file and data file are not in the same directory',
+                            function_file, data_file)
+        if not function_file.endswith('.function'):
+            raise Exception('Function file does not have the .function extension',
+                            function_file)
+        if not data_file.endswith('.data'):
+            raise Exception('Data file does not have the .data extension',
+                            data_file)
+        return sjoin('$(PERL)',
+                     '$(SOURCE_DIR_FROM_TESTS)/tests/scripts/generate_code.pl',
+                     '$(SOURCE_DIR_FROM_TESTS)/tests/suites',
+                     os.path.splitext(os.path.basename(function_file))[0],
+                     os.path.splitext(os.path.basename(data_file))[0])
+
+class OnTargetTestGenerator:
+    """Test generator script description for the >=2.13 test generator
+    with on-target testing support (generate_test_code.py)."""
+
+    def __init__(self, options):
+        self.options = options
+
+    @staticmethod
+    def target(c_file):
+        datax_file = os.path.splitext(c_file)[0] + '.datax'
+        return sjoin(c_file, datax_file)
+
+    @staticmethod
+    def script(source_dir):
+        return os.path.dirname(source_dir) + '/scripts/generate_test_code.py'
+
+    @staticmethod
+    def function_files(function_file, on_target=False):
+        source_dir = os.path.dirname(function_file)
+        return (['{}/{}.function'.format(source_dir, helper)
+                 for helper in ['helpers', 'main_test',
+                                'target_test' if on_target else 'host_test']] +
+                [function_file])
+
+    @classmethod
+    def command(cls, function_file, data_file):
+        source_dir = os.path.dirname(function_file)
+        suite_path = '$(SOURCE_DIR_FROM_TESTS)/' + source_dir
+        return sjoin('$(PYTHON)',
+                     '$(SOURCE_DIR_FROM_TESTS)/' + cls.script(source_dir),
+                     '-f $(SOURCE_DIR_FROM_TESTS)/' + function_file,
+                     '-d $(SOURCE_DIR_FROM_TESTS)/' + data_file,
+                     '-t', suite_path + '/main_test.function',
+                     '-p', suite_path + '/host_test.function',
+                     '--helpers-file', suite_path + '/helpers.function',
+                     '-s', suite_path,
+                     '-o .')
+
+class MakefileMaker:
+    """A class to generate a makefile for Mbed TLS or Mbed Crypto.
+
+    Typical usage:
+        MakefileMaker(options, source_path).generate()
+    """
+
+    PSA_CRYPTO_DRIVER_WRAPPERS_DEPENDENCIES = frozenset([
+        'include/psa/crypto_driver_common.h',
+        'include/psa/crypto_platform.h',
+        'include/psa/crypto_types.h',
+        'include/psa/crypto_values.h',
+        'library/psa_crypto_core.h',
+        'library/psa_crypto_driver_wrappers.h',
+    ])
+
+    def __init__(self, options, source_path):
+        """Initialize a makefile generator.
+
+        options is the command line option object.
+
+        source_path is a path to the root of the source directory,
+        relative to the root of the build directory.
+        """
+        self.options = options
+        if self.options.indirect_extensions:
+            self.executable_extension = '$(EXEXT)'
+            self.library_extension = '$(LIBEXT)'
+            self.assembly_extension = '$(ASMEXT)'
+            self.object_extension = '$(OBJEXT)'
+            self.shared_library_extension = '$(DLEXT)'
+        else:
+            self.executable_extension = self.options.executable_extension
+            self.library_extension = self.options.library_extension
+            self.assembly_extension = self.options.assembly_extension
+            self.object_extension = self.options.object_extension
+            self.shared_library_extension = self.options.shared_library_extension
+        self.source_path = source_path
+        self.out = None
+        self.static_libraries = None
+        self.help = {}
+        self.clean = []
+        self.dependency_cache = {
+            # TODO: arrange to find dependencies of this generated file.
+            # They're hard-coded for now, but that won't work if the
+            # dependencies change over time.
+            'library/psa_crypto_driver_wrappers.c': self.PSA_CRYPTO_DRIVER_WRAPPERS_DEPENDENCIES,
+        }
+        self.submodules = [submodule for submodule in _submodule_names
+                           if self.source_exists(submodule)]
+        if self.source_exists('tests/scripts/generate_test_code.py'):
+            self.test_generator = OnTargetTestGenerator(options)
+        else:
+            self.test_generator = ClassicTestGenerator(options)
+        # Unset fields that are only meaningful at certain later times.
+        # Setting them here makes Pylint happy, but having set them here
+        # makes it harder to diagnose if some method is buggy and attempts
+        # to use a field whose value isn't actually known.
+        del self.static_libraries # Set when generating the library targets
+        del self.out # Set only while writing the output file
+
+    def get_file_submodule(self, filename):
+        """Break up a path into submodule and inner path.
+
+        More precisely, given a path filename from the root of the source
+        tree, return a tuple (submodule, inner_path) where submodule
+        is the submodule containing the file and inner_path is the path
+        to the file inside the submodule. If the file is not in a submodule,
+        return None for the submodule.
+        """
+        # This function and the ones that use it should be rewritten
+        # to work on SourceFile objects.
+        for submodule in self.submodules:
+            if filename.startswith(submodule + os.sep):
+                return submodule, filename[len(submodule) + 1:]
+        return None, filename
+
+    def crypto_file_path(self, filename):
+        """Return the path to a crypto file.
+
+        Look for the file at the given path in the crypto submodule, and if
+        it exists, return its path from the root of the source tree.
+        Otherwise return filename unchanged.
+        """
+        in_crypto = os.path.join('crypto', filename)
+        if os.path.exists(in_crypto):
+            filename = in_crypto
+        return '$(SOURCE_DIR)/' + filename
+
+    def source_exists(self, filename):
+        """Test if the given path exists in the source tree.
+
+        This function does not try different submodules. If the file is
+        in a submodule, filename must include the submodule part.
+        """
+        return os.path.exists(os.path.join(self.options.source, filename))
+
+    def line(self, text):
+        """Emit a makefile line."""
+        self.out.write(text + '\n')
+
+    def words(self, *words):
+        """Emit a makefile line obtain by joining the words with spaces."""
+        self.line(' '.join(words))
+
+    def assign(self, name, *value_words):
+        """Emit a makefile line that contains an assignment.
+
+        The assignment is to the variable called name, and its value
+        is value_words joined with spaces as the separator.
+        """
+        nonempty_words = [word for word in value_words if word]
+        self.line(' '.join([name, '='] + nonempty_words))
+
+    def format(self, template, *args):
+        """Emit a makefile line containing the given formatted template."""
+        self.line(template.format(*args))
+
+    def comment(self, template, *args):
+        """Emit a makefile comment line containing the given formatted template."""
+        self.format('## ' + template, *args)
+
+    def add_dependencies(self, name, *dependencies):
+        """Generate dependencies for name."""
+        parts = (name + ':',) + dependencies
+        simple = ' '.join(parts)
+        if len(simple) < 80:
+            self.line(simple)
+        else:
+            self.line(' \\\n\t\t'.join(parts))
+
+    _glob2re_re = re.compile(r'[.^$*+?{}\|()]')
+    @staticmethod
+    def _glob2re_repl(m):
+        if m.group(0) == '*':
+            return '[^/]*'
+        elif m.group(0) == '?':
+            return '[^/]'
+        else:
+            return '\\' + m.group(0)
+    @classmethod
+    def glob2re(cls, pattern):
+        # Simple glob pattern to regex translator. Does not support
+        # character sets properly, which is ok because we don't use them.
+        # We don't use fnmatch or PurePath.match because they let
+        # '*' and '?' match '/'.
+        return re.sub(cls._glob2re_re, cls._glob2re_repl, pattern)
+
+    def is_already_cleaned(self, name):
+        if not self.clean:
+            return False
+        regex = ''.join(['\A(?:',
+                         '|'.join([self.glob2re(pattern)
+                                   for patterns in self.clean
+                                   for pattern in patterns.split()]),
+                         ')\Z'])
+        return re.match(regex, name)
+
+    def add_clean(self, *elements):
+        """Add one or more element to the list of things to clean.
+
+        These can be file paths or wildcard patterns. They can contain
+        macro expansions.
+
+        Elements that are added in the same call to this function are grouped
+        together for cosmetic purposes.
+        """
+        self.clean.append(' '.join(elements))
+
+    def target(self, name, dependencies, commands,
+               help=None, phony=False, clean=None, short=None):
+        """Generate a makefile rule.
+
+        * name: the target(s) of the rule. This is a string. If there are
+          multiple targets, separate them with spaces.
+        * dependencies: a list of dependencies.
+        * commands: a list of commands to run (the recipe).
+        * help: documentation to show for this target in "make help".
+          If this is omitted, the target is not listed in "make help".
+        * phony: if true, declare this target as phony.
+        * clean: if true, add this target to the list of things to clean.
+          This parameter only has an effect on non-phony targets.
+          By default, add this target to the list of things to clean unless
+          it's already there, possibly via a wildcard pattern.
+        * short: if this is specified, the command(s) in the recipe
+          will not be shown in the make transcript, and instead the
+          make transcript will display this string.
+        """
+        self.add_dependencies(name, *dependencies)
+        if short:
+            self.format('\t@$(ECHO_IF_QUIET) "  {}"', short)
+        for com in commands:
+            self.format('\t{}{}',
+                        ('' if short is None else '$(Q)'),
+                        com.replace('\n', ' \\\n\t'))
+        if help is not None:
+            self.help[name] = help
+        if phony:
+            self.format('.PHONY: {}', name)
+        else:
+            if clean is None:
+                # TODO: is_already_cleaned is slow, and only works as intended
+                # if the pattern is added before the specific item, which
+                # isn't very natural. Maybe instead I should do an elimination
+                # pass at the end, to remove redundant entries. Or maybe
+                # just don't worry about it: the only purpose is to avoid
+                # having "rm foo.bar" if there's also "rm *.bar", and that's
+                # cosmetic.
+                clean = True #not self.is_already_cleaned(name)
+            if clean:
+                self.add_clean(name)
+
+    def environment_option_subsection(self):
+        """Generate the assignments to customizable options."""
+        self.comment('Tool settings')
+        for envopt in _environment_options:
+            if envopt.help is not None:
+                self.comment('{}', envopt.help)
+            self.assign(envopt.var,
+                        getattr(self.options, envopt.attr))
+
+    def settings_section(self):
+        """Generate assignments to customizable and internal variables.
+
+        Some additional section-specified variables are assigned in each
+        section.
+        """
+        if self.options.var:
+            self.comment('Auxiliary variables')
+            for var in self.options.var:
+                if '=' in var:
+                    self.line(re.sub(r'\s*([:?+]?=)\s*', ' \1 ', var))
+                else:
+                    value = os.getenv(var)
+                    if value is None:
+                        raise KeyError(var)
+                    self.format('{} = {}', var, value)
+            self.line('')
+        self.comment('Path settings')
+        self.assign('SOURCE_DIR', self.source_path)
+        self.line('')
+        self.environment_option_subsection()
+        self.line('')
+        self.comment('Configuration')
+        if self.options.indirect_extensions:
+            self.line('ASMEXT = ' + self.options.assembly_extension)
+            self.line('OBJEXT = ' + self.options.object_extension)
+            self.line('LIBEXT = ' + self.options.library_extension)
+            self.line('DLEXT = ' + self.options.shared_library_extension)
+            self.line('EXEXT =' + self.options.executable_extension)
+        self.line('')
+        self.comment('Internal variables')
+        self.line('AUX_ECHO_IF_QUIET_ = :')
+        self.line('AUX_Q_ =')
+        self.line('AUX_ECHO_IF_QUIET_$(V) = echo')
+        self.line('AUX_Q_$(V) = @')
+        self.line('ECHO_IF_QUIET = $(AUX_ECHO_IF_QUIET_)')
+        self.line('Q = $(AUX_Q_)')
+        self.line('')
+        self.comment('Auxiliary paths')
+        self.assign('SOURCE_DIR_FROM_TESTS', '../$(SOURCE_DIR)')
+        self.assign('VALGRIND_LOG_DIR_FROM_TESTS', '.')
+
+    def include_path(self, filename):
+        """Return the include path for filename.
+
+        filename must be a path relative to the root of the source tree.
+
+        Return a list of directories relative to the root of the source tree.
+        """
+        dirs = []
+        submodule, base = self.get_file_submodule(filename)
+        subdirs = ['include', 'include/mbedtls', 'library']
+        if base.startswith('tests') or base.startswith('programs'):
+            subdirs.append('tests')
+            if self.source_exists('tests/include'):
+                subdirs.append('tests/include')
+        for subdir in subdirs:
+            if submodule is None:
+                dirs += [os.path.join(submodule, subdir)
+                         for submodule in self.submodules]
+            dirs.append(subdir)
+            if submodule is not None:
+                dirs.append(os.path.join(submodule, subdir))
+        return dirs
+
+    def include_path_options(self, filename):
+        """Return the include path options (-I ...) for filename."""
+        return ' '.join(['-I $(SOURCE_DIR)/' + dir
+                         for dir in self.include_path(filename)])
+
+    def collect_c_dependencies(self, c_file, stack=frozenset()):
+        """Find the build dependencies of the specified C source file.
+
+        c_file must be an existing C file in the source tree.
+        Return a set of directory paths from the root of the source tree.
+
+        The dependencies of a C source files are the files mentioned
+        in an #include directive that are present in the source tree,
+        as well as dependencies of dependencies recursively.
+        This function does not consider which preprocessor symbols
+        might be defined: it bases its analysis solely on the textual
+        presence of "#include".
+
+        This function uses a cache internally, so repeated calls with
+        the same argument return almost instantly.
+
+        The optional argument stack is only used for recursive calls
+        to prevent infinite loops.
+        """
+        if c_file in self.dependency_cache:
+            return self.dependency_cache[c_file]
+        if c_file in stack:
+            return set()
+        stack |= {c_file}
+        include_path = ([os.path.dirname(c_file)] + self.include_path(c_file))
+        dependencies = set()
+        extra = set()
+        with open(os.path.join(self.options.source, c_file)) as stream:
+            for line in stream:
+                m = re.match(r'#include ["<](.*)[">]', line)
+                if m is None:
+                    continue
+                filename = m.group(1)
+                for subdir in include_path:
+                    if os.path.exists(os.path.join(self.options.source,
+                                                   subdir, filename)):
+                        dependencies.add('/'.join([subdir, filename]))
+                        break
+                else:
+                    if filename.endswith('.c'):
+                        extra.add(os.path.dirname(c_file) + '/' + filename)
+        for dep in frozenset(dependencies):
+            dependencies |= self.collect_c_dependencies(dep, stack)
+        dependencies |= extra
+        self.dependency_cache[c_file] = dependencies
+        return dependencies
+
+    def is_generated(self, filename):
+        """Whether the specified C file is generated.
+
+        Implemented with heuristics based on the name.
+        """
+        if '_generated.' in filename:
+            return True
+        if 'psa_crypto_driver_wrappers.c' in filename:
+            # TODO: not in the preliminary work, but upcoming
+            return False
+            #return True
+        return False
+
+    def is_include_only(self, filename):
+        """Whether the specified C file is only meant for use in "#include" directive.
+
+        Implemented with heuristics based on the name.
+        """
+        return os.path.basename(filename) in {
+            'psa_constant_names_generated.c',
+            'ssl_test_common_source.c',
+        }
+
+    def c_with_dependencies(self, c_file):
+        """A list of C dependencies in makefile syntax.
+
+        Generate the depdendencies of c_file with collect_c_dependencies,
+        and make it into a list where each file name is given without
+        the submodule part if any.
+
+        c_file itself is included in the resulting list.
+        """
+        # Bug: if xxx_generated.c is present in the source directory,
+        # it gets used instead of the one generated in the build directory.
+        deps = self.collect_c_dependencies(c_file)
+        return [(self.get_file_submodule(filename)[1]
+                 if self.is_generated(filename) else
+                 '$(SOURCE_DIR)/' + filename)
+                for filename in sorted(deps) + [c_file]]
+
+    def c_dependencies_only(self, c_files):
+        """A list of C dependencies in makefile syntax.
+
+        Generate the depdendencies of each element of c_files with
+        collect_c_dependencies, and make it into a list where each file name
+        is given without the submodule part if any.
+
+        The elements of c_files themselves are included not in the resulting
+        list unless they are a dependency of another element.
+        """
+        deps = set.union(*[self.collect_c_dependencies(c_file)
+                           for c_file in c_files])
+        return ['$(SOURCE_DIR)/' + filename for filename in sorted(deps)]
+
+    def object_target(self, section, src, extra):
+        c_file = src.make_path()
+        dependencies = self.c_with_dependencies(src.relative_path())
+        for short, switch, extension in [
+                ('CC -S ', '-S', self.assembly_extension),
+                ('CC    ', '-c', self.object_extension),
+        ]:
+            self.target(src.target(extension),
+                        dependencies,
+                        [sjoin('$(CC)',
+                               '$(WARNING_CFLAGS)',
+                               '$(COMMON_FLAGS)',
+                               '$(CFLAGS)',
+                               ' '.join(['$({}_CFLAGS)'.format(section)] +
+                                        extra),
+                               '-o $@',
+                               switch, c_file)],
+                        short=(short + c_file))
+
+    _potential_libraries = ['crypto', 'x509', 'tls']
+
+    @staticmethod
+    def library_of(module):
+        """Identify which Mbed TLS library contains the specified module.
+
+        This function bases the result on known module names, defaulting
+        to crypto.
+        """
+        module = os.path.basename(module)
+        if module.startswith('x509') or \
+           module in ['certs', 'pkcs11']:
+            return 'x509'
+        elif module.startswith('ssl') or \
+             module in ['debug', 'net', 'net_sockets']:
+            return 'tls'
+        else:
+            return 'crypto'
+
+    @staticmethod
+    def dash_l_lib(lib):
+        """Return the -l option to link with the specified library."""
+        base = os.path.splitext(os.path.basename(lib))[0]
+        if base.startswith('lib'):
+            base = base[3:]
+        if not base.startswith('mbed'):
+            base = 'mbed' + base
+        return '-l' + base
+
+    def psa_crypto_driver_wrappers_subsection(self, contents):
+        generated = 'library/psa_crypto_driver_wrappers.c'
+        script_path = self.crypto_file_path('scripts/psa_crypto_driver_wrappers.py')
+        sources = [self.crypto_file_path(drv)
+                   for drv in self.options.psa_driver]
+        contents['crypto'].append(os.path.splitext(generated)[0])
+        self.target(generated,
+                    [script_path] + sources,
+                    [sjoin(script_path, '-o $@', *sources)])
+        self.object_target('LIBRARY', GeneratedFile(generated), [])
+
+    def list_source_files(self, root, pattern):
+        """List the source files matching the specified pattern.
+
+        Look for the specified wildcard pattern under all submodules, including
+        the root tree. If a given file name is present in multiple submodules,
+        only the earliest matching submodule is kept, with the root tree being
+        looked up last.
+
+        This function returns a sorted list of SourceFile objects.
+        """
+        # FIXME: for error.c at least, we need the root, not the submodule.
+        all_sources = {}
+        for submodule in _submodule_names + ['']:
+            submodule_root = os.path.join(root, submodule)
+            start = len(submodule_root)
+            if submodule:
+                start += 1
+            abs_pattern = os.path.join(submodule_root, pattern)
+            sources = [src[start:] for src in glob.glob(abs_pattern)]
+            for source_name in sources:
+                src = SourceFile(root, submodule, source_name)
+                base = src.base()
+                # Skip .c files that are only meant to be #include'd
+                # in other files, and can't be compiled on their own.
+                if self.is_include_only(src.relative_path()):
+                    continue
+                # Skip files that were seen in an earlier submodule.
+                if base not in all_sources:
+                    all_sources[base] = src
+        return sorted(all_sources.values())
+
+    def library_section(self):
+        """Generate the section of the makefile for the library directory.
+
+        The targets are object files for library modules and
+        static and dynamic library files.
+        """
+        self.comment('Library targets')
+        self.assign('LIBRARY_CFLAGS',
+                    '-I include/mbedtls', # must come first, for "config.h"
+                    '-I include',
+                    self.include_path_options('library/*'),
+                    '$(LIBRARY_EXTRA_CFLAGS)')
+        self.add_clean(*['library/*' + ext
+                         for ext in (self.assembly_extension,
+                                     self.library_extension,
+                                     self.object_extension,
+                                     self.shared_library_extension)])
+        # Enumerate modules and emit the rules to build them
+        modules = self.list_source_files(self.options.source, 'library/*.c')
+        for module in modules:
+            self.object_target('LIBRARY', module, [])
+        contents = {}
+        # Enumerate libraries and the rules to build them
+        for lib in self._potential_libraries:
+            contents[lib] = []
+        for module in modules:
+            contents[self.library_of(module.base())].append(module.base())
+        if self.options.psa_driver:
+            self.psa_crypto_driver_wrappers_subsection(contents)
+        libraries = [lib for lib in self._potential_libraries
+                     if contents[lib]]
+        for lib in libraries:
+            self.format('libmbed{}_modules = {}', lib, ' '.join(contents[lib]))
+            self.format('libmbed{}_objects = $(libmbed{}_modules:={})',
+                        lib, lib, self.object_extension)
+        self.static_libraries = []
+        shared_libraries = []
+        for idx, lib in enumerate(libraries):
+            objects = '$(libmbed{}_objects)'.format(lib)
+            static = 'library/libmbed{}{}'.format(lib, self.library_extension)
+            shared = 'library/libmbed{}{}'.format(lib, self.shared_library_extension)
+            self.static_libraries.append(static)
+            shared_libraries.append(shared)
+            self.target(static, [objects],
+                        ['$(AR) $(ARFLAGS) $@ ' + objects],
+                        short='AR    $@')
+            dependent_libraries = libraries[:idx]
+            if dependent_libraries:
+                dash_l_dependent = ('-L . ' +
+                                 sjoin(*[self.dash_l_lib(lib)
+                                         for lib in dependent_libraries]))
+            else:
+                dash_l_dependent = ''
+            self.target(shared, [objects] + ['library/libmbed{}{}'
+                                             .format(lib, self.shared_library_extension)
+                                             for lib in dependent_libraries],
+                        [sjoin('$(CC)',
+                               '$(COMMON_FLAGS)',
+                               '$(LDFLAGS)',
+                               '$(DLLFLAGS)',
+                               '-o $@',
+                               dash_l_dependent,
+                               objects)],
+                        short='LD    $@')
+        self.target('lib', self.static_libraries,
+                    [],
+                    help='Build the static libraries.',
+                    phony=True)
+        self.target('dll', shared_libraries,
+                    [],
+                    help='Build the shared libraries.',
+                    phony=True)
+
+    _query_config = [
+        'programs/ssl/query_config', # in Mbed TLS up to 2.21
+        'programs/test/query_config', # in Mbed Crypto
+    ]
+    _ssl_test_lib = ['programs/ssl/ssl_test_lib']
+    """Auxiliary files used by sample programs.
+
+    This is a map from the base of the file containing the main()
+    function of the sample program to the list of bases of other
+    source files to link into the program. The base of a file
+    is the subdirectory path without the submodule part and the
+    basename of the file. Non-existing files are ignored.
+    """
+    _auxiliary_objects = {
+        'programs/ssl/ssl_client2': _query_config + _ssl_test_lib,
+        'programs/ssl/ssl_server2': _query_config + _ssl_test_lib,
+        'programs/test/query_compile_time_config': _query_config,
+    }
+    """List of bases of source files that are an auxiliary object for
+    some sample program.
+    """
+    _auxiliary_sources = (frozenset(obj
+                                    for objs in _auxiliary_objects.values()
+                                    for obj in objs)
+                          .union({
+                              'programs/fuzz/common', 'programs/fuzz/onefile',
+                          }))
+
+    def auxiliary_objects(self, base):
+        if base.startswith('programs/fuzz'):
+            return ['programs/fuzz/common', 'programs/fuzz/onefile']
+        else:
+            return self._auxiliary_objects.get(base, [])
+
+    def program_libraries(self, app):
+        """Return the list of libraries that app uses.
+
+        app is the base of the main file of a sample program (directory
+        without the submodule part and basename of the file).
+
+        Return the list of library base names in their dependency order
+        (e.g. ["crypto", "x509", "tls"]).
+        """
+        basename = os.path.basename(app)
+        subdir = os.path.basename(os.path.dirname(app))
+        if (subdir == 'ssl' or basename.startswith('ssl') or
+            subdir == 'fuzz' or
+            basename in {'cert_app', 'dh_client', 'dh_server', 'udp_proxy'}
+        ):
+            return ['crypto', 'x509', 'tls']
+        if (subdir == 'x509' or
+            (basename == 'selftest' and self.source_exists('library/x509.c'))
+        ):
+            return ['crypto', 'x509']
+        return ['crypto']
+
+    def extra_link_flags(self, app):
+        """Return the list of extra link flags for app.
+
+        app is the base of the main file of a sample program (directory
+        without the submodule part and basename of the file).
+
+        Return a list of strings to insert on the command line when
+        linking app.
+        """
+        flags = []
+        if 'thread' in app:
+            flags.append('-lpthread')
+        return flags
+
+    def add_run_target(self, program, executable=None):
+        if executable is None:
+            executable = program + self.executable_extension
+        self.target(program + '.run',
+                    [executable],
+                    ['$(RUN) ' + executable + ' $(RUNS)'],
+                    phony=True)
+        self.target(program + '.gmon',
+                    [executable],
+                    ['$(RUN) ' + executable + ' $(RUNS)',
+                     'mv gmon.out $@'])
+
+    def program_subsection(self, src, executables):
+        """Emit the makefile rules for the given sample program.
+
+        src is a SourceFile object refering to a source file under programs/.
+        This can either be a file containing a main function or an
+        auxiliary source file.
+
+        This function appends the path to the program executable to
+        the list executables, unless src refers to an auxiliary file.
+        """
+        base = src.base()
+        if os.path.basename(base) == 'psa_constant_names':
+            script_path = self.crypto_file_path('scripts/generate_psa_constants.py')
+            self.target(base + '_generated.c',
+                        ([script_path] +
+                         [self.crypto_file_path(
+                             os.path.join('include', 'psa', filename)
+                          )
+                          for filename in ['crypto_extra.h',
+                                           'crypto_values.h']]),
+                        [script_path],
+                        short='Gen   $@')
+            self.add_clean(base + '_generated.c')
+        extra_includes = ['-I', src.target_dir()] # for generated files
+        object_file = src.target(self.object_extension)
+        self.object_target('PROGRAMS', src, extra_includes)
+        if base in self._auxiliary_sources:
+            return
+        exe_file = src.target(self.executable_extension)
+        object_deps = [dep + self.object_extension
+                       for dep in self.auxiliary_objects(base)
+                       if self.source_exists(dep + '.c')]
+        object_deps.append('$(test_common_objects)')
+        libs = list(reversed(self.program_libraries(base)))
+        lib_files = ['library/libmbed{}{}'.format(lib, self.library_extension)
+                     for lib in libs]
+        dash_l_libs = [self.dash_l_lib(lib) for lib in libs]
+        self.target(exe_file,
+                    [object_file] + object_deps + lib_files,
+                    [sjoin('$(CC)',
+                           object_file,
+                           sjoin(*object_deps),
+                           '$(COMMON_FLAGS)',
+                           '$(LDFLAGS)',
+                           '$(PROGRAMS_LDFLAGS)',
+                           sjoin(*(dash_l_libs + self.extra_link_flags(base))),
+                           '-o $@')],
+                    clean=False,
+                    short='LD    $@')
+        executables.append(exe_file)
+
+    def programs_section(self):
+        """Emit the makefile rules to build the sample programs."""
+        self.comment('Sample programs')
+        self.assign('PROGRAMS_CFLAGS',
+                    '-I include',
+                    self.include_path_options('programs/*/*'),
+                    '$(PROGRAMS_EXTRA_CFLAGS)')
+        self.assign('PROGRAMS_LDFLAGS',
+                    '-L library',
+                    '$(PROGRAMS_EXTRA_LDFLAGS)')
+        self.add_clean(*['programs/*/*' + ext
+                         for ext in (self.assembly_extension,
+                                     self.object_extension)])
+        programs = self.list_source_files(self.options.source, 'programs/*/*.c')
+        executables = []
+        for src in programs:
+            self.program_subsection(src, executables)
+        dirs = set(src.target_dir() for src in programs)
+        for subdir in sorted(dirs):
+            self.target(subdir + '/seedfile', ['tests/seedfile'],
+                        ['$(CP) tests/seedfile $@'],
+                        clean=False)
+        self.assign('programs', *executables)
+        self.target('programs', ['$(programs)'],
+                    [],
+                    help='Build the sample programs.',
+                    phony=True)
+        self.add_clean('$(programs)')
+        self.add_run_target('programs/test/benchmark')
+        self.add_run_target('programs/test/selftest')
+        # TODO: *_demo.sh
+
+    def define_tests_common_objects(self):
+        """Emit the definition of tests_common_objects.
+
+        These objects are needed for unit tests and for sample programs
+        (or at least for some programs in some configurations), so this
+        definition must come before both targets for programs and tests.
+        """
+        tests_common_sources = self.list_source_files(self.options.source,
+                                                      'tests/src/*.c')
+        tests_common_objects = []
+        for src in tests_common_sources:
+            self.object_target('TESTS', src, [])
+            object_file = src.target(self.object_extension)
+            tests_common_objects.append(object_file)
+        self.assign('test_common_objects', *tests_common_objects)
+
+    def test_subsection(self, src, executables):
+        """Emit the makefile rules to build one test suite.
+
+        src is a SourceFile object for a .data file.
+
+        This function appens the path to the test executable to the list
+        executables.)"""
+        base = os.path.basename(src.base())
+        source_dir = src.source_dir()
+        try:
+            function_base = base[:base.index('.')]
+        except ValueError:
+            function_base = base
+        data_file = src.relative_path()
+        function_file = os.path.join(source_dir, function_base + '.function')
+        function_files = self.test_generator.function_files(function_file)
+        c_file = os.path.join('tests', base + '.c')
+        exe_basename = base + self.executable_extension
+        exe_file = os.path.join('tests', exe_basename)
+        generate_command = self.test_generator.command(function_file, data_file)
+        self.target(self.test_generator.target(c_file),
+                    ['$(SOURCE_DIR)/' + base
+                     for base in ([self.test_generator.script(source_dir)] +
+                                  function_files +
+                                  [data_file])],
+                    ['cd tests && ' + generate_command],
+                    short='Gen   $@')
+        self.target(exe_file,
+                    (self.c_dependencies_only(function_files) +
+                     ['$(lib)', '$(test_build_deps)', c_file]),
+                    [sjoin('$(CC)',
+                           '$(WARNING_CFLAGS)',
+                           '$(COMMON_FLAGS)',
+                           '$(CFLAGS)',
+                           '$(TESTS_CFLAGS)',
+                           '$(TESTS_EXTRA_OBJECTS)',
+                           c_file,
+                           '$(LDFLAGS)',
+                           '$(TESTS_LDFLAGS)',
+                           '$(test_common_objects)',
+                           '$(test_libs)',
+                           '-o $@')],
+                    clean=False,
+                    short='CC    $@')
+        executables.append(exe_file)
+        # Strictly speaking, the .run target also depends on the .datax
+        # file, since running the test reads the .datax file. However,
+        # all the dependencies of the .datax file are also dependencies
+        # of the test executable, so if the executable is up to date,
+        # so is the .datax file.
+        self.target('tests/' + base + '.run',
+                    [exe_file, 'tests/seedfile'],
+                    ['cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)'],
+                    short='RUN   tests/' + exe_basename,
+                    phony=True)
+        self.target('tests/' + base + '.gmon',
+                    [exe_file, 'tests/seedfile'],
+                    ['cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)',
+                     'mv tests/gmon.out $@'],
+                    short='RUN   tests/' + exe_basename)
+        valgrind_log_basename = 'MemoryChecker.{}.log'.format(base)
+        valgrind_log = '$(VALGRIND_LOG_DIR_FROM_TESTS)/' + valgrind_log_basename
+        self.target('tests/' + base + '.valgrind',
+                    [exe_file, 'tests/seedfile'],
+                    [sjoin('cd tests &&',
+                           '$(VALGRIND) $(VALGRIND_FLAGS)',
+                           '--log-file=' + valgrind_log,
+                            './' + exe_basename),
+                     sjoin('cd tests && ! grep . ' + valgrind_log)],
+                    short='VALGRIND tests/' + exe_basename,
+                    phony=True)
+
+    def tests_section(self):
+        """Emit makefile rules to build and run test suites."""
+        self.comment('Test targets')
+        self.assign('TESTS_CFLAGS',
+                    '-Wno-unused-function',
+                    '-I include',
+                    self.include_path_options('tests/*'),
+                    '$(TESTS_EXTRA_CFLAGS)')
+        self.assign('TESTS_LDFLAGS',
+                    '-L library',
+                    '$(TESTS_EXTRA_LDFLAGS)')
+        self.assign('TESTS_EXTRA_OBJECTS')
+        self.assign('test_libs',
+                    *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
+        self.assign('test_build_deps',
+                    '$(test_common_objects)', *self.static_libraries)
+        self.add_clean(*['tests' + sub + '/*' + ext
+                         for sub in ('', '/*')
+                         for ext in (self.assembly_extension,
+                                     self.object_extension)])
+        self.add_clean('tests/*.c', 'tests/*.datax')
+        data_files = self.list_source_files(self.options.source,
+                                            'tests/suites/*.data')
+        executables = []
+        for src in data_files:
+            self.test_subsection(src, executables)
+        self.assign('test_apps', *executables)
+        self.target('tests', ['$(test_apps)'],
+                    [],
+                    help='Build the host tests.',
+                    phony=True)
+        self.target('tests/seedfile', [],
+                    ['dd bs=64 count=1 </dev/urandom >$@'])
+        self.target('check', ['$(test_apps)', 'tests/seedfile'],
+                    ['cd tests && $(PERL) scripts/run-test-suites.pl --skip=$(SKIP_TEST_SUITES)'],
+                    help='Run all the test suites.',
+                    short='',
+                    phony=True)
+        self.target('test', ['check'],
+                    [],
+                    help='Run all the test suites.',
+                    short='',
+                    phony=True)
+        self.target('test.valgrind',
+                    ['$(test_apps:$(EXEXT)=.valgrind)',
+                     'tests/seedfile'],
+                    [],
+                    help='Run all the test suites with Valgrind.',
+                    phony=True)
+        self.help['tests/test_suite_%.run'] = 'Run one test suite.'
+        self.help['tests/test_suite_%.valgrind'] = 'Run one test suite with valgrind.'
+        self.add_clean('$(test_apps)')
+        # TODO: test_psa_constant_names.py
+
+    def help_lines(self):
+        """Return the lines of text to show for the 'help' target."""
+        return ['{:<14} : {}'.format(name, self.help[name])
+                for name in sorted(self.help.keys())]
+
+    def variables_help_lines(self):
+        """Return the lines of text to show for the 'help-variables' target."""
+        env_opts = [(envopt.var, envopt.help)
+                    for envopt in _environment_options]
+        ad_hoc = [
+            ('V', 'Show commands in full if non-empty.')
+        ]
+        return ['{:<14} # {}'.format(name, text)
+                for (name, text) in sorted(env_opts + ad_hoc)]
+
+    def output_all(self):
+        """Emit the whole makefile."""
+        self.comment('Generated by {}', ' '.join(sys.argv))
+        self.comment('Do not edit this file! All modifications will be lost.')
+        self.line('')
+        self.settings_section()
+        self.line('')
+        self.target('default', [self.options.default_target], [], phony=True)
+        self.line('')
+        self.target('all', ['lib', 'programs', 'tests'],
+                    [],
+                    help='Build the library, the tests and the sample programs.',
+                    phony=True)
+        self.line('')
+        self.target('pwd', [], ['pwd'], phony=True, short='PWD') # for testing
+        self.line('')
+        self.library_section()
+        self.line('')
+        self.define_tests_common_objects()
+        self.line('')
+        self.programs_section()
+        self.line('')
+        self.tests_section()
+        self.line('')
+        self.target('clean', [],
+                    ['$(RM) ' + patterns for patterns in self.clean],
+                    help='Remove all generated files.',
+                    short='RM    {generated files}',
+                    phony=True)
+        self.line('')
+        self.target('help-variables', [],
+                    ['@echo "{}"'.format(line) for line in self.variables_help_lines()],
+                    help='Show useful variables to pass on the make command line.',
+                    phony=True)
+        # The help target must come last because it displays accumulated help
+        # text set by previous calls to self.target. Set its own help manually
+        # because self.target would set it too late for it to be printed.
+        self.help['help'] = 'Show this help listing the most commonly-used non-file targets.'
+        self.target('help', [],
+                    ['@echo "{}"'.format(line) for line in self.help_lines()],
+                    phony=True)
+        self.line('')
+        self.comment('End of generated file.')
+
+    def generate(self):
+        """Generate the makefile."""
+        destination = os.path.join(self.options.dir, 'Makefile')
+        temp_file = destination + '.new'
+        with open(temp_file, 'w') as out:
+            try:
+                self.out = out
+                self.output_all()
+            finally:
+                del self.out
+        os.replace(temp_file, destination)
+
+class ConfigMaker:
+    """Parent class for config.h builders.
+
+    Typical usage: ChildClass(options).run()
+    """
+
+    def __init__(self, options):
+        """Initialize a config.h builder with the given command line options."""
+        self.options = options
+        self.source_file = options.config_file
+        if self.source_file is None:
+            self.source_file = os.path.join(options.source,
+                                            'include', 'mbedtls', 'config.h')
+            self.source_file_path = 'include/mbedtls/config.h'
+            if not options.in_tree_build:
+                self.source_file_path = 'source/' + self.source_file_path
+        else:
+            self.source_file_path = os.path.abspath(self.source_file)
+        self.target_file = os.path.join(options.dir,
+                                        'include', 'mbedtls', 'config.h')
+
+    def start(self):
+        """Builder-specific method which is called first."""
+        raise NotImplementedError
+
+    def set(self, name, value=None):
+        """Builder-specific method to set name to value."""
+        raise Exception("Configuration method {} does not support setting options"
+                        .format(options.config_mode))
+
+    def unset(self, name):
+        """Builder-specific method to unset name."""
+        raise Exception("Configuration method {} does not support unsetting options"
+                        .format(options.config_mode))
+
+    def batch(self, name):
+        """Builder-specific method to set the configuration with the given name."""
+        raise Exception("Configuration method {} does not support batch-setting options"
+                        .format(options.config_mode))
+
+    def finish(self):
+        """Builder-specific method which is called last."""
+        raise NotImplementedError
+
+    def run(self):
+        """Go ahead and generate config.h."""
+        self.start()
+        if self.options.config_name is not None:
+            self.batch(self.options.config_name)
+        for spec in self.options.config_unset:
+            for name in re.split(r'[\t ,]+', spec):
+                self.unset(name)
+        for spec in self.options.config_set:
+            m = re.match(r'(?P<name>[0-9A-Z_a-z]+)' +
+                         r'(?P<args>\([\t ,0-9A-Z_a-z]*\))?' +
+                         r'(?P<sep>[=,]?)', spec)
+            if m is None or \
+               (m.group('args') is not None and m.group('sep') == ',') :
+                raise Exception("Invalid argument to --config-set")
+            if m.group('sep') == ',':
+                for name in spec.split(','):
+                    self.set(name)
+            else:
+                name = spec[:m.start('sep')]
+                value = spec[m.end('sep'):]
+                self.set(name, value)
+        self.finish()
+_config_classes = {}
+
+class ConfigCopy(ConfigMaker):
+    """ConfigMaker implementation that copies config.h and runs config.pl."""
+
+    def start(self):
+        if not are_same_existing_files(self.source_file, self.target_file):
+            shutil.copyfile(self.source_file, self.target_file)
+
+    def run_config_script(self, *args):
+        cmd = ['perl', 'scripts/config.pl',
+               '-f', os.path.abspath(self.target_file)] + list(args)
+        subprocess.check_call(cmd, cwd=self.options.dir)
+
+    def set(self, name, value=None):
+        if value is None:
+            self.run_config_script('set', name)
+        else:
+            self.run_config_script('set', name, value)
+
+    def unset(self, name):
+        self.run_config_script('unset', name)
+
+    def batch(self, name):
+        self.run_config_script(name)
+
+    def finish(self):
+        pass
+_config_classes['copy'] = ConfigCopy
+
+class ConfigInclude(ConfigMaker):
+    """ConfigMaker implementation that makes a config.h that #includes the base one."""
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.lines = []
+
+    def start(self):
+        source_path = self.source_file_path
+        if not os.path.isabs(source_path):
+            source_path = os.path.join(os.pardir, os.pardir, source_path)
+        self.lines.append('#ifndef MBEDTLS_CHECK_CONFIG_H')
+        self.lines.append('#include "{}"'.format(source_path))
+        self.lines.append('')
+
+    def set(self, name, value=None):
+        if value:
+            self.lines.append('#define ' + name + ' ' + value)
+        else:
+            self.lines.append('#define ' + name)
+
+    def unset(self, name):
+        self.lines.append('#undef ' + name)
+
+    def finish(self):
+        self.lines.append('')
+        self.lines.append('#undef MBEDTLS_CHECK_CONFIG_H')
+        # Avoid a redefinition of this typedef
+        self.lines.append('#define mbedtls_iso_c_forbids_empty_translation_units mbedtls_iso_c_forbids_empty_translation_units2')
+        self.lines.append('#include "mbedtls/check_config.h"')
+        self.lines.append('#undef mbedtls_iso_c_forbids_empty_translation_units')
+        self.lines.append('#endif')
+        with open(self.target_file, 'w') as out:
+            for line in self.lines:
+                out.write(line + '\n')
+_config_classes['include'] = ConfigInclude
+
+class BuildTreeMaker:
+    """Prepare an Mbed TLS/Crypto build tree.
+
+    * Create a directory structure.
+    * Create symbolic links to some files and directories from the source.
+    * Create a config.h.
+    * Create a Makefile.
+
+    Typical usage: BuildTreeMaker(options).run()
+    """
+
+    def __init__(self, options):
+        self.options = options
+        self.source_path = os.path.abspath(options.source)
+        options.in_tree_build = are_same_existing_files(self.options.source,
+                                                        self.options.dir)
+        self.makefile = MakefileMaker(options,
+                                      '.' if options.in_tree_build else 'source')
+        if options.config_mode is None:
+            if options.config_name is None and not options.in_tree_build:
+                options.config_mode = 'include'
+            else:
+                options.config_mode = 'copy'
+        self.config = _config_classes[options.config_mode](options)
+
+    def programs_subdirs(self):
+        """Detect subdirectories for sample programs."""
+        tops = ([self.options.source] +
+                [os.path.join(self.options.source, submodule)
+                 for submodule in _submodule_names])
+        return [os.path.basename(d)
+                for top in tops
+                for d in glob.glob(os.path.join(top, 'programs', '*'))
+                if os.path.isdir(d)]
+
+    def make_subdir(self, subdir):
+        """Create the given subdirectory of the build tree."""
+        path = os.path.join(self.options.dir, *subdir)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+    def make_link(self, target, link):
+        """Create a symbolic link called link pointing to target.
+
+        link is a path relative to the build directory.
+
+        If the link already exists, it is not modified.
+        """
+        link_path = os.path.join(self.options.dir, link)
+        if not os.path.lexists(link_path):
+            os.symlink(target, link_path)
+
+    def link_to_source(self, sub_link, link):
+        """Create a symbolic link in the build tree to sub_link under the source."""
+        self.make_link(os.path.join(*([os.pardir] * (len(link) - 1) +
+                                      ['source'] + sub_link)),
+                       os.path.join(*link))
+
+    def link_to_source_maybe(self, link):
+        """Create a symbolic link in the build tree to a target of the same
+        name in the source tree in any submodule.
+
+        Check the root first, then the submodules in the order given by
+        _submodule_names.
+        """
+        for submodule in [''] + _submodule_names:
+            sub_link = [submodule] + link
+            if os.path.exists(os.path.join(self.options.source, *sub_link)):
+                self.link_to_source(sub_link, link)
+
+    def link_test_suites(self):
+        # This is a hack due to the weird paths produced by the test generator.
+        # The test generator generates a file with #file directives that
+        # point to "suites/xxx.function". Since we run the compiler from the
+        # top of the build tree rather than from the tests directory,
+        # the debug information in the binary contains a path of the form
+        # "build-directory/suites/xxx.function" rather than
+        # the correct source path. So arrange for this directory to exist.
+        # This is only a partial workaround, since it points to the main
+        # source tree, but the correct file for any given test may be
+        # in a submodule.
+        self.make_link('source/tests/suites', 'suites')
+
+    def run(self):
+        """Go ahead and prepate the build tree."""
+        for subdir in ([['include', 'mbedtls'],
+                        ['library'],
+                        ['tests', 'src']] +
+                       [['programs', d] for d in self.programs_subdirs()]):
+            self.make_subdir(subdir)
+        source_link = os.path.join(self.options.dir, 'source')
+        if not self.options.in_tree_build and not os.path.exists(source_link):
+            os.symlink(self.source_path, source_link)
+        for link in [['include', 'psa'], # hack for psa_constant_names.py
+                     ['scripts'],
+                     ['tests', 'configs'],
+                     ['tests', 'compat.sh'],
+                     ['tests', 'data_files'],
+                     ['tests', 'scripts'],
+                     ['tests', 'ssl-opt.sh']]:
+            self.link_to_source_maybe(link)
+        self.link_test_suites()
+        self.makefile.generate()
+        self.config.run()
+
+"""Named presets.
+
+This is a dictionary mapping preset names to their descriptions. The
+description of a preset is a namespace object that represents the options to
+set for this preset. The field _help in a description has a special meaning:
+it's the documentation of the preset.
+"""
+_preset_options = {
+    '': {}, # empty preset = use defaults
+    'asan': argparse.Namespace(
+        _help='Clang with ASan+UBSan, current configuration',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='clang',
+        CFLAGS='-O',
+        COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
+    ),
+    'coverage': argparse.Namespace(
+        _help='Build with coverage instrumentation',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CFLAGS='-O0',
+        COMMON_FLAGS='--coverage -g3',
+    ),
+    'debug': argparse.Namespace(
+        _help='Debug build',
+        CFLAGS='-O0',
+        COMMON_FLAGS='-g3',
+    ),
+    'full': argparse.Namespace(
+        _help='Full configuration',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+    ),
+    'full-asan': argparse.Namespace(
+        _help='Full configuration with GCC+ASan+UBSan',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='gcc',
+        CFLAGS='-O',
+        COMMON_FLAGS='-fsanitize=address,undefined -fno-common -g3',
+    ),
+    'full-debug': argparse.Namespace(
+        _help='Full configuration, debug build',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CFLAGS='-O0',
+        COMMON_FLAGS='-g3',
+    ),
+    'full-thumb': argparse.Namespace(
+        _help='Full configuration for arm-linux-gnueabi',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='arm-linux-gnueabi-gcc',
+        CFLAGS='-Os',
+        COMMON_FLAGS='-mthumb',
+    ),
+    'm0plus': argparse.Namespace(
+        _help='Baremetal configuration for Cortex-M0+ target',
+        config_name='baremetal',
+        default_target='lib',
+        CC='arm-none-eabi-gcc',
+        CFLAGS='-Os',
+        COMMON_FLAGS='-mthumb -mcpu=cortex-m0plus',
+    ),
+    'msan': argparse.Namespace(
+        _help='Clang Memory sanitizer (MSan), current configuration',
+        config_unset=['MBEDTLS_AESNI_C',
+                      'MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='clang',
+        CFLAGS='-O',
+        COMMON_FLAGS='-fsanitize=memory -g3',
+    ),
+    'thumb': argparse.Namespace(
+        _help='Default configuration for arm-linux-gnueabi',
+        CC='arm-linux-gnueabi-gcc',
+        CFLAGS='-Os',
+        COMMON_FLAGS='-mthumb',
+    ),
+    'valgrind': argparse.Namespace(
+        # This is misleading: it doesn't actually run programs through
+        # valgrind when you run e.g. `make check`
+        _help='Build for Valgrind, current configuration',
+        config_unset=['MBEDTLS_AESNI_C'],
+        CFLAGS='-g -O3',
+    ),
+}
+
+"""Default values for some options.
+
+The keys are the field names in the options object.
+"""
+_default_options = {
+    'default_target': 'all',
+    'dir': os.curdir,
+    'executable_extension': '',
+    'indirect_extensions': False,
+    'library_extension': '.a',
+    'assembly_extension': '.s',
+    'object_extension': '.o',
+    'shared_library_extension': '.so',
+    'source': os.curdir,
+}
+
+def set_default_option(options, attr, value):
+    if getattr(options, attr) is None:
+        setattr(options, attr, value)
+    elif isinstance(value, list):
+        setattr(options, attr, value + getattr(options, attr))
+
+def set_default_options(options):
+    """Apply the preset if any and set default for remaining options.
+
+    We set defaults via this function rather than via the `default`
+    keyword argument to `parser.add_argument` in order to apply
+    settings in the correct precedence order: default, then preset,
+    then explicit.
+
+    For options that can be used more than once and whose values
+    are accumulated in a list, the default is always empty, and a
+    preset puts things at the beginning of the list. A command line
+    option can only append to the preset, not remove preset elements.
+    This is implemented by prepending the preset to the explicit elements
+    """
+    # Step 1: apply preset.
+    if options.preset:
+        for attr, value in _preset_options[options.preset]._get_kwargs():
+            if attr.startswith('_'):
+                continue
+            set_default_option(options, attr, value)
+            set_default_option(options, 'dir', 'build-' + options.preset)
+    # Step 2: set remaining defaults.
+    for attr, value in _default_options.items():
+        set_default_option(options, attr, value)
+    for envopt in _environment_options:
+        set_default_option(options, envopt.attr, envopt.default)
+
+def preset_help():
+    """Return a documentation string for the presets."""
+    return '\n'.join(['Presets:'] +
+                     ['{}: {}'.format(name, _preset_options[name]._help)
+                      for name in sorted(_preset_options.keys())
+                      if hasattr(_preset_options[name], '_help')] +
+                     [''])
+
+def arg_type_bool(arg):
+    """Boolean argument type for argparse.add_argument."""
+    if not isinstance(arg, str):
+        return arg
+    arg = arg.lower()
+    if arg in ['1', 't', 'true', 'y', 'yes']:
+        return True
+    elif arg in ['0', 'f', 'false', 'n', 'no']:
+        return False
+    else:
+        raise argparse.ArgumentTypeError('invalid boolean value: ' + repr(arg))
+
+def main():
+    """Process the command line and prepare a build tree accordingly."""
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description=__doc__,
+                                     epilog=preset_help())
+    for envopt in _environment_options:
+        parser.add_argument(envopt.option,
+                            dest=envopt.attr,
+                            help='{} ({})'.format(envopt.help, envopt.var))
+    parser.add_argument('--assembly-extension',
+                        help='File extension for assembly files')
+    parser.add_argument('--config-file',
+                        help='Base config.h to use')
+    parser.add_argument('--config-mode',
+                        choices=_config_classes.keys(),
+                        help='What to do with config.h')
+    parser.add_argument('--config-name',
+                        help='Configuration to set with scripts/config.pl')
+    parser.add_argument('--config-set',
+                        action='append', default=[],
+                        help='Additional symbol to set in config.h')
+    parser.add_argument('--config-unset',
+                        action='append', default=[],
+                        help='Symbol to unset in config.h')
+    parser.add_argument('--default-target',
+                        help='Default makefile target (default: all)')
+    parser.add_argument('--dir', '-d',
+                        help='Build directory to create (default: build-PRESET if given "-p PRESET", otherwise current directory)')
+    parser.add_argument('--executable-extension',
+                        help='File extension for executables')
+    parser.add_argument('--indirect-extensions',
+                        type=arg_type_bool,
+                        help='Whether to use makefile variable for file extensions')
+    parser.add_argument('--library-extension',
+                        help='File extension for static libraries')
+    parser.add_argument('--object-extension',
+                        help='File extension for object files')
+    parser.add_argument('--preset', '-p',
+                        choices = sorted(_preset_options.keys()),
+                        help='Apply a preset configuration before processing other options')
+    parser.add_argument('--psa-driver',
+                        action='append', default=[],
+                        help='PSA crypto driver description file')
+    parser.add_argument('--shared-library-extension',
+                        help='File extension for shared libraries')
+    parser.add_argument('--source', '-s',
+                        help='Root directory of the source tree (default: current directory)')
+    parser.add_argument('--var',
+                        action='append', default=[],
+                        help='Extra variable to define in the makefile')
+    options = parser.parse_args()
+    set_default_options(options)
+    builder = BuildTreeMaker(options)
+    builder.run()
+
+if __name__ == '__main__':
+    main()
