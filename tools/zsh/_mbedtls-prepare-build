@@ -1,0 +1,106 @@
+#compdef mbedtls-prepare-build
+
+_mbedtls_prepare_build_symbols () {
+  local -a identifiers
+  identifiers=("${(@f)$(_call_program _config_pl_symbols sed -n \''s!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p'\' \$source_dir/include/mbedtls/config.h)}")
+  if ((!$#identifiers)); then return 1; fi
+  _values -s , 'config.h symbols' $identifiers
+}
+
+_mbedtls_prepare_build () {
+  local context state state_descr line
+  typeset -A opt_args
+  local ret=0
+  local prefix spec
+  local -a specs; specs=()
+  local source_dir=.
+  local -a args; args=($words[2,-1])
+  local -a presets; presets=()
+
+  while (($#args)); do
+    case $args[1] in
+      (-s|--source) if (($#args >= 2)); then source_dir=$args[2]; fi;;
+      (--*=*) :;;
+      -*) if (($#args >= 2)); then shift args; fi;;
+    esac
+    shift args
+  done
+
+  state='options'
+  for line in "${(@f)${$(export COLUMNS=9999;
+                         _call_program help $words[1] --help)//$'\n    '/  }}"; do
+    # 1=opt1 3=?arg1 5=?opt2 7=descr
+    if [[ $state == 'options' &&
+          $line =~ '  (-[^ ]+)( ([^- ][^ ]*))?(, (-[^ ]+)( [^- ][^ ]*)?)*  +(.*)' ]]; then
+      spec="[${${match[7]//\]/\\\]}//:/\\:}]"
+      if [[ -n $match[3] ]]; then
+        spec="=$spec:$match[3]:->${match[1]}"
+      fi
+      case $match[1] in
+        (--config-set|--config-unset|--var) prefix='*';;
+        (*) prefix="($match[1] $match[5])";;
+      esac
+      if [[ -n $match[5] ]]; then
+        if [[ -n $spec ]]; then
+          if [[ $match[1] == --* ]]; then
+            match[1]="$match[1]="
+          else
+            match[1]="$match[1]+"
+          fi
+          if [[ $match[5] == --* ]]; then
+            match[5]="$match[5]="
+          else
+            match[5]="$match[5]+"
+          fi
+        fi
+        specs+=($prefix{$match[1],$match[5]}${spec#\=})
+      else
+        specs+=($prefix$match[1]$spec)
+      fi
+    elif [[ $state == 'presets' &&
+            $line =~ '([-0-9A-Z_a-z]+): *(.*)' ]]; then
+      presets+=($match[1]:$match[2])
+    elif [[ $line == 'Presets:' ]]; then
+      state='presets'
+    fi
+  done
+  line=
+  s=($specs)
+  _arguments $specs
+
+  case $state in
+    (--ar|--cc|--cp|--perl|--python|--rm|--valgrind)
+      _call_function ret _command_names -e;;
+    (--config-file)
+      _call_function ret _files -g "*.h";;
+    (--config-mode)
+      local -a config_modes
+      config_modes=(
+        'copy:Copy config.h'
+        'include:#include ${SOURCE_DIR}/config.h'
+      )
+      _call_function ret _describe -t config_mode 'Handling of config.h' config_modes;;
+    (--config-name)
+      local -a config_names
+      config_names=(
+        'baremetal:All features for bare metal platforms'
+        'full:All features'
+        'realfull:Uncomment all #define'\''s'
+      )
+      _call_function ret _describe -t config_name 'Preset configuration name' config_names;;
+    (--config-set|--config-unset)
+      _call_function ret _mbedtls_prepare_build_symbols;;
+    (--dir|--source)
+      _call_function ret _files -/;;
+    (--preset)
+      _call_function ret _describe -t preset 'Preset build name' presets;;
+  esac
+  return $ret
+}
+
+_mbedtls_prepare_build "$@"
+
+# Local Variables:
+# mode: sh
+# sh-shell: zsh
+# End:
