@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+
+"""Run Mbed TLS unit tests.
+
+By default, run all test casess. If at least one of --prefix, --regex or
+--substring is specified, only run the test cases that match any of these
+options.
+"""
+
+import argparse
+import os
+import re
+import subprocess
+import tempfile
+
+
+class TestCaseFilter:
+    """Test case filter."""
+
+    def __init__(self, options):
+        """Set up a test case filter.
+
+        See `main` for what options are valid.
+        """
+        include = ''
+        for string in options.substring:
+            include += '|.*' + re.escape(string)
+        for string in options.prefix:
+            include += '|' + re.escape(string)
+        for regex in options.regex:
+            include += '|.*' + regex
+        if include: # no filter specified
+            include = include[1:] # remove the leading '|'
+        self.include = re.compile(include.encode())
+        if options.exclude:
+            exclude = '|'.join(options.exclude)
+        else:
+            exclude = r'.\A' # matches nothing
+        self.exclude = re.compile(exclude.encode())
+
+    def match(self, description):
+        """Whether the given test case description matches the filter."""
+        return (re.match(self.include, description) and
+                not re.match(self.exclude, description))
+
+
+def extract_description(stanza):
+    """Extract the description from a .data stanza."""
+    m = re.match(r'(?:\n|#[^\n]*\n)*([^#\n][^\n]*)\n', stanza + '\n')
+    if m:
+        return m.group(1)
+    else:
+        return None
+
+def filter_test_cases(all_datax, tcf, temp_datax):
+    """Filter test cases.
+
+    Filter test cases from datax_file based on their description according
+    to the filter tcf. Write the selected test cases to temp_datax.
+    """
+    in_stanza = False
+    in_match = False
+    for line in open(all_datax, 'rb'):
+        was_in_stanza = in_stanza
+        in_stanza = not not line.strip()
+        if in_stanza and not was_in_stanza:
+            in_match = tcf.match(line)
+        elif not in_stanza:
+            in_match = False
+        if in_match:
+            temp_datax.write(line)
+    temp_datax.flush()
+
+def run_exe(keep_temp, precommand, exe, extra_options, all_datax, tcf):
+    """Run one Mbed TLS test suites based on the specified options.
+
+    See `main` for what options are valid.
+    """
+    directory = os.path.dirname(exe)
+    with tempfile.NamedTemporaryFile(
+            dir=directory, suffix='.datax', delete=not keep_temp
+    ) as temp_datax:
+        filter_test_cases(all_datax, tcf, temp_datax)
+        print(directory,
+              os.path.basename(exe),
+              os.path.basename(temp_datax.name))
+        cmd = (precommand +
+               [os.path.join(os.path.curdir, os.path.basename(exe))] +
+               extra_options +
+               [os.path.basename(temp_datax.name)])
+        outcome = subprocess.run(cmd, cwd=directory)
+    return outcome.returncode
+
+def find_data_file(exe):
+    """Return the .datax file for the specified test suite executable."""
+    directory = os.path.dirname(exe)
+    basename = os.path.basename(exe)
+    basebasename = os.path.splitext(basename)[0]
+    for datax_file in [
+            os.path.join(directory, basename + '.datax'),
+            os.path.join(directory, basebasename + '.datax'),
+    ]:
+        if os.path.exists(datax_file):
+            return datax_file
+    else:
+        raise Exception('.datax file not found for ' + exe)
+
+def run(options):
+    """Run Mbed TLS test suites based on the specified options.
+
+    See `main` for what options are valid.
+    """
+    extra_options = []
+    if options.verbose:
+        extra_options.append('-v')
+    tcf = TestCaseFilter(options)
+    # Make sure we can find all the data files before we start running tests.
+    data_files = [find_data_file(exe) for exe in options.exes]
+    global_status = 0
+    for exe, data_file in zip(options.exes, data_files):
+        status = run_exe(options.keep,
+                         options.command, exe, extra_options,
+                         data_file, tcf)
+        if status > global_status:
+            global_status = status
+    return global_status
+
+def main():
+    """Process the command line and run Mbed TLS tests."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--command', '-c',
+                        action='append', default=[],
+                        help='Precommand modifier (run COMMAND EXE instead of just EXE)')
+    parser.add_argument('--exclude', '-e',
+                        action='append', default=[],
+                        help='Exclude tests whose description contains a match for the specified Python regex')
+    parser.add_argument('--keep', '-k',
+                        action='store_true', default=False,
+                        help='Keep the temporary .datax files')
+    parser.add_argument('--prefix', '-p',
+                        action='append', default=[],
+                        help='Only run tests whose description starts with the specified string')
+    parser.add_argument('--regex', '-r',
+                        action='append', default=[],
+                        help='Only run tests whose description contains a match for the specified Python regex')
+    parser.add_argument('--substring', '-s',
+                        action='append', default=[],
+                        help='Only run tests whose description contains the specified substring')
+    parser.add_argument('--verbose', '-v',
+                        action='store_true',
+                        help='Run test suites in verbose mode')
+    parser.add_argument(metavar='EXE', nargs='+',
+                        dest='exes',
+                        help='Test suite executable')
+    options = parser.parse_args()
+    exit(run(options))
+
+if __name__ == '__main__':
+    main()
