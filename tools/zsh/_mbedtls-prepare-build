@@ -1,5 +1,11 @@
 #compdef mbedtls-prepare-build
 
+_mbedtls_prepare_build_cross () {
+  local architectures
+  architectures=(/usr/*(/Ne['REPLY=$REPLY:t; [[ -e /usr/bin/$REPLY-gcc ]]']))
+  _call_function ret _describe -t architectures 'Architectures' architectures
+}
+
 _mbedtls_prepare_build_symbols () {
   local -a identifiers
   identifiers=("${(@f)$(_call_program _config_pl_symbols sed -n \''s!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p'\' \$source_dir/include/mbedtls/config.h)}")
@@ -90,6 +96,8 @@ _mbedtls_prepare_build () {
       _call_function ret _describe -t config_name 'Preset configuration name' config_names;;
     (--config-set|--config-unset)
       _call_function ret _mbedtls_prepare_build_symbols;;
+    (--cross)
+      _call_function ret _mbedtls_prepare_build_cross;;
     (--dir|--source)
       _call_function ret _files -/;;
     (--preset)
