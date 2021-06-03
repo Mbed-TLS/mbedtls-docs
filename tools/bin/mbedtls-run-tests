@@ -2,7 +2,7 @@
 
 """Run Mbed TLS unit tests.
 
-By default, run all test casess. If at least one of --prefix, --regex or
+By default, run all test cases. If at least one of --prefix, --regex or
 --substring is specified, only run the test cases that match any of these
 options.
 """
@@ -29,7 +29,7 @@ class TestCaseFilter:
             include += '|' + re.escape(string)
         for regex in options.regex:
             include += '|.*' + regex
-        if include: # no filter specified
+        if include:
             include = include[1:] # remove the leading '|'
         self.include = re.compile(include.encode())
         if options.exclude:
