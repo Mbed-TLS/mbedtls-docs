@@ -74,6 +74,10 @@ def filter_test_cases(all_datax, tcf, temp_datax):
 def run_exe(keep_temp, precommand, exe, extra_options, all_datax, tcf):
     """Run one Mbed TLS test suites based on the specified options.
 
+    Return the subprocess's exit status (should be 0 for success, 1 for
+    a test failure, 2 on operational error), or a negative code if it was
+    killed by a signal.
+
     See `main` for what options are valid.
     """
     directory = os.path.dirname(exe)
@@ -121,8 +125,10 @@ def run(options):
         status = run_exe(options.keep,
                          options.command, exe, extra_options,
                          data_file, tcf)
-        if status > global_status:
-            global_status = status
+        if status > 0: # test failure or operational error
+            global_status = max(global_status, status)
+        elif status < 0: # killed by a signal
+            global_status = max(global_status, 120)
     return global_status
 
 def main():
