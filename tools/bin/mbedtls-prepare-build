@@ -717,8 +717,8 @@ class MakefileMaker:
                     [sjoin(script_path, '-o $@', *sources)])
         self.object_target('LIBRARY', GeneratedFile(generated), [])
 
-    def list_source_files(self, root, pattern):
-        """List the source files matching the specified pattern.
+    def list_source_files(self, root, *patterns):
+        """List the source files matching any of the specified patterns.
 
         Look for the specified wildcard pattern under all submodules, including
         the root tree. If a given file name is present in multiple submodules,
@@ -734,8 +734,10 @@ class MakefileMaker:
             start = len(submodule_root)
             if submodule:
                 start += 1
-            abs_pattern = os.path.join(submodule_root, pattern)
-            sources = [src[start:] for src in glob.glob(abs_pattern)]
+            sources = []
+            for pattern in patterns:
+                abs_pattern = os.path.join(submodule_root, pattern)
+                sources += [src[start:] for src in glob.glob(abs_pattern)]
             for source_name in sources:
                 src = SourceFile(root, submodule, source_name)
                 base = src.base()
@@ -994,7 +996,8 @@ class MakefileMaker:
         definition must come before both targets for programs and tests.
         """
         tests_common_sources = self.list_source_files(self.options.source,
-                                                      'tests/src/*.c')
+                                                      'tests/src/*.c',
+                                                      'tests/src/drivers/*.c')
         tests_common_objects = []
         for src in tests_common_sources:
             self.object_target('TESTS', src, [])
@@ -1420,7 +1423,7 @@ class BuildTreeMaker:
         """Go ahead and prepate the build tree."""
         for subdir in ([['include', 'mbedtls'],
                         ['library'],
-                        ['tests', 'src']] +
+                        ['tests', 'src', 'drivers']] +
                        [['programs', d] for d in self.programs_subdirs()]):
             self.make_subdir(subdir)
         source_link = os.path.join(self.options.dir, 'source')
