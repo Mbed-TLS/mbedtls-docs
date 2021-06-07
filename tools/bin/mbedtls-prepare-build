@@ -86,6 +86,8 @@ _environment_options = [
                       'Options to pass to ${CC} when linking sample programs'),
     EnvironmentOption('PYTHON', 'python3',
                       'Python3 interpreter'),
+    EnvironmentOption('QEMU_LD_PREFIX', '',
+                      'Path to a runtime for Qemu'),
     EnvironmentOption('RM', 'rm -f',
                       'Program to remove files (e.g. "rm -f")'),
     EnvironmentOption('RUN', '',
@@ -308,6 +310,9 @@ class MakefileMaker:
         self.static_libraries = None
         self.help = {}
         self.clean = []
+        self.variables_to_export = set()
+        if options.QEMU_LD_PREFIX:
+            self.variables_to_export.add('QEMU_LD_PREFIX')
         self.dependency_cache = {
             # TODO: arrange to find dependencies of this generated file.
             # They're hard-coded for now, but that won't work if the
@@ -478,6 +483,21 @@ class MakefileMaker:
             if clean:
                 self.add_clean(name)
 
+    def setenv_command(self):
+        """Generate a shell command to export some environment variables.
+
+        The values of these variables must not contain the character ``'``
+        (single quote).
+
+        Return an empty string if there are no variables to export.
+        """
+        if not self.variables_to_export:
+            return ''
+        return (' export ' +
+                ' '.join(['{}=\'$({})\''.format(name, name)
+                          for name in sorted(self.variables_to_export)]) +
+                '; ')
+
     def environment_option_subsection(self):
         """Generate the assignments to customizable options."""
         self.comment('Tool settings')
@@ -524,6 +544,7 @@ class MakefileMaker:
         self.line('AUX_Q_$(V) = @')
         self.line('ECHO_IF_QUIET = $(AUX_ECHO_IF_QUIET_)')
         self.line('Q = $(AUX_Q_)')
+        self.assign('SETENV', self.setenv_command())
         self.line('')
         self.comment('Auxiliary paths')
         self.assign('SOURCE_DIR_FROM_TESTS', '../$(SOURCE_DIR)')
@@ -717,8 +738,8 @@ class MakefileMaker:
                     [sjoin(script_path, '-o $@', *sources)])
         self.object_target('LIBRARY', GeneratedFile(generated), [])
 
-    def list_source_files(self, root, pattern):
-        """List the source files matching the specified pattern.
+    def list_source_files(self, root, *patterns):
+        """List the source files matching any of the specified patterns.
 
         Look for the specified wildcard pattern under all submodules, including
         the root tree. If a given file name is present in multiple submodules,
@@ -734,8 +755,10 @@ class MakefileMaker:
             start = len(submodule_root)
             if submodule:
                 start += 1
-            abs_pattern = os.path.join(submodule_root, pattern)
-            sources = [src[start:] for src in glob.glob(abs_pattern)]
+            sources = []
+            for pattern in patterns:
+                abs_pattern = os.path.join(submodule_root, pattern)
+                sources += [src[start:] for src in glob.glob(abs_pattern)]
             for source_name in sources:
                 src = SourceFile(root, submodule, source_name)
                 base = src.base()
@@ -896,11 +919,11 @@ class MakefileMaker:
             executable = program + self.executable_extension
         self.target(program + '.run',
                     [executable],
-                    ['$(RUN) ' + executable + ' $(RUNS)'],
+                    ['$(SETENV)$(RUN) ' + executable + ' $(RUNS)'],
                     phony=True)
         self.target(program + '.gmon',
                     [executable],
-                    ['$(RUN) ' + executable + ' $(RUNS)',
+                    ['$(SETENV)$(RUN) ' + executable + ' $(RUNS)',
                      'mv gmon.out $@'])
 
     def program_subsection(self, src, executables):
@@ -994,7 +1017,8 @@ class MakefileMaker:
         definition must come before both targets for programs and tests.
         """
         tests_common_sources = self.list_source_files(self.options.source,
-                                                      'tests/src/*.c')
+                                                      'tests/src/*.c',
+                                                      'tests/src/drivers/*.c')
         tests_common_objects = []
         for src in tests_common_sources:
             self.object_target('TESTS', src, [])
@@ -1054,12 +1078,12 @@ class MakefileMaker:
         # so is the .datax file.
         self.target('tests/' + base + '.run',
                     [exe_file, 'tests/seedfile'],
-                    ['cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)'],
+                    ['$(SETENV)cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)'],
                     short='RUN   tests/' + exe_basename,
                     phony=True)
         self.target('tests/' + base + '.gmon',
                     [exe_file, 'tests/seedfile'],
-                    ['cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)',
+                    ['$(SETENV)cd tests && $(RUN) ./' + exe_basename + ' $(RUNS)',
                      'mv tests/gmon.out $@'],
                     short='RUN   tests/' + exe_basename)
         valgrind_log_basename = 'MemoryChecker.{}.log'.format(base)
@@ -1108,7 +1132,7 @@ class MakefileMaker:
         self.target('tests/seedfile', [],
                     ['dd bs=64 count=1 </dev/urandom >$@'])
         self.target('check', ['$(test_apps)', 'tests/seedfile'],
-                    ['cd tests && $(PERL) scripts/run-test-suites.pl --skip=$(SKIP_TEST_SUITES)'],
+                    ['$(SETENV)cd tests && $(PERL) scripts/run-test-suites.pl --skip=$(SKIP_TEST_SUITES)'],
                     help='Run all the test suites.',
                     short='',
                     phony=True)
@@ -1420,7 +1444,7 @@ class BuildTreeMaker:
         """Go ahead and prepate the build tree."""
         for subdir in ([['include', 'mbedtls'],
                         ['library'],
-                        ['tests', 'src']] +
+                        ['tests', 'src', 'drivers']] +
                        [['programs', d] for d in self.programs_subdirs()]):
             self.make_subdir(subdir)
         source_link = os.path.join(self.options.dir, 'source')
@@ -1547,6 +1571,16 @@ def set_default_option(options, attr, value):
     elif isinstance(value, list):
         setattr(options, attr, value + getattr(options, attr))
 
+def handle_cross(options):
+    """Update settings to handle --cross."""
+    if options.cross is None:
+        return
+    # Paths for Ubuntu 18.04 with the packages qemu-user and either
+    # gcc-multilib-<ARCH> or gcc-<ARCH> installed.
+    set_default_option(options, 'QEMU_LD_PREFIX', '/usr/' + options.cross)
+    set_default_option(options, 'CC', options.cross + '-gcc')
+    set_default_option(options, 'dir', 'build-' + options.cross)
+
 def set_default_options(options):
     """Apply the preset if any and set default for remaining options.
 
@@ -1568,7 +1602,9 @@ def set_default_options(options):
                 continue
             set_default_option(options, attr, value)
             set_default_option(options, 'dir', 'build-' + options.preset)
-    # Step 2: set remaining defaults.
+    # Step 2: handle multi-effect options
+    handle_cross(options)
+    # Step 3: set remaining defaults.
     for attr, value in _default_options.items():
         set_default_option(options, attr, value)
     for envopt in _environment_options:
@@ -1618,6 +1654,8 @@ def main():
     parser.add_argument('--config-unset',
                         action='append', default=[],
                         help='Symbol to unset in config.h')
+    parser.add_argument('--cross',
+                        help='Run tests on a different architecture with Qemu. Forces an out-of-tree build.')
     parser.add_argument('--default-target',
                         help='Default makefile target (default: all)')
     parser.add_argument('--dir', '-d',
