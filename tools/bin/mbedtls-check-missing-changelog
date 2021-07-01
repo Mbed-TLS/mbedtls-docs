@@ -30,5 +30,5 @@ for c in $merge_commits; do
   if git diff --name-only $c~1 $c | grep -q ChangeLog; then
     continue
   fi
-  git show --oneline $c | grep .
+  git show -s --oneline $c | grep .
 done
