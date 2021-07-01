@@ -12,8 +12,6 @@ This script uses heuristics:
   revision range.
 * Pull requests that modify ChangeLog or ChangeLog.d in any way are assumed
   to be ok.
-* Pull requests whose last commit before merging has an @arm.com author
-  are assumed to be team PR where we put a changelog entry if necessary.
 EOF
 }
 
@@ -29,9 +27,6 @@ fi
 revision_range=$1
 merge_commits=$(git log --merges --first-parent --format=%H $revision_range)
 for c in $merge_commits; do
-  if [[ $(git log -n1 --format=%ae $c\^2) == *@arm.com ]]; then
-    continue
-  fi
   if git diff --name-only $c~1 $c | grep -q ChangeLog; then
     continue
   fi
