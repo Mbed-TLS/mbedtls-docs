@@ -1526,6 +1526,13 @@ _preset_options = {
         CFLAGS='-Os',
         COMMON_FLAGS='-mthumb -mcpu=cortex-m0plus',
     ),
+    'mingw': argparse.Namespace(
+        _help='MinGW-w64',
+        AR='x86_64-w64-mingw32-ar',
+        CC='x86_64-w64-mingw32-gcc',
+        EXTRA_LIBS='-lws2_32',
+        CFLAGS='-O1',
+    ),
     'msan': argparse.Namespace(
         _help='Clang Memory sanitizer (MSan), current configuration',
         config_unset=['MBEDTLS_AESNI_C',
