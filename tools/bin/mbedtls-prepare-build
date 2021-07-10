@@ -70,10 +70,8 @@ _environment_options = [
                       'Options to always pass to ${CC} when compiling or linking'),
     EnvironmentOption('DLLFLAGS', '-shared',
                       'Options to pass to ${CC} when building a shared library'),
-    # TODO: allow linking extra libraries. This requires passing -l options
-    # _after_ the objects to link. But LDFLAGS and xxx_EXTRA_LDFLAGS are
-    # currently passed before. Should they be moved after? Or should there be
-    # different variables?
+    EnvironmentOption('EXTRA_LIBS', '',
+                      'Extra libraries to link programs (including tests) with'),
     EnvironmentOption('LDFLAGS', '',
                       'Options to always pass to ${CC} when linking'),
     EnvironmentOption('LIBRARY_EXTRA_CFLAGS', '',
@@ -972,6 +970,7 @@ class MakefileMaker:
                            '$(LDFLAGS)',
                            '$(PROGRAMS_LDFLAGS)',
                            sjoin(*(dash_l_libs + self.extra_link_flags(base))),
+                           '$(EXTRA_LIBS)',
                            '-o $@')],
                     clean=False,
                     short='LD    $@')
@@ -1111,7 +1110,8 @@ class MakefileMaker:
                     '$(TESTS_EXTRA_LDFLAGS)')
         self.assign('TESTS_EXTRA_OBJECTS')
         self.assign('test_libs',
-                    *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
+                    *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)],
+                    '$(EXTRA_LIBS)')
         self.assign('test_build_deps',
                     '$(test_common_objects)', *self.static_libraries)
         self.add_clean(*['tests' + sub + '/*' + ext
