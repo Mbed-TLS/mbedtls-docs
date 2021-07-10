@@ -1306,9 +1306,13 @@ class ConfigCopy(ConfigMaker):
             shutil.copyfile(self.source_file, self.target_file)
 
     def run_config_script(self, *args):
-        cmd = ['perl', 'scripts/config.pl',
-               '-f', os.path.abspath(self.target_file)] + list(args)
-        subprocess.check_call(cmd, cwd=self.options.dir)
+        if os.path.exists(os.path.join(self.options.source,
+                                       'scripts', 'config.py')):
+            cmd = [sys.executable, 'scripts/config.py']
+        else:
+            cmd = ['perl', 'scripts/config.pl']
+        cmd += ['-f', os.path.abspath(self.target_file)] + list(args)
+        subprocess.check_call(cmd, cwd=self.options.source)
 
     def set(self, name, value=None):
         if value is None:
@@ -1661,7 +1665,7 @@ def main():
                         choices=_config_classes.keys(),
                         help='What to do with the config header')
     parser.add_argument('--config-name',
-                        help='Configuration to set with scripts/config.pl')
+                        help='Configuration to set with scripts/config.p[ly]')
     parser.add_argument('--config-set',
                         action='append', default=[],
                         help='Additional symbol to set in the config header')
