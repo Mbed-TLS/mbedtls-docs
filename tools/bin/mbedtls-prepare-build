@@ -777,7 +777,7 @@ class MakefileMaker:
         """
         self.comment('Library targets')
         self.assign('LIBRARY_CFLAGS',
-                    '-I include/mbedtls', # must come first, for "config.h"
+                    '-I include/mbedtls', # must come first, for the config header
                     '-I include',
                     self.include_path_options('library/*'),
                     '$(LIBRARY_EXTRA_CFLAGS)')
@@ -1224,25 +1224,31 @@ class MakefileMaker:
         os.replace(temp_file, destination)
 
 class ConfigMaker:
-    """Parent class for config.h builders.
+    """Parent class for config.h or mbedtls_config.h builders.
 
     Typical usage: ChildClass(options).run()
     """
 
     def __init__(self, options):
-        """Initialize a config.h builder with the given command line options."""
+        """Initialize a config header builder with the given command line options."""
         self.options = options
         self.source_file = options.config_file
+        include_dir = os.path.join(options.source, 'include', 'mbedtls')
+        if os.path.exists(os.path.join(include_dir, 'build_info.h')):
+            self.version = 3
+            basename = 'mbedtls_config.h'
+        else:
+            self.version = 2
+            basename = 'config.h'
         if self.source_file is None:
-            self.source_file = os.path.join(options.source,
-                                            'include', 'mbedtls', 'config.h')
-            self.source_file_path = 'include/mbedtls/config.h'
+            self.source_file = os.path.join(include_dir, basename)
+            self.source_file_path = 'include/mbedtls/' + basename
             if not options.in_tree_build:
                 self.source_file_path = 'source/' + self.source_file_path
         else:
             self.source_file_path = os.path.abspath(self.source_file)
         self.target_file = os.path.join(options.dir,
-                                        'include', 'mbedtls', 'config.h')
+                                        'include', 'mbedtls', basename)
 
     def start(self):
         """Builder-specific method which is called first."""
@@ -1268,7 +1274,7 @@ class ConfigMaker:
         raise NotImplementedError
 
     def run(self):
-        """Go ahead and generate config.h."""
+        """Go ahead and generate the config header."""
         self.start()
         if self.options.config_name is not None:
             self.batch(self.options.config_name)
@@ -1293,7 +1299,7 @@ class ConfigMaker:
 _config_classes = {}
 
 class ConfigCopy(ConfigMaker):
-    """ConfigMaker implementation that copies config.h and runs config.pl."""
+    """ConfigMaker implementation that copies the config header and runs the config script."""
 
     def start(self):
         if not are_same_existing_files(self.source_file, self.target_file):
@@ -1321,7 +1327,7 @@ class ConfigCopy(ConfigMaker):
 _config_classes['copy'] = ConfigCopy
 
 class ConfigInclude(ConfigMaker):
-    """ConfigMaker implementation that makes a config.h that #includes the base one."""
+    """ConfigMaker implementation that makes a config script that #includes the base one."""
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1345,12 +1351,13 @@ class ConfigInclude(ConfigMaker):
         self.lines.append('#undef ' + name)
 
     def finish(self):
-        self.lines.append('')
-        self.lines.append('#undef MBEDTLS_CHECK_CONFIG_H')
-        # Avoid a redefinition of this typedef
-        self.lines.append('#define mbedtls_iso_c_forbids_empty_translation_units mbedtls_iso_c_forbids_empty_translation_units2')
-        self.lines.append('#include "mbedtls/check_config.h"')
-        self.lines.append('#undef mbedtls_iso_c_forbids_empty_translation_units')
+        if self.version < 3:
+            self.lines.append('')
+            self.lines.append('#undef MBEDTLS_CHECK_CONFIG_H')
+            # Avoid a redefinition of this typedef
+            self.lines.append('#define mbedtls_iso_c_forbids_empty_translation_units mbedtls_iso_c_forbids_empty_translation_units2')
+            self.lines.append('#include "mbedtls/check_config.h"')
+            self.lines.append('#undef mbedtls_iso_c_forbids_empty_translation_units')
         self.lines.append('#endif')
         with open(self.target_file, 'w') as out:
             for line in self.lines:
@@ -1362,7 +1369,7 @@ class BuildTreeMaker:
 
     * Create a directory structure.
     * Create symbolic links to some files and directories from the source.
-    * Create a config.h.
+    * Create a config.h or mbedtls_config.h.
     * Create a Makefile.
 
     Typical usage: BuildTreeMaker(options).run()
@@ -1649,18 +1656,18 @@ def main():
     parser.add_argument('--assembly-extension',
                         help='File extension for assembly files')
     parser.add_argument('--config-file',
-                        help='Base config.h to use')
+                        help='Base config header (config.h or mbedtls_config.h) to use')
     parser.add_argument('--config-mode',
                         choices=_config_classes.keys(),
-                        help='What to do with config.h')
+                        help='What to do with the config header')
     parser.add_argument('--config-name',
                         help='Configuration to set with scripts/config.pl')
     parser.add_argument('--config-set',
                         action='append', default=[],
-                        help='Additional symbol to set in config.h')
+                        help='Additional symbol to set in the config header')
     parser.add_argument('--config-unset',
                         action='append', default=[],
-                        help='Symbol to unset in config.h')
+                        help='Symbol to unset in the config header')
     parser.add_argument('--cross',
                         help='Run tests on a different architecture with Qemu. Forces an out-of-tree build.')
     parser.add_argument('--default-target',
