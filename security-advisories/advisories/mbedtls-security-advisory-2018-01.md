@@ -93,17 +93,3 @@ this is not practical, users should consider if disabling the option
 `MBEDTLS_PKCS1_V21` in the Mbed TLS configuration is practical for their
 application. Disabling RSASSA-PSS signatures in the verification profile at
 runtime is not a sufficient countermeasure.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Simon Butcher
-
-**Published:**
-Feb 5, 2018
-
-**Last updated:**
-Feb 5, 2018

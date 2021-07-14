@@ -41,17 +41,3 @@ Users should wherever possible upgrade to the newer version of mbed TLS. Where
 this is not practical, users should consider if changing the authentication to
 the 'required' mode `MBEDTLS_SSL_VERIFY_REQUIRED` is practical for their
 application.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Simon Butcher
-
-**Published:**
-Aug 28, 2017
-
-**Last updated:**
-Aug 28, 2017

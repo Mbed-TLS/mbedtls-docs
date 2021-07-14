@@ -45,17 +45,3 @@ configurations with `MBEDTLS_RSA_NO_CRT` enabled, this means n, e, d, p and q.
 ## Workaround
 
 There are no known workarounds.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Janos Follath
-
-**Published:**
-Feb 18, 2020
-
-**Last updated:**
-Feb 21, 2020

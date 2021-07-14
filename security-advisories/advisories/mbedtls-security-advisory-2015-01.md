@@ -64,17 +64,3 @@ following work-arounds.
   * Do not use ticket-based session resumption. This can be achieved in two ways: (1) do not attempt to resume a saved session (do not use `mbedtls_get_session()` / `mbedtls_set_session()`), or (2) if you want to resume sessions, make sure you're not using tickets by calling `ssl_set_session_tickets( SSL_SESSION_TICKETS_DISABLED )` in 1.3.x or `mbedtls_ssl_conf_session_tickets( MBEDTLS_SSL_SESSION_TICKETS_DISABLED )` in 2.x
 
   * If you accept hostnames from unstrusted parties, validate that they are at most 255 bytes long (limit defined by RFC 1305) before passing them to `ssl_set_hostname()`.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Manuel Pégourié-Gonnard
-
-**Published:**
-Oct 5, 2015
-
-**Last updated:**
-Oct 8, 2015

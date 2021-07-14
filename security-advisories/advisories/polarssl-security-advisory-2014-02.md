@@ -56,17 +56,3 @@ Alternatively the following patch can be applied to your current PolarSSL
 
 Upgrade to PolarSSL 1.3.8 for the 1.3 branch or PolarSSL 1.2.11 for the 1.2
 branch.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Jul 10, 2014
-
-**Last updated:**
-Jul 11, 2014

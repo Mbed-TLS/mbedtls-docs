@@ -50,17 +50,3 @@ depending on the branch they're currently using.
 Users are encouraged to use AEAD ciphersuites (CHACHA20-POLY1305, GCM, CCM)
 whenever possible, or it they have to use CBC, to enable use of the Encrypt-
 then-Mac extension on both sides of the connection.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Manuel Pégourié-Gonnard
-
-**Published:**
-Sep 1, 2020
-
-**Last updated:**
-Sep 1, 2020

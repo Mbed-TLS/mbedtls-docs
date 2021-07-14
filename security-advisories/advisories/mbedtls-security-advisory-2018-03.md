@@ -79,17 +79,3 @@ use RSA signature combined with (EC)DH(E) are not affected.
 In all cases, we recommend that you use key sizes that are a multiple of 64
 bits. We also recommend not to use the same key for decryption and for
 signature.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Janos Follath
-
-**Published:**
-Nov 28, 2018
-
-**Last updated:**
-Dec 4, 2018

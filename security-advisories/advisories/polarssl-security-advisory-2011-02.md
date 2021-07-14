@@ -50,17 +50,3 @@ less vulnerable to problems within a single source.
 
 We advise everyone to move to the new CTR_DRBG algorithm and entropy pool if
 possible.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Oct 14, 2012
-
-**Last updated:**
-Jul 12, 2013

@@ -46,17 +46,3 @@ We strongly advise you to consider if your application needs RC4-dependent
 ciphersuites and disable them if you have the option. No real action is needed
 if an adversary cannot gain access to (part of) the network and thus cannot
 inject packets between your servers and clients.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Mar 13, 2013
-
-**Last updated:**
-Jul 12, 2013

@@ -149,18 +149,3 @@ The patch for PolarSSL version 1.1.1 is as follows:
 
          k = mpi_msb( X );
          if( k < nbits ) MPI_CHK( mpi_shift_l( X, nbits - k ) );
-
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Oct 14, 2012
-
-**Last updated:**
-Oct 14, 2012

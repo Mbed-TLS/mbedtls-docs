@@ -49,17 +49,3 @@ depending on the branch they're currently using.
 ## Work-around
 
 None.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Manuel Pégourié-Gonnard
-
-**Published:**
-Sep 1, 2020
-
-**Last updated:**
-Sep 1, 2020

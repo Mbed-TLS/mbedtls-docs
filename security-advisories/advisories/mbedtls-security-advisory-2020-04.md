@@ -47,17 +47,3 @@ depending on the branch they're currently using.
 ## Work-around
 
 There is no known work-around. Affected users need to upgrade.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Manuel Pégourié-Gonnard
-
-**Published:**
-Apr 7, 2020
-
-**Last updated:**
-Apr 16, 2020

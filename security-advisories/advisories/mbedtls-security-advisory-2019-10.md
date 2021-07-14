@@ -44,17 +44,3 @@ Mbed TLS or Mbed Crypto.
 
 If this is not possible, as a workaround, disabling deterministic ECDSA
 prevents this attack.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Janos Follath
-
-**Published:**
-Sep 6, 2019
-
-**Last updated:**
-Sep 26, 2019

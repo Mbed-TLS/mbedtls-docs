@@ -113,18 +113,3 @@ The patch for PolarSSL version 0.14.0 is as follows:
          *olen = mpi_size( &ctx->K );
 
          MPI_CHK( mpi_write_binary( &ctx->K, output, *olen ) );
-
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Oct 14, 2012
-
-**Last updated:**
-Jul 12, 2013

@@ -67,17 +67,3 @@ clients.
 
 We want to thank Kenny and Nadhem for their support during the disclosure
 phase and the testing of our patch.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Feb 2, 2013
-
-**Last updated:**
-Jul 12, 2013

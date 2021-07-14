@@ -57,17 +57,3 @@ If your application calls `mbedtls_ecp_mul()` or
 `mbedtls_ecp_mul_restartable()` directly, you want to make sure that you're
 always passing a non-NULL `f_rng` parameter, pointing to a well-seeded
 instance of a secure RNG.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Manuel Pégourié-Gonnard
-
-**Published:**
-Jun 30, 2020
-
-**Last updated:**
-Jul 1, 2020

@@ -24,14 +24,14 @@ def scrape_advisory(drvr, url):
     # Convert to markdown
     article_md = html2text.html2text(article_html)
 
-    # Remove the 'Sharing' section
-    article_md = article_md.split("**Sharing:**")[0]
+    # Remove everything from the '### Like this?' heading onwards
+    article_md = article_md.split("### Like this?")[0]
 
     # Remove trailing whitespace from lines
     article_md = "\n".join([ln.rstrip() for ln in article_md.split("\n")])
 
-    # Remove trailing blank lines
-    article_md = article_md.rstrip("\n")
+    # Remove extra trailing blank lines
+    article_md = article_md.rstrip("\n") + "\n"
 
     return article_md
 

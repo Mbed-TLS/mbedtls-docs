@@ -35,17 +35,3 @@ the fix. Users should upgrade to Mbed Crypto 3.0.1 or later.
 ## Workaround
 
 There are no known workarounds.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Janos Follath
-
-**Published:**
-Oct 25, 2019
-
-**Last updated:**
-Jan 27, 2020

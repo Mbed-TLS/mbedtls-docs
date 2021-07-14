@@ -53,17 +53,3 @@ apply the patch, upgrade to version [1.1.8](/tech-
 updates/releases/polarssl-1.1.8-released), [1.2.9](/tech-
 updates/releases/polarssl-1.2.9-released) if outside parties are present or
 can connect to your network.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Oct 1, 2013
-
-**Last updated:**
-Oct 8, 2013

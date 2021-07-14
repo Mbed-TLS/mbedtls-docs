@@ -117,17 +117,3 @@ properly secure:
 
   * Maintain up-to-date systems with the latest security updates from the operating system vendor, and if necessary, any microcode updates issued by the processor vendor.
   * Ensure you follow security best practices and guidelines. For example, do not run any unstrusted software.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Simon Butcher
-
-**Published:**
-Jul 24, 2018
-
-**Last updated:**
-Jul 26, 2018

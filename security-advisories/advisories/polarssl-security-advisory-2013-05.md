@@ -44,17 +44,3 @@ Upgrade to PolarSSL version 1.3.0 of 1.2.9.
 
 We strongly advise you to consider upgrading to the 1.3 branch if outside
 parties are present or can connect to your network.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Oct 1, 2013
-
-**Last updated:**
-Oct 3, 2013

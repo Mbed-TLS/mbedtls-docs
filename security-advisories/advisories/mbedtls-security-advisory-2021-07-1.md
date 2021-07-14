@@ -33,17 +33,3 @@ depending on the branch they're currently using.
 ## Work-around
 
 None.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Manuel Pégourié-Gonnard
-
-**Published:**
-Jul 5, 2021
-
-**Last updated:**
-Jul 7, 2021

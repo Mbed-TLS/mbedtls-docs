@@ -64,17 +64,3 @@ The fix is a one-line addition to _asn1parse.c_ :
 
 Apply the above patch to your codebase, or download and use mbed TLS 1.3.10 or
 PolarSSL 1.2.13.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Jan 15, 2015
-
-**Last updated:**
-Feb 16, 2015

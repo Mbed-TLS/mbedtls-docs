@@ -45,17 +45,3 @@ At runtime you can call:
 
 
 This forces your SSL context to only negotiate TLS 1.0 or higher.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Oct 16, 2014
-
-**Last updated:**
-Oct 16, 2014

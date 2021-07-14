@@ -56,17 +56,3 @@ issue in Mbed TLS.
 If you use a DHE-PSK cipher suite, treat the length of the pre-shared key as a
 public quantity. If you have privacy concerns, always use a pre-shared key of
 the same length.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Manuel Pégourié-Gonnard
-
-**Published:**
-Sep 1, 2020
-
-**Last updated:**
-Sep 10, 2020

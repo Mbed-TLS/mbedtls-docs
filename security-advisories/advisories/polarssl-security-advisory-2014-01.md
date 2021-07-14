@@ -51,17 +51,3 @@ OpenSSL.
 
 **For OpenSSL users:** Switch to PolarSSL or upgrade to the latest version of
 OpenSSL.
-
-### Like this?
-
-**Section:**
-Security Advisories
-
-**Author:**
-Paul Bakker
-
-**Published:**
-Apr 8, 2014
-
-**Last updated:**
-Apr 8, 2014
