@@ -1665,7 +1665,7 @@ def main():
                         choices=_config_classes.keys(),
                         help='What to do with the config header')
     parser.add_argument('--config-name',
-                        help='Configuration to set with scripts/config.p[ly]')
+                        help='Configuration to set with scripts/config.{pl,py}')
     parser.add_argument('--config-set',
                         action='append', default=[],
                         help='Additional symbol to set in the config header')
