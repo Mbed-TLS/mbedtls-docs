@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Mbed TLS'
-copyright = '2021, The Mbed TLS Contributors'
+copyright = 'The Mbed TLS Contributors'
 author = 'The Mbed TLS Contributors'
 
 
