@@ -36,7 +36,7 @@ templates_path = ['_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
-                    'README.md', 'CONTRIBUTING.md', 'tools/README.md']
+                    'README.md', 'tools/README.md']
 
 
 # -- Options for HTML output -------------------------------------------------

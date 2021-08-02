@@ -23,6 +23,7 @@ For more information, see the following:
    architecture/proposed/long-term-plans.md
    security-advisories/security-advisories.md
    maintainers.md
+   CONTRIBUTING.md
 
 Indices and tables
 ==================

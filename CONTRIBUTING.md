@@ -1,5 +1,5 @@
-Contributing
-============
+Contributing to This Documentation
+==================================
 
 We gratefully accept contributions from the community.
 
