@@ -3,8 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Mbed TLS's documentation!
-====================================
+Mbed TLS documentation hub
+==========================
+
+This is the unified documentation for the Mbed TLS project.
+This documentation is currently incomplete and will be expanded over time.
+For more information, see the following:
+
+* `GitHub repository <https://github.com/ARMmbed/mbedtls>`_
+* `Documentation GitHub Repository <https://github.com/ARMmbed/mbedtls-docs>`_
+* `Mbed TLS page on trustedfirmware.org <https://www.trustedfirmware.org/projects/mbed-tls/>`_
+* `Legacy website <https://tls.mbed.org>`_
 
 .. toctree::
    :maxdepth: 2
