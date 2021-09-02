@@ -1451,6 +1451,29 @@ class BuildTreeMaker:
         # in a submodule.
         self.make_link('source/tests/suites', 'suites')
 
+    def prepare_source(self):
+        """Generate extra source files in the source tree.
+
+        This is necessary in the Mbed TLS development branch since before 3.0:
+        some source files are not checked into version control. Ideally this
+        script would know how to generate them in the target directory, but
+        this is not implemented yet. As an easier-to-implement stopgap measure,
+        generate the files in the source tree.
+
+        This implementation relies on the official Makefile, so it won't work
+        when re-running mbedtls-prepare-build for an in-tree build.
+        """
+        if not os.path.exists(os.path.join(self.source_path,
+                                           'library', 'error.c')):
+            for name in ('gnumake', 'gmake', 'make'):
+                make_command = shutil.which(name)
+                if make_command is not None:
+                    break
+            else:
+                raise Exception('No "make" command found to run "make generated_files"')
+            subprocess.check_call([make_command, 'generated_files'],
+                                  cwd=self.source_path)
+
     def run(self):
         """Go ahead and prepate the build tree."""
         for subdir in ([['include', 'mbedtls'],
@@ -1470,6 +1493,7 @@ class BuildTreeMaker:
                      ['tests', 'ssl-opt.sh']]:
             self.link_to_source_maybe(link)
         self.link_test_suites()
+        self.prepare_source()
         self.makefile.generate()
         self.config.run()
 
