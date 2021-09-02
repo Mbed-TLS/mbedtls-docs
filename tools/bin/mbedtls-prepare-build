@@ -463,7 +463,7 @@ class MakefileMaker:
         for com in commands:
             self.format('\t{}{}',
                         ('' if short is None else '$(Q)'),
-                        com.replace('\n', ' \\\n\t'))
+                        com.strip('\n').replace('\n', ' \\\n\t'))
         if help is not None:
             self.help[name] = help
         if phony:
@@ -1115,9 +1115,13 @@ class MakefileMaker:
         """
         use_run_test_suites = False
         for base, executables in groups.items():
-            short_base = re.sub(r'\Atest_suite_', r'', base)
-            skip_re = '(?!{})[A-Za-z_0-9]+'.format(short_base)
-            shell_code = '$(PERL) scripts/run-test-suites.pl --skip=\'{}\''.format(skip_re)
+            shell_code = '''
+failures=;
+for x in {}; do
+./$$x || failures="$$failures $$x";
+done;
+if [ -n "$$failures" ]; then echo; echo "Failures:$$failures"; false; fi
+'''.format(' '.join([re.sub(r'.*/', r'', exe) for exe in executables]))
             self.target('tests/' + base + '.run',
                         groups[base] + ['tests/seedfile'],
                         ['$(SETENV)cd tests && ' + shell_code],
