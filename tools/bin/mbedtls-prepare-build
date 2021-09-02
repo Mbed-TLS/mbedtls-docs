@@ -1025,17 +1025,24 @@ class MakefileMaker:
             tests_common_objects.append(object_file)
         self.assign('test_common_objects', *tests_common_objects)
 
-    def test_subsection(self, src, executables):
+    def test_subsection(self, src, executables, groups):
         """Emit the makefile rules to build one test suite.
 
         src is a SourceFile object for a .data file.
 
         This function appens the path to the test executable to the list
-        executables.)"""
+        executables.
+
+        If the .data file is part of a group (*.*.data where the part before the
+        first '.' identifies a group), add it to the groups dictionary. The
+        keys in this dictionary are group names (base names of .function files)
+        and the values are lists of dependencies.
+        """
         base = os.path.basename(src.base())
         source_dir = src.source_dir()
         try:
             function_base = base[:base.index('.')]
+            groups.setdefault(function_base, [])
         except ValueError:
             function_base = base
         data_file = src.relative_path()
@@ -1044,6 +1051,8 @@ class MakefileMaker:
         c_file = os.path.join('tests', base + '.c')
         exe_basename = base + self.executable_extension
         exe_file = os.path.join('tests', exe_basename)
+        if function_base in groups:
+            groups[function_base].append(exe_file)
         generate_command = self.test_generator.command(function_file, data_file)
         self.target(self.test_generator.target(c_file),
                     ['$(SOURCE_DIR)/' + base
@@ -1097,6 +1106,24 @@ class MakefileMaker:
                     short='VALGRIND tests/' + exe_basename,
                     phony=True)
 
+    def test_group_targets(self, groups):
+        """Emit run targets for test groups.
+
+        A test group is a group of test executables that share the same
+        .function file. The groups parameter is a dictionary mapping group
+        names to the list of executables that they contain.
+        """
+        use_run_test_suites = False
+        for base, executables in groups.items():
+            short_base = re.sub(r'\Atest_suite_', r'', base)
+            skip_re = '(?!{})[A-Za-z_0-9]+'.format(short_base)
+            shell_code = '$(PERL) scripts/run-test-suites.pl --skip=\'{}\''.format(skip_re)
+            self.target('tests/' + base + '.run',
+                        groups[base] + ['tests/seedfile'],
+                        ['$(SETENV)cd tests && ' + shell_code],
+                        short='',
+                        phony=True)
+
     def tests_section(self):
         """Emit makefile rules to build and run test suites."""
         self.comment('Test targets')
@@ -1122,9 +1149,11 @@ class MakefileMaker:
         data_files = self.list_source_files(self.options.source,
                                             'tests/suites/*.data')
         executables = []
+        groups = {}
         for src in data_files:
-            self.test_subsection(src, executables)
+            self.test_subsection(src, executables, groups)
         self.assign('test_apps', *executables)
+        self.test_group_targets(groups)
         self.target('tests', ['$(test_apps)'],
                     [],
                     help='Build the host tests.',
@@ -1147,7 +1176,7 @@ class MakefileMaker:
                     [],
                     help='Run all the test suites with Valgrind.',
                     phony=True)
-        self.help['tests/test_suite_%.run'] = 'Run one test suite.'
+        self.help['tests/test_suite_%.run'] = 'Run one test suite (or a group).'
         self.help['tests/test_suite_%.valgrind'] = 'Run one test suite with valgrind.'
         self.add_clean('$(test_apps)')
         # TODO: test_psa_constant_names.py
