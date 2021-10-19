@@ -70,10 +70,8 @@ _environment_options = [
                       'Options to always pass to ${CC} when compiling or linking'),
     EnvironmentOption('DLLFLAGS', '-shared',
                       'Options to pass to ${CC} when building a shared library'),
-    # TODO: allow linking extra libraries. This requires passing -l options
-    # _after_ the objects to link. But LDFLAGS and xxx_EXTRA_LDFLAGS are
-    # currently passed before. Should they be moved after? Or should there be
-    # different variables?
+    EnvironmentOption('EXTRA_LIBS', '',
+                      'Extra libraries to link programs (including tests) with'),
     EnvironmentOption('LDFLAGS', '',
                       'Options to always pass to ${CC} when linking'),
     EnvironmentOption('LIBRARY_EXTRA_CFLAGS', '',
@@ -465,7 +463,7 @@ class MakefileMaker:
         for com in commands:
             self.format('\t{}{}',
                         ('' if short is None else '$(Q)'),
-                        com.replace('\n', ' \\\n\t'))
+                        com.strip('\n').replace('\n', ' \\\n\t'))
         if help is not None:
             self.help[name] = help
         if phony:
@@ -779,7 +777,7 @@ class MakefileMaker:
         """
         self.comment('Library targets')
         self.assign('LIBRARY_CFLAGS',
-                    '-I include/mbedtls', # must come first, for "config.h"
+                    '-I include/mbedtls', # must come first, for the config header
                     '-I include',
                     self.include_path_options('library/*'),
                     '$(LIBRARY_EXTRA_CFLAGS)')
@@ -972,6 +970,7 @@ class MakefileMaker:
                            '$(LDFLAGS)',
                            '$(PROGRAMS_LDFLAGS)',
                            sjoin(*(dash_l_libs + self.extra_link_flags(base))),
+                           '$(EXTRA_LIBS)',
                            '-o $@')],
                     clean=False,
                     short='LD    $@')
@@ -1026,17 +1025,24 @@ class MakefileMaker:
             tests_common_objects.append(object_file)
         self.assign('test_common_objects', *tests_common_objects)
 
-    def test_subsection(self, src, executables):
+    def test_subsection(self, src, executables, groups):
         """Emit the makefile rules to build one test suite.
 
         src is a SourceFile object for a .data file.
 
         This function appens the path to the test executable to the list
-        executables.)"""
+        executables.
+
+        If the .data file is part of a group (*.*.data where the part before the
+        first '.' identifies a group), add it to the groups dictionary. The
+        keys in this dictionary are group names (base names of .function files)
+        and the values are lists of dependencies.
+        """
         base = os.path.basename(src.base())
         source_dir = src.source_dir()
         try:
             function_base = base[:base.index('.')]
+            groups.setdefault(function_base, [])
         except ValueError:
             function_base = base
         data_file = src.relative_path()
@@ -1045,6 +1051,8 @@ class MakefileMaker:
         c_file = os.path.join('tests', base + '.c')
         exe_basename = base + self.executable_extension
         exe_file = os.path.join('tests', exe_basename)
+        if function_base in groups:
+            groups[function_base].append(exe_file)
         generate_command = self.test_generator.command(function_file, data_file)
         self.target(self.test_generator.target(c_file),
                     ['$(SOURCE_DIR)/' + base
@@ -1098,6 +1106,28 @@ class MakefileMaker:
                     short='VALGRIND tests/' + exe_basename,
                     phony=True)
 
+    def test_group_targets(self, groups):
+        """Emit run targets for test groups.
+
+        A test group is a group of test executables that share the same
+        .function file. The groups parameter is a dictionary mapping group
+        names to the list of executables that they contain.
+        """
+        use_run_test_suites = False
+        for base, executables in groups.items():
+            shell_code = '''
+failures=;
+for x in {}; do
+./$$x || failures="$$failures $$x";
+done;
+if [ -n "$$failures" ]; then echo; echo "Failures:$$failures"; false; fi
+'''.format(' '.join([re.sub(r'.*/', r'', exe) for exe in executables]))
+            self.target('tests/' + base + '.run',
+                        groups[base] + ['tests/seedfile'],
+                        ['$(SETENV)cd tests && ' + shell_code],
+                        short='',
+                        phony=True)
+
     def tests_section(self):
         """Emit makefile rules to build and run test suites."""
         self.comment('Test targets')
@@ -1111,7 +1141,8 @@ class MakefileMaker:
                     '$(TESTS_EXTRA_LDFLAGS)')
         self.assign('TESTS_EXTRA_OBJECTS')
         self.assign('test_libs',
-                    *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)])
+                    *[self.dash_l_lib(lib) for lib in reversed(self.static_libraries)],
+                    '$(EXTRA_LIBS)')
         self.assign('test_build_deps',
                     '$(test_common_objects)', *self.static_libraries)
         self.add_clean(*['tests' + sub + '/*' + ext
@@ -1122,9 +1153,11 @@ class MakefileMaker:
         data_files = self.list_source_files(self.options.source,
                                             'tests/suites/*.data')
         executables = []
+        groups = {}
         for src in data_files:
-            self.test_subsection(src, executables)
+            self.test_subsection(src, executables, groups)
         self.assign('test_apps', *executables)
+        self.test_group_targets(groups)
         self.target('tests', ['$(test_apps)'],
                     [],
                     help='Build the host tests.',
@@ -1147,7 +1180,7 @@ class MakefileMaker:
                     [],
                     help='Run all the test suites with Valgrind.',
                     phony=True)
-        self.help['tests/test_suite_%.run'] = 'Run one test suite.'
+        self.help['tests/test_suite_%.run'] = 'Run one test suite (or a group).'
         self.help['tests/test_suite_%.valgrind'] = 'Run one test suite with valgrind.'
         self.add_clean('$(test_apps)')
         # TODO: test_psa_constant_names.py
@@ -1224,25 +1257,31 @@ class MakefileMaker:
         os.replace(temp_file, destination)
 
 class ConfigMaker:
-    """Parent class for config.h builders.
+    """Parent class for config.h or mbedtls_config.h builders.
 
     Typical usage: ChildClass(options).run()
     """
 
     def __init__(self, options):
-        """Initialize a config.h builder with the given command line options."""
+        """Initialize a config header builder with the given command line options."""
         self.options = options
         self.source_file = options.config_file
+        include_dir = os.path.join(options.source, 'include', 'mbedtls')
+        if os.path.exists(os.path.join(include_dir, 'build_info.h')):
+            self.version = 3
+            basename = 'mbedtls_config.h'
+        else:
+            self.version = 2
+            basename = 'config.h'
         if self.source_file is None:
-            self.source_file = os.path.join(options.source,
-                                            'include', 'mbedtls', 'config.h')
-            self.source_file_path = 'include/mbedtls/config.h'
+            self.source_file = os.path.join(include_dir, basename)
+            self.source_file_path = 'include/mbedtls/' + basename
             if not options.in_tree_build:
                 self.source_file_path = 'source/' + self.source_file_path
         else:
             self.source_file_path = os.path.abspath(self.source_file)
         self.target_file = os.path.join(options.dir,
-                                        'include', 'mbedtls', 'config.h')
+                                        'include', 'mbedtls', basename)
 
     def start(self):
         """Builder-specific method which is called first."""
@@ -1268,7 +1307,7 @@ class ConfigMaker:
         raise NotImplementedError
 
     def run(self):
-        """Go ahead and generate config.h."""
+        """Go ahead and generate the config header."""
         self.start()
         if self.options.config_name is not None:
             self.batch(self.options.config_name)
@@ -1293,16 +1332,20 @@ class ConfigMaker:
 _config_classes = {}
 
 class ConfigCopy(ConfigMaker):
-    """ConfigMaker implementation that copies config.h and runs config.pl."""
+    """ConfigMaker implementation that copies the config header and runs the config script."""
 
     def start(self):
         if not are_same_existing_files(self.source_file, self.target_file):
             shutil.copyfile(self.source_file, self.target_file)
 
     def run_config_script(self, *args):
-        cmd = ['perl', 'scripts/config.pl',
-               '-f', os.path.abspath(self.target_file)] + list(args)
-        subprocess.check_call(cmd, cwd=self.options.dir)
+        if os.path.exists(os.path.join(self.options.source,
+                                       'scripts', 'config.py')):
+            cmd = [sys.executable, 'scripts/config.py']
+        else:
+            cmd = ['perl', 'scripts/config.pl']
+        cmd += ['-f', os.path.abspath(self.target_file)] + list(args)
+        subprocess.check_call(cmd, cwd=self.options.source)
 
     def set(self, name, value=None):
         if value is None:
@@ -1321,7 +1364,7 @@ class ConfigCopy(ConfigMaker):
 _config_classes['copy'] = ConfigCopy
 
 class ConfigInclude(ConfigMaker):
-    """ConfigMaker implementation that makes a config.h that #includes the base one."""
+    """ConfigMaker implementation that makes a config script that #includes the base one."""
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -1345,12 +1388,13 @@ class ConfigInclude(ConfigMaker):
         self.lines.append('#undef ' + name)
 
     def finish(self):
-        self.lines.append('')
-        self.lines.append('#undef MBEDTLS_CHECK_CONFIG_H')
-        # Avoid a redefinition of this typedef
-        self.lines.append('#define mbedtls_iso_c_forbids_empty_translation_units mbedtls_iso_c_forbids_empty_translation_units2')
-        self.lines.append('#include "mbedtls/check_config.h"')
-        self.lines.append('#undef mbedtls_iso_c_forbids_empty_translation_units')
+        if self.version < 3:
+            self.lines.append('')
+            self.lines.append('#undef MBEDTLS_CHECK_CONFIG_H')
+            # Avoid a redefinition of this typedef
+            self.lines.append('#define mbedtls_iso_c_forbids_empty_translation_units mbedtls_iso_c_forbids_empty_translation_units2')
+            self.lines.append('#include "mbedtls/check_config.h"')
+            self.lines.append('#undef mbedtls_iso_c_forbids_empty_translation_units')
         self.lines.append('#endif')
         with open(self.target_file, 'w') as out:
             for line in self.lines:
@@ -1362,7 +1406,7 @@ class BuildTreeMaker:
 
     * Create a directory structure.
     * Create symbolic links to some files and directories from the source.
-    * Create a config.h.
+    * Create a config.h or mbedtls_config.h.
     * Create a Makefile.
 
     Typical usage: BuildTreeMaker(options).run()
@@ -1440,6 +1484,29 @@ class BuildTreeMaker:
         # in a submodule.
         self.make_link('source/tests/suites', 'suites')
 
+    def prepare_source(self):
+        """Generate extra source files in the source tree.
+
+        This is necessary in the Mbed TLS development branch since before 3.0:
+        some source files are not checked into version control. Ideally this
+        script would know how to generate them in the target directory, but
+        this is not implemented yet. As an easier-to-implement stopgap measure,
+        generate the files in the source tree.
+
+        This implementation relies on the official Makefile, so it won't work
+        when re-running mbedtls-prepare-build for an in-tree build.
+        """
+        if not os.path.exists(os.path.join(self.source_path,
+                                           'library', 'error.c')):
+            for name in ('gnumake', 'gmake', 'make'):
+                make_command = shutil.which(name)
+                if make_command is not None:
+                    break
+            else:
+                raise Exception('No "make" command found to run "make generated_files"')
+            subprocess.check_call([make_command, 'generated_files'],
+                                  cwd=self.source_path)
+
     def run(self):
         """Go ahead and prepate the build tree."""
         for subdir in ([['include', 'mbedtls'],
@@ -1459,6 +1526,7 @@ class BuildTreeMaker:
                      ['tests', 'ssl-opt.sh']]:
             self.link_to_source_maybe(link)
         self.link_test_suites()
+        self.prepare_source()
         self.makefile.generate()
         self.config.run()
 
@@ -1525,6 +1593,13 @@ _preset_options = {
         CC='arm-none-eabi-gcc',
         CFLAGS='-Os',
         COMMON_FLAGS='-mthumb -mcpu=cortex-m0plus',
+    ),
+    'mingw': argparse.Namespace(
+        _help='MinGW-w64',
+        AR='x86_64-w64-mingw32-ar',
+        CC='x86_64-w64-mingw32-gcc',
+        EXTRA_LIBS='-lws2_32',
+        CFLAGS='-O1',
     ),
     'msan': argparse.Namespace(
         _help='Clang Memory sanitizer (MSan), current configuration',
@@ -1642,18 +1717,18 @@ def main():
     parser.add_argument('--assembly-extension',
                         help='File extension for assembly files')
     parser.add_argument('--config-file',
-                        help='Base config.h to use')
+                        help='Base config header (config.h or mbedtls_config.h) to use')
     parser.add_argument('--config-mode',
                         choices=_config_classes.keys(),
-                        help='What to do with config.h')
+                        help='What to do with the config header')
     parser.add_argument('--config-name',
-                        help='Configuration to set with scripts/config.pl')
+                        help='Configuration to set with scripts/config.{pl,py}')
     parser.add_argument('--config-set',
                         action='append', default=[],
-                        help='Additional symbol to set in config.h')
+                        help='Additional symbol to set in the config header')
     parser.add_argument('--config-unset',
                         action='append', default=[],
-                        help='Symbol to unset in config.h')
+                        help='Symbol to unset in the config header')
     parser.add_argument('--cross',
                         help='Run tests on a different architecture with Qemu. Forces an out-of-tree build.')
     parser.add_argument('--default-target',
