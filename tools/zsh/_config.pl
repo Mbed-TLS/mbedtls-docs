@@ -10,7 +10,8 @@ _config_pl_symbols () {
 _config_pl () {
   local context state state_descr line
   typeset -A opt_args
-  local ret=0 config_h=$words[1]:h/../include/mbedtls/config.h
+  local ret=0 config_h
+  config_h=($words[1]:h/../include/mbedtls/(mbedtls_|)config.h(N[1]))
   local -a commands_with_descriptions
   commands_with_descriptions=(
     'baremetal:All features for bare metal platforms'
