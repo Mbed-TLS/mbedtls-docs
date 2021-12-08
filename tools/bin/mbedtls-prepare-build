@@ -1185,6 +1185,25 @@ if [ -n "$$failures" ]; then echo; echo "Failures:$$failures"; false; fi
         self.add_clean('$(test_apps)')
         # TODO: test_psa_constant_names.py
 
+    COVERAGE_RULE = """
+        rm -rf Coverage
+        lcov --capture --initial --directory library -o files.info
+        lcov --rc lcov_branch_coverage=1 --capture --directory library -o tests.info
+        lcov --rc lcov_branch_coverage=1 --add-tracefile files.info --add-tracefile tests.info -o all.info
+        lcov --rc lcov_branch_coverage=1 --remove all.info -o final.info '*.h'
+        genhtml --title "Mbed TLS" --keep-descriptions --legend --branch-coverage -o Coverage final.info
+        rm -f files.info tests.info all.info final.info descriptions
+        """
+
+    def misc_section(self):
+        """Emit miscellaneous other targets.
+        """
+        if self.options.coverage_targets:
+            self.target('lcov',
+                        [],
+                        [line.strip() for line in self.COVERAGE_RULE.split('\n')],
+                        help='Generate test coverage report')
+
     def help_lines(self):
         """Return the lines of text to show for the 'help' target."""
         return ['{:<14} : {}'.format(name, self.help[name])
@@ -1223,6 +1242,8 @@ if [ -n "$$failures" ]; then echo; echo "Failures:$$failures"; false; fi
         self.programs_section()
         self.line('')
         self.tests_section()
+        self.line('')
+        self.misc_section()
         self.line('')
         self.target('clean', [],
                     ['$(RM) ' + patterns for patterns in self.clean],
@@ -1550,6 +1571,7 @@ _preset_options = {
         _help='Build with coverage instrumentation',
         config_name='full',
         config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        coverage_targets=True,
         CFLAGS='-O0',
         COMMON_FLAGS='--coverage -g3',
     ),
@@ -1629,6 +1651,7 @@ _preset_options = {
 The keys are the field names in the options object.
 """
 _default_options = {
+    'coverage_targets': False,
     'default_target': 'all',
     'dir': os.curdir,
     'executable_extension': '',
@@ -1729,6 +1752,9 @@ def main():
     parser.add_argument('--config-unset',
                         action='append', default=[],
                         help='Symbol to unset in the config header')
+    parser.add_argument('--coverage-targets',
+                        type=arg_type_bool,
+                        help='Whether to include test coverage measurement targets')
     parser.add_argument('--cross',
                         help='Run tests on a different architecture with Qemu. Forces an out-of-tree build.')
     parser.add_argument('--default-target',
