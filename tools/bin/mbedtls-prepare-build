@@ -627,7 +627,12 @@ class MakefileMaker:
         """Whether the specified C file is generated.
 
         Implemented with heuristics based on the name.
+
+        This does not include configuration-independent files pre-generated
+        before the build.
         """
+        if 'ssl_debug_helpers_generated.' in filename:
+            return False
         if '_generated.' in filename:
             return True
         if 'psa_crypto_driver_wrappers.c' in filename:
