@@ -974,7 +974,9 @@ class MakefileMaker:
         object_deps = [dep + self.object_extension
                        for dep in self.auxiliary_objects(base)
                        if self.source_exists(dep + '.c')]
-        if base != 'programs/test/dlopen':
+        if base == 'programs/test/dlopen':
+            object_deps.append('library/platform.o library/platform_util.o')
+        else:
             object_deps.append('$(test_common_objects)')
         libs = list(reversed(self.program_libraries(base)))
         lib_files = ['library/libmbed{}{}'.format(lib, self.library_extension)
