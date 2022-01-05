@@ -5,7 +5,13 @@
 This is a generated list of our released advisories. A more comprehensive view
 is available in the Security Center.
 
-28 advisories have been released.
+29 advisories have been released.
+
+First published Dec 14, 2021.
+
+  * [Double Free in `mbedtls_ssl_set_session()` in an error case.](./advisories/mbedtls-security-advisory-2021-12.md)
+
+First published Jul 7, 2021.
 
   * [Local side channel attack on static Diffie-Hellman with Montgomery curves](./advisories/mbedtls-security-advisory-2021-07-2.md)
 
