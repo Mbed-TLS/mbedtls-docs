@@ -6,6 +6,7 @@ import argparse
 import glob
 import itertools
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -53,6 +54,10 @@ class EnvironmentOption:
         self.default = default
         self.help = help
 
+DEFAULT_LDFLAGS_L_DLOPEN = (
+    '-ldl' if platform.system() == 'Linux' else
+    '')
+
 """A list of makefile variables that can be set through command line options.
 """
 _environment_options = [
@@ -74,6 +79,10 @@ _environment_options = [
                       'Extra libraries to link programs (including tests) with'),
     EnvironmentOption('LDFLAGS', '',
                       'Options to always pass to ${CC} when linking'),
+    EnvironmentOption('LDFLAGS_L_DLOPEN', DEFAULT_LDFLAGS_L_DLOPEN,
+                      'Options to pass to ${CC} when linking a program that calls dlopen()'),
+    EnvironmentOption('LDFLAGS_L_THREADS', '-lpthread',
+                      'Options to pass to ${CC} when linking a program that uses threads'),
     EnvironmentOption('LIBRARY_EXTRA_CFLAGS', '',
                       'Options to pass to ${CC} when compiling library sources'),
     EnvironmentOption('PERL', 'perl',
@@ -627,7 +636,12 @@ class MakefileMaker:
         """Whether the specified C file is generated.
 
         Implemented with heuristics based on the name.
+
+        This does not include configuration-independent files pre-generated
+        before the build.
         """
+        if 'ssl_debug_helpers_generated.' in filename:
+            return False
         if '_generated.' in filename:
             return True
         if 'psa_crypto_driver_wrappers.c' in filename:
@@ -887,6 +901,8 @@ class MakefileMaker:
         """
         basename = os.path.basename(app)
         subdir = os.path.basename(os.path.dirname(app))
+        if basename == 'dlopen':
+            return []
         if (subdir == 'ssl' or basename.startswith('ssl') or
             subdir == 'fuzz' or
             basename in {'cert_app', 'dh_client', 'dh_server', 'udp_proxy'}
@@ -909,7 +925,9 @@ class MakefileMaker:
         """
         flags = []
         if 'thread' in app:
-            flags.append('-lpthread')
+            flags.append('$(LDFLAGS_L_THREADS)')
+        if 'dlopen' in app:
+            flags.append('$(LDFLAGS_L_DLOPEN)')
         return flags
 
     def add_run_target(self, program, executable=None):
@@ -956,7 +974,10 @@ class MakefileMaker:
         object_deps = [dep + self.object_extension
                        for dep in self.auxiliary_objects(base)
                        if self.source_exists(dep + '.c')]
-        object_deps.append('$(test_common_objects)')
+        if base == 'programs/test/dlopen':
+            object_deps.append('library/platform.o library/platform_util.o')
+        else:
+            object_deps.append('$(test_common_objects)')
         libs = list(reversed(self.program_libraries(base)))
         lib_files = ['library/libmbed{}{}'.format(lib, self.library_extension)
                      for lib in libs]
