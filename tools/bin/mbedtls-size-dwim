@@ -1,0 +1,86 @@
+#!/bin/sh
+set -eu
+
+help () {
+    cat <<EOF
+Usage: $0 [OPTION]... [DIR]
+Build Mbed TLS in DIR and record the size of the library modules.
+DIR defaults to the current directory.
+
+This script must be run from a Git working directory. If there are
+changes since the last commit, display the size differences compared
+to the last commit. If there are no changes since the last commit,
+compare with the previous commit and record the current sizes in a text file.
+
+  -n NAME   Use NAME as the build name in log files. (Default: based on DIR.)
+  -r REF    Compare with REF instead of the last/previous commit.
+EOF
+}
+
+if [ "${1:-}" = "--help" ]; then
+    help
+    exit
+fi
+
+ref_commit=
+
+while getopts hn:r: OPTLET; do
+    case "$OPTLET" in
+        h) help; exit;;
+        n) build_name=$OPTARG;;
+        r) ref_commit=$(git rev-parse "$OPTARG");;
+        \?) help >&2; exit 120;;
+    esac
+done
+shift $((OPTIND - 1))
+
+build_dir=${1:-.}
+build_dir=${build_dir%/}
+build_name=default
+if [ -n "${1:+set}" ]; then
+    build_name=${build_dir#build-}
+fi
+
+base_name=${0##*/}
+log_file=$base_name.log
+
+run_size () (
+    cd "$build_dir" && size library/*.o
+)
+
+compare_with () {
+    join -j 6 -o 1.1,2.1,1.6 "$1" - |
+    awk '$1 != $2 {print $3 ": " $1 " -> " $2 " (diff: " ($1-$2) ")" }'
+}
+
+make -C "$build_dir" lib >"$log_file" 2>&1 || {
+    cat "$log_file" >&2
+    exit 2
+}
+
+modified=1
+if git diff --quiet HEAD; then
+    modified=
+fi
+
+head_commit=$(git rev-parse HEAD)
+if [ -z "$ref_commit" ]; then
+    if [ -n "$modified" ]; then
+        ref_commit=$head_commit
+    else
+        ref_commit=$(git rev-parse 'HEAD~1')
+    fi
+fi
+
+head_size=size-$build_name-$head_commit.txt
+ref_size=size-$build_name-$ref_commit.txt
+
+if [ -n "$modified" ]; then
+    cat "$ref_size" >/dev/null # abort if absent
+    run_size | compare_with "$ref_size"
+else
+    run_size >"$head_size"
+    if [ -e "$ref_size" ]; then
+        <"$head_size" compare_with "$ref_size"
+    fi
+fi
