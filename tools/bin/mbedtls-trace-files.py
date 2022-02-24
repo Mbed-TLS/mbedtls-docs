@@ -24,6 +24,7 @@ The outputs are stored in a subdirectory named for each commit hash.
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 from typing import List, Optional
@@ -91,6 +92,16 @@ class Archiver:
         if self.run_after:
             subprocess.check_call(self.run_after, shell=True)
 
+    def list_revisions(self, revision_or_range: str) -> List[str]:
+        """Return the list of commits in revision_or_range.
+
+        If revision_or_range is a single revision, return it in a one-element
+        list. Otherwise return the list of commits in that range.
+        """
+        return subprocess.check_output(
+            ['git', 'rev-list', '--no-walk', revision_or_range]
+        ).decode('ascii').split()
+
     def archive_revisions(self, revision_range: str, files: List[str]) -> None:
         """Archive generated files for a given revision range.
 
@@ -99,14 +110,13 @@ class Archiver:
         """
         self.prepare()
         try:
-            revisions = subprocess.check_output(
-                ['git', 'log', '--format=%H', revision_range]
-            ).decode('ascii').split()
+            revisions = self.list_revisions(revision_range)
             for revision in revisions:
                 self.archive_revision(revision, files)
         finally:
             self.done()
 
+REVISION_SEPARATOR = re.compile('[\t\n\f\r ,]')
 
 def main() -> None:
     """Command line entry point."""
@@ -120,11 +130,11 @@ def main() -> None:
     parser.add_argument('--run-before', '-r', metavar='CMD',
                         help='Shell command to run before each build')
     parser.add_argument('revisions', metavar='REVISIONS',
-                        help='Comma-separated of Git revisions (see gitrevisions(7))')
+                        help='Comma/blank-separated list of Git revisions or ranges (see gitrevisions(7))')
     parser.add_argument('files', metavar='FILE', nargs='*',
                         help='File to archive')
     options = parser.parse_args()
-    revision_ranges = options.revisions.split(',')
+    revision_ranges = REVISION_SEPARATOR.split(options.revisions)
     del options.revisions
     files = options.files
     del options.files
