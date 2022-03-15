@@ -1698,6 +1698,7 @@ class BuildTreeMaker:
                      ['tests', 'configs'],
                      ['tests', 'compat.sh'],
                      ['tests', 'data_files'],
+                     ['tests', 'opt-testcases'],
                      ['tests', 'scripts'],
                      ['tests', 'ssl-opt.sh']]:
             self.link_to_source_maybe(link)
