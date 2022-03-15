@@ -1523,19 +1523,16 @@ class ConfigCopy(ConfigMaker):
         pass
 _config_classes['copy'] = ConfigCopy
 
-class ConfigInclude(ConfigMaker):
-    """ConfigMaker implementation that makes a config script that #includes the base one."""
+class ConfigExplicit(ConfigMaker):
+    """ConfigMaker implementation that makes a config script with only explicitly set options."""
 
     def __init__(self, *args) -> None:
         super().__init__(*args)
         self.lines = [] #type: List[str]
 
     def start(self) -> None:
-        source_path = self.source_file_path
-        if not os.path.isabs(source_path):
-            source_path = os.path.join(os.pardir, os.pardir, source_path)
-        self.lines.append('#ifndef MBEDTLS_CHECK_CONFIG_H')
-        self.lines.append('#include "{}"'.format(source_path))
+        self.lines.append('#ifndef MBEDTLS_CONFIG_H')
+        self.lines.append('#define MBEDTLS_CONFIG_H')
         self.lines.append('')
 
     def set(self, name: str, value: Optional[str] = None) -> None:
@@ -1548,6 +1545,25 @@ class ConfigInclude(ConfigMaker):
         self.lines.append('#undef ' + name)
 
     def finish(self) -> None:
+        self.lines.append('')
+        self.lines.append('#endif')
+        with open(self.target_file, 'w') as out:
+            for line in self.lines:
+                out.write(line + '\n')
+_config_classes['explicit'] = ConfigExplicit
+
+class ConfigInclude(ConfigExplicit):
+    """ConfigMaker implementation that makes a config script that #includes the base one."""
+
+    def start(self) -> None:
+        source_path = self.source_file_path
+        if not os.path.isabs(source_path):
+            source_path = os.path.join(os.pardir, os.pardir, source_path)
+        self.lines.append('#ifndef MBEDTLS_CHECK_CONFIG_H')
+        self.lines.append('#include "{}"'.format(source_path))
+        self.lines.append('')
+
+    def finish(self) -> None:
         if self.version < 3:
             self.lines.append('')
             self.lines.append('#undef MBEDTLS_CHECK_CONFIG_H')
@@ -1555,10 +1571,7 @@ class ConfigInclude(ConfigMaker):
             self.lines.append('#define mbedtls_iso_c_forbids_empty_translation_units mbedtls_iso_c_forbids_empty_translation_units2')
             self.lines.append('#include "mbedtls/check_config.h"')
             self.lines.append('#undef mbedtls_iso_c_forbids_empty_translation_units')
-        self.lines.append('#endif')
-        with open(self.target_file, 'w') as out:
-            for line in self.lines:
-                out.write(line + '\n')
+        super().finish()
 _config_classes['include'] = ConfigInclude
 
 
