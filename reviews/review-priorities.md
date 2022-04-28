@@ -8,7 +8,7 @@ Please note that if your PR falls into the lower priority categories, we are hap
 
 - Commenting on the PR to explain why there is an important use-case for it
 - Other users commenting to show wider demand for the PR
-- Attending the bi-weekly Tech Forum call to discuss the PR
+- Attending the regular Tech Forum call to discuss the PR
 - Advocating for the PR on the project mailing list
 - Find others to review your PR
 
@@ -21,7 +21,7 @@ Please note that these are the priorities used by the core team. External contri
 
 This classification is used for PRs which are typically one of:
 
-- Security (or other high-priority) bug-fixes
+- Security (or other high-priority) bug fixes
 - Items that the Mbed TLS team have planned for delivery in the current quarter
 
 These PRs should receive review promptly.
@@ -29,12 +29,14 @@ These PRs should receive review promptly.
 
 ### priority-medium
 
-This is for PRs which advance the core team's aims for Mbed TLS, but are not needed to meet delivery in the current quarter. These would typically address one of the following areas:
+This is for PRs which advance the core team's aims for Mbed TLS, but are not needed to meet delivery in the current quarter. These PRs will receive review on a best-effort basis, but assistance from the community would be helpful.
+
+These would typically address one of the following areas:
 
 * Security
   * Non-urgent and lower-priority security improvements
 * Robustness
-  * Non-urgent bug-fixes
+  * Non-urgent bug fixes
   * Test improvements
   * Documentation
 * PSA Crypto
