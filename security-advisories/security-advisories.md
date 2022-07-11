@@ -5,7 +5,11 @@
 This is a generated list of our released advisories. A more comprehensive view
 is available in the Security Center.
 
-29 advisories have been released.
+30 advisories have been released.
+
+First published July 11, 2022
+
+  * [Buffer overread in DTLS ClientHello parsing](./advisories/mbedtls-security-advisory-2022-07.md)
 
 First published Dec 14, 2021.
 
