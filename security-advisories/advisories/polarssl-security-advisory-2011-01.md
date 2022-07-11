@@ -5,13 +5,11 @@
 **CVE** |  CVE-2011-1923
 **Date** |  25th of February 2011
 **Affects** |  PolarSSL library 0.14.0 and earlier and PolarSSL 0.99-pre1
-**Not affected** |  Instances not using ciphersuites that are based on Diffie-
-Hellman key-exchange
+**Not affected** |  Instances not using ciphersuites that are based on Diffie-<br>Hellman key-exchange
 **Impact** |  Possible man in the middle
 **Exploit** |  Withheld
 **Solution** |  Upgrade to PolarSSL 0.14.2 or PolarSSL 0.99-pre3
-**Workaround** |  Disable ciphersuites using Diffie-Hellman key exchange,
-enable full authentication or apply patch provided.
+**Workaround** |  Disable ciphersuites using Diffie-Hellman key exchange,<br>enable full authentication or apply patch provided.
 **Credits** |  Larry Highsmith, [Subreption LLS](http://www.subreption.com/)
 
 By posing as a man in the middle and modifying packets as the secure

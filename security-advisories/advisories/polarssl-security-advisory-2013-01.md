@@ -4,10 +4,8 @@
 ---|---
 **CVE** |  CVE-2013-0169
 **Date** |  4th of February 2013 ( **Updated on 11th of March 2013** )
-**Affects** |  all checked SSL libraries including PolarSSL versions prior to
-PolarSSL 1.2.6
-**Not affected** |  AES-GCM-based or RC4-based ciphersuites. Servers and
-clients that only communicate over a private network
+**Affects** |  all checked SSL libraries including PolarSSL versions prior to<br>PolarSSL 1.2.6
+**Not affected** |  AES-GCM-based or RC4-based ciphersuites. Servers and<br>clients that only communicate over a private network
 **Impact** |  Possible (partial) recovery of plaintext
 **Exploit** |  Withheld
 **Solution** |  Upgrade to PolarSSL 1.2.6 or PolarSSL 1.1.6

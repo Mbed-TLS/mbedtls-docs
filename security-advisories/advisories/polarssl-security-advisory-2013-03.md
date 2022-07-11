@@ -5,8 +5,7 @@
 **CVE** |  CVE-2013-4623
 **Date** |  21th of June 2013
 **Affects** |  PolarSSL versions prior to 1.1.7 or 1.2.8
-**Not affected** |  PolarSSL Clients / Servers without PEM support
-(POLARSSL_PEM_C not defined)
+**Not affected** |  PolarSSL Clients / Servers without PEM support<br>(POLARSSL_PEM_C not defined)
 **Impact** |  Denial of service through infinite loops
 **Exploit** |  Withheld
 **Solution** |  Upgrade to PolarSSL 1.1.7 or 1.2.8

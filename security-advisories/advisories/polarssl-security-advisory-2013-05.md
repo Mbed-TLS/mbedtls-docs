@@ -1,7 +1,6 @@
 # PolarSSL Security Advisory 2013-05
 
-**Title** |  Timing Attack against protected RSA-CRT implementation used in
-PolarSSL
+**Title** |  Timing Attack against protected RSA-CRT implementation used in<br>PolarSSL
 ---|---
 **CVE** |  CVE-2013-5915
 **Date** |  1st of October 2013

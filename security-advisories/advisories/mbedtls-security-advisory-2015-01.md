@@ -5,9 +5,7 @@
 **CVE** |  CVE-2015-5291
 **Date** |  5th of October 2015
 **Affects** |  PolarSSL 1.0 and up
-**Not affected** |  PolarSSL 1.2.17 and up, mbed TLS 1.3.14 and up, mbed TLS
-2.1.2 and up and any version with clients not using session tickets nor
-accepting hostnames from untrusted parties
+**Not affected** |  PolarSSL 1.2.17 and up, mbed TLS 1.3.14 and up, mbed TLS<br>2.1.2 and up and any version with clients not using session tickets nor<br>accepting hostnames from untrusted parties
 **Impact** |  Denial of service and possible remote code execution
 **Severity** |  High
 **Exploit** |  Withheld

@@ -7,8 +7,7 @@
 **Affects** |  All versions of Mbed TLS and Mbed Crypto
 **Impact** |  A powerful local attacker can extract the private key
 **Severity** |  High
-**Credit** |  (found internally following previous work from Alejandro Cabrera
-Aldaya and Billy Bob Brumley)
+**Credit** |  (found internally following previous work from Alejandro Cabrera<br>Aldaya and Billy Bob Brumley)
 
 ## Vulnerability
 

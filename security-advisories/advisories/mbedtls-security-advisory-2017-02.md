@@ -1,14 +1,11 @@
 # mbed TLS Security Advisory 2017-02
 
-**Title** |  Bypass of authentication of peer possible when the authentication
-mode is configured as 'optional'
+**Title** |  Bypass of authentication of peer possible when the authentication<br>mode is configured as 'optional'
 ---|---
 **Date** |  28th August 2017
-**Affects** |  All versions of mbed TLS from version 1.3.10 and up, including
-all 2.1 and later releases
+**Affects** |  All versions of mbed TLS from version 1.3.10 and up, including<br>all 2.1 and later releases
 **Not affected** |  mbed TLS 1.3.9 and earlier
-**Impact** |  Use of the 'optional' authentication mode can permit the peer to
-bypass peer authentication
+**Impact** |  Use of the 'optional' authentication mode can permit the peer to<br>bypass peer authentication
 **Severity** |  High
 
 ## Vulnerability

@@ -5,13 +5,11 @@ for each possible attack.
 
 * * *
 
-**Title** |  Remote plaintext recovery on use of CBC based ciphersuites
-through a timing side-channel
+**Title** |  Remote plaintext recovery on use of CBC based ciphersuites<br>through a timing side-channel
 ---|---
 **CVE** |  CVE-2018-0497
 **Date** |  25th July 2018
-**Affects** |  All versions of Mbed TLS from version 1.2 upwards, including
-all 2.1, 2.7 and later releases
+**Affects** |  All versions of Mbed TLS from version 1.2 upwards, including<br>all 2.1, 2.7 and later releases
 **Impact** |  Allows a remote attacker to partially recover the plaintext
 **Severity** |  High
 **Credit** |  Kenny Paterson, Eyal Ronen and Adi Shamir
@@ -59,13 +57,11 @@ CBC, or using hash sizes other than SHA-384, or using Encrypt-then-Mac ([RFC
 
 * * *
 
-**Title** |  Plaintext recovery on use of CBC based ciphersuites through a
-cache based side-channel
+**Title** |  Plaintext recovery on use of CBC based ciphersuites through a<br>cache based side-channel
 ---|---
 **CVE** |  CVE-2018-0498
 **Date** |  25th July 2018
-**Affects** |  All versions of Mbed TLS from version 1.2 upwards, including
-all 2.1, 2.7 and later releases
+**Affects** |  All versions of Mbed TLS from version 1.2 upwards, including<br>all 2.1, 2.7 and later releases
 **Impact** |  Allows partial recovery of the plaintext
 **Severity** |  High
 **Credit** |  Kenny Paterson, Eyal Ronen and Adi Shamir

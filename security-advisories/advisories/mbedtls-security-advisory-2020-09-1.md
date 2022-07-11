@@ -7,8 +7,7 @@
 **Affects** |  All versions of Mbed TLS
 **Impact** |  A local attacker can extract portions of the plaintext
 **Severity** |  High
-**Credit** |  Tuba Yavuz, Farhaan Fowze, Ken (Yihan) Bai, Grant Hernandez,
-Kevin Butler and Dave Tian.
+**Credit** |  Tuba Yavuz, Farhaan Fowze, Ken (Yihan) Bai, Grant Hernandez,<br>Kevin Butler and Dave Tian.
 
 ## Vulnerability
 
