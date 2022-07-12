@@ -19,7 +19,7 @@ on a local system, there seems to be enough indication that this can properly
 be performed from a remote system as well.
 
 The attack has been added to the known attacks in [our Security
-Center](/security).
+Center](../security-advisories.md).
 
 ## Impact
 
