@@ -29,7 +29,7 @@ directly from the services and users and to impersonate services and users."_
 [[1]](http://heartbleed.com/)
 
 The attack has been added to the known attacks in [our Security
-Center](/security).
+Center](../security-advisories.md).
 
 ## Impact
 
