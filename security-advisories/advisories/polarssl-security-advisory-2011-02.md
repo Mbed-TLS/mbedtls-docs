@@ -8,8 +8,7 @@
 **Not affected** |  Instances not running in virtualized environments
 **Impact** |  Key retrieval possible
 **Exploit** |  Withheld
-**Solution** |  Upgrade to PolarSSL 1.1.0 and move to CTR_DRBG random
-generator
+**Solution** |  Upgrade to PolarSSL 1.1.0 and move to CTR_DRBG random<br>generator
 **Workaround** |  Provide another random source to the SSL layer
 **Credits** |  Jacob Appelbaum, Marsh Ray, and Oscar Koeroo
 

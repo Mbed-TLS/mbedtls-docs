@@ -5,8 +5,7 @@
 **CVE** |  CVE-2019-16910
 **Date** |  6th Sept 2019
 **Affects** |  All versions of Mbed TLS and Mbed Crypto
-**Impact** |  If the victim can be tricked to sign the same message
-repeatedly, the private key may be recoverable through side channels.
+**Impact** |  If the victim can be tricked to sign the same message<br>repeatedly, the private key may be recoverable through side channels.
 **Severity** |  High
 **Credit** |  Jack Lloyd
 

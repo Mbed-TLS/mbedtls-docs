@@ -9,8 +9,7 @@
 **Impact** |  Possible remote exploit
 **Exploit** |  Withheld
 **Solution** |  Upgrade to PolarSSL 1.1.8, or 1.2.0 and later
-**Credits** |  independently found by both TrustInSoft and Paul Brodeur of
-Leviathan Security Group
+**Credits** |  independently found by both TrustInSoft and Paul Brodeur of<br>Leviathan Security Group
 
 When using TLS 1.1, `ssl_read_record()` omits to check the length of the
 incoming data. This results in a possible buffer overflow of the receive-

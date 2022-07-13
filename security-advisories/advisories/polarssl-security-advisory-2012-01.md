@@ -5,15 +5,11 @@
 **CVE** |  CVE-2012-2130
 **Date** |  23th of April 2012
 **Affects** |  PolarSSL 0.99-pre4 up to and including PolarSSL 1.1.1
-**Not affected** |  Instances not using Diffie-Hellman key exchange and not
-using prime or RSA key generation
-**Impact** |  Weak prime generation and key negotiation resulting in possible
-breach of confidentiality and integrity
+**Not affected** |  Instances not using Diffie-Hellman key exchange and not<br>using prime or RSA key generation
+**Impact** |  Weak prime generation and key negotiation resulting in possible<br>breach of confidentiality and integrity
 **Exploit** |  Withheld
 **Solution** |  Upgrade to PolarSSL 1.1.2
-**Workaround** |  Disable ciphersuites using Diffie-Hellman key exchange or
-apply patch provided. Re-generate primes or RSA keys created with affected
-versions of PolarSSL.
+**Workaround** |  Disable ciphersuites using Diffie-Hellman key exchange or<br>apply patch provided. Re-generate primes or RSA keys created with affected<br>versions of PolarSSL.
 **Credits** |  Ruslan Yushchenko
 
 During code migration a bug was introduced in PolarSSL 0.99-pre4. As a result

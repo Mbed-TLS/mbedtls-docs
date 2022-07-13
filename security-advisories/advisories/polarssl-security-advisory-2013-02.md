@@ -5,13 +5,11 @@
 **CVE** |  Unknown
 **Date** |  13th of March 2013
 **Affects** |  all SSL libraries including PolarSSL
-**Not affected** |  AES-GCM-based or CBC-based ciphersuites. Servers and
-clients that only communicate over a private network
+**Not affected** |  AES-GCM-based or CBC-based ciphersuites. Servers and<br>clients that only communicate over a private network
 **Impact** |  Possible (partial) recovery of plaintext
 **Exploit** |  Withheld
 **Solution** |  Disable RC4-based ciphersuites
-**Credits** |  Nadhem AlFardan, Dan Bernstein, Kenny Paterson, Bertram
-Poettering and Jacob Schuldt
+**Credits** |  Nadhem AlFardan, Dan Bernstein, Kenny Paterson, Bertram<br>Poettering and Jacob Schuldt
 
 [On the Security of RC4 in TLS](http://www.isg.rhul.ac.uk/tls) describes an
 attack that applies to implementations of RC4-mode ciphersuites in all version

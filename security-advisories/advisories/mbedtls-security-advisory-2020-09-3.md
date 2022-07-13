@@ -5,11 +5,9 @@
 **CVE** |  Unknown
 **Date** |  1st of September, 2020
 **Affects** |  All versions of Mbed TLS
-**Impact** |  An active network attacker can learn the size of the pre-shared
-key
+**Impact** |  An active network attacker can learn the size of the pre-shared<br>key
 **Severity** |  Low
-**Credit** |  Robert Merget, Marcus Brinkmann, Nimrod Aviram and Juraj
-Somorovsky
+**Credit** |  Robert Merget, Marcus Brinkmann, Nimrod Aviram and Juraj<br>Somorovsky
 
 ## Vulnerability
 

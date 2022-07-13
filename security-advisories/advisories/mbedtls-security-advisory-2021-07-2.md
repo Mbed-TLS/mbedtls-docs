@@ -1,15 +1,13 @@
 # Local side channel attack on static Diffie-Hellman with Montgomery curves
 
-**Title** |  Local side channel attack on static Diffie-Hellman with
-Montgomery curves
+**Title** |  Local side channel attack on static Diffie-Hellman with<br>Montgomery curves
 ---|---
 **CVE** |  (none)
 **Date** |  7th of July, 2021
 **Affects** |  All versions of Mbed TLS and Mbed Crypto
 **Impact** |  A local attacker can extract the private key
 **Severity** |  High
-**Credit** |  Leila Batina, Lukas Chmielewski, Björn Haase, Niels Samwel and
-Peter Schwabe
+**Credit** |  Leila Batina, Lukas Chmielewski, Björn Haase, Niels Samwel and<br>Peter Schwabe
 
 ## Vulnerability
 

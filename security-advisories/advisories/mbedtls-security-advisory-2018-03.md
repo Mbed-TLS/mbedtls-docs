@@ -5,13 +5,9 @@
 **CVE** |  CVE-2018-19608
 **Date** |  30th Nov 2018
 **Affects** |  All versions of Mbed TLS
-**Impact** |  Allows a local _unprivileged_ attacker to recover the plaintext
-of RSA decryption, which is used in RSA-without-(EC)DH(E) cipher suites
+**Impact** |  Allows a local _unprivileged_ attacker to recover the plaintext<br>of RSA decryption, which is used in RSA-without-(EC)DH(E) cipher suites
 **Severity** |  High
-**Credit** |  Eyal Ronen (Weizmann Institute), Robert Gillham (University of
-Adelaide), Daniel Genkin (University of Michigan), Adi Shamir (Weizmann
-Institute), David Wong (NCC Group), and Yuval Yarom (University of Adelaide
-and Data61).
+**Credit** |  Eyal Ronen (Weizmann Institute), Robert Gillham (University of<br>Adelaide), Daniel Genkin (University of Michigan), Adi Shamir (Weizmann<br>Institute), David Wong (NCC Group), and Yuval Yarom (University of Adelaide<br>and Data61).
 
 ## Vulnerability
 
