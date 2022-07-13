@@ -44,44 +44,46 @@ patch.
 
 
 
-    diff --git a/include/polarssl/x509.h b/include/polarssl/x509.h
-    index 87151c9..296925f 100644
-    --- a/include/polarssl/x509.h
-    +++ b/include/polarssl/x509.h
-    @@ -425,6 +425,18 @@ extern "C" {
+```diff
+diff --git a/include/polarssl/x509.h b/include/polarssl/x509.h
+index 87151c9..296925f 100644
+--- a/include/polarssl/x509.h
++++ b/include/polarssl/x509.h
+@@ -425,6 +425,18 @@ extern "C" {
 
-     /** \ingroup x509_module */
-     /**
-    + * \brief          Parse a single DER formatted certificate and add it
-    + *                 to the chained list.
-    + *
-    + * \param chain    points to the start of the chain
-    + * \param buf      buffer holding the certificate DER data
-    + * \param buflen   size of the buffer
-    + *
-    + * \return         0 if successful, or a specific X509 or PEM error code
-    + */
-    +int x509parse_crt_der( x509_cert *chain, const unsigned char *buf, size_t buflen );
-    +
-    +/**
-      * \brief          Parse one or more certificates and add them
-      *                 to the chained list. Parses permissively. If some
-      *                 certificates can be parsed, the result is the number
-    diff --git a/library/ssl_tls.c b/library/ssl_tls.c
-    index 9087ab4..e0cddf8 100644
-    --- a/library/ssl_tls.c
-    +++ b/library/ssl_tls.c
-    @@ -2375,8 +2375,8 @@ int ssl_parse_certificate( ssl_context *ssl )
-                 return( POLARSSL_ERR_SSL_BAD_HS_CERTIFICATE );
-             }
+ /** \ingroup x509_module */
+ /**
++ * \brief          Parse a single DER formatted certificate and add it
++ *                 to the chained list.
++ *
++ * \param chain    points to the start of the chain
++ * \param buf      buffer holding the certificate DER data
++ * \param buflen   size of the buffer
++ *
++ * \return         0 if successful, or a specific X509 or PEM error code
++ */
++int x509parse_crt_der( x509_cert *chain, const unsigned char *buf, size_t buflen );
++
++/**
+  * \brief          Parse one or more certificates and add them
+  *                 to the chained list. Parses permissively. If some
+  *                 certificates can be parsed, the result is the number
+diff --git a/library/ssl_tls.c b/library/ssl_tls.c
+index 9087ab4..e0cddf8 100644
+--- a/library/ssl_tls.c
++++ b/library/ssl_tls.c
+@@ -2375,8 +2375,8 @@ int ssl_parse_certificate( ssl_context *ssl )
+             return( POLARSSL_ERR_SSL_BAD_HS_CERTIFICATE );
+         }
 
-    -        ret = x509parse_crt( ssl->session_negotiate->peer_cert, ssl->in_msg + i,
-    -                             n );
-    +        ret = x509parse_crt_der( ssl->session_negotiate->peer_cert,
-    +                                 ssl->in_msg + i, n );
-             if( ret != 0 )
-             {
-                 SSL_DEBUG_RET( 1, " x509parse_crt", ret );
+-        ret = x509parse_crt( ssl->session_negotiate->peer_cert, ssl->in_msg + i,
+-                             n );
++        ret = x509parse_crt_der( ssl->session_negotiate->peer_cert,
++                                 ssl->in_msg + i, n );
+         if( ret != 0 )
+         {
+             SSL_DEBUG_RET( 1, " x509parse_crt", ret );
+```
 
 
 ## Advice

@@ -64,84 +64,86 @@ The patch for PolarSSL version 1.1.1 is as follows:
 
 
 
-    Index: library/dhm.c
-    ===================================================================
-    --- library/dhm.c
-    +++ library/dhm.c
-    @@ -130,19 +130,21 @@
-                          int (*f_rng)(void *, unsigned char *, size_t),
-                          void *p_rng )
-     {
-    -    int ret, n;
-    +    int ret;
-         size_t n1, n2, n3;
-         unsigned char *p;
+```diff
+Index: library/dhm.c
+===================================================================
+--- library/dhm.c
++++ library/dhm.c
+@@ -130,19 +130,21 @@
+                      int (*f_rng)(void *, unsigned char *, size_t),
+                      void *p_rng )
+ {
+-    int ret, n;
++    int ret;
+     size_t n1, n2, n3;
+     unsigned char *p;
 
+     /*
+      * Generate X as large as possible ( < P )
+      */
+-    n = x_size / sizeof( t_uint ) + 1;
++    do
++    {
++        mpi_fill_random( &ctx->X, x_size, f_rng, p_rng );
+
+-    mpi_fill_random( &ctx->X, n, f_rng, p_rng );
+-
+-    while( mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
++        while( mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
+            mpi_shift_r( &ctx->X, 1 );
++    }
++    while( dhm_check_range( &ctx->X, &ctx->P ) != 0 );
+
+     /*
+      * Calculate GX = G^X mod P
+@@ -207,7 +209,7 @@
+                      int (*f_rng)(void *, unsigned char *, size_t),
+                      void *p_rng )
+ {
+-    int ret, n;
++    int ret;
+
+     if( ctx == NULL || olen < 1 || olen > ctx->len )
+         return( POLARSSL_ERR_DHM_BAD_INPUT_DATA );
+@@ -215,12 +217,14 @@
+     /*
+      * generate X and calculate GX = G^X mod P
+      */
+-    n = x_size / sizeof( t_uint ) + 1;
++    do
++    {
++        mpi_fill_random( &ctx->X, x_size, f_rng, p_rng );
+
+-    mpi_fill_random( &ctx->X, n, f_rng, p_rng );
+-
+-    while( mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
++        while( mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
+            mpi_shift_r( &ctx->X, 1 );
++    }
++    while( dhm_check_range( &ctx->X, &ctx->P ) != 0 );
+
+     MPI_CHK( mpi_exp_mod( &ctx->GX, &ctx->G, &ctx->X,
+                           &ctx->P , &ctx->RP ) );
+Index: library/bignum.c
+===================================================================
+--- library/bignum.c
++++ library/bignum.c
+@@ -1813,7 +1813,7 @@
          /*
-          * Generate X as large as possible ( < P )
+          * pick a random A, 1 < A < |X| - 1
           */
-    -    n = x_size / sizeof( t_uint ) + 1;
-    +    do
-    +    {
-    +        mpi_fill_random( &ctx->X, x_size, f_rng, p_rng );
+-        MPI_CHK( mpi_fill_random( &A, X->n, f_rng, p_rng ) );
++        MPI_CHK( mpi_fill_random( &A, X->n * ciL, f_rng, p_rng ) );
 
-    -    mpi_fill_random( &ctx->X, n, f_rng, p_rng );
-    -
-    -    while( mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
-    +        while( mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
-                mpi_shift_r( &ctx->X, 1 );
-    +    }
-    +    while( dhm_check_range( &ctx->X, &ctx->P ) != 0 );
+         if( mpi_cmp_mpi( &A, &W ) >= 0 )
+         {
+@@ -1885,7 +1885,7 @@
 
-         /*
-          * Calculate GX = G^X mod P
-    @@ -207,7 +209,7 @@
-                          int (*f_rng)(void *, unsigned char *, size_t),
-                          void *p_rng )
-     {
-    -    int ret, n;
-    +    int ret;
+     n = BITS_TO_LIMBS( nbits );
 
-         if( ctx == NULL || olen < 1 || olen > ctx->len )
-             return( POLARSSL_ERR_DHM_BAD_INPUT_DATA );
-    @@ -215,12 +217,14 @@
-         /*
-          * generate X and calculate GX = G^X mod P
-          */
-    -    n = x_size / sizeof( t_uint ) + 1;
-    +    do
-    +    {
-    +        mpi_fill_random( &ctx->X, x_size, f_rng, p_rng );
+-    MPI_CHK( mpi_fill_random( X, n, f_rng, p_rng ) );
++    MPI_CHK( mpi_fill_random( X, n * ciL, f_rng, p_rng ) );
 
-    -    mpi_fill_random( &ctx->X, n, f_rng, p_rng );
-    -
-    -    while( mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
-    +        while( mpi_cmp_mpi( &ctx->X, &ctx->P ) >= 0 )
-                mpi_shift_r( &ctx->X, 1 );
-    +    }
-    +    while( dhm_check_range( &ctx->X, &ctx->P ) != 0 );
-
-         MPI_CHK( mpi_exp_mod( &ctx->GX, &ctx->G, &ctx->X,
-                               &ctx->P , &ctx->RP ) );
-    Index: library/bignum.c
-    ===================================================================
-    --- library/bignum.c
-    +++ library/bignum.c
-    @@ -1813,7 +1813,7 @@
-             /*
-              * pick a random A, 1 < A < |X| - 1
-              */
-    -        MPI_CHK( mpi_fill_random( &A, X->n, f_rng, p_rng ) );
-    +        MPI_CHK( mpi_fill_random( &A, X->n * ciL, f_rng, p_rng ) );
-
-             if( mpi_cmp_mpi( &A, &W ) >= 0 )
-             {
-    @@ -1885,7 +1885,7 @@
-
-         n = BITS_TO_LIMBS( nbits );
-
-    -    MPI_CHK( mpi_fill_random( X, n, f_rng, p_rng ) );
-    +    MPI_CHK( mpi_fill_random( X, n * ciL, f_rng, p_rng ) );
-
-         k = mpi_msb( X );
-         if( k < nbits ) MPI_CHK( mpi_shift_l( X, nbits - k ) );
+     k = mpi_msb( X );
+     if( k < nbits ) MPI_CHK( mpi_shift_l( X, nbits - k ) );
+```

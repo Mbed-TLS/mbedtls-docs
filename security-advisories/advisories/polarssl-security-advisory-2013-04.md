@@ -30,19 +30,21 @@ patch.
 
 
 
-    diff --git a/library/ssl_tls.c b/library/ssl_tls.c
-    index 27f2172..a5d1cb1 100644
-    --- a/library/ssl_tls.c
-    +++ b/library/ssl_tls.c
-    @@ -1159,7 +1159,7 @@ int ssl_read_record( ssl_context *ssl )
-             /*
-              * TLS encrypted messages can have up to 256 bytes of padding
-              */
-    -        if( ssl->minor_ver == SSL_MINOR_VERSION_1 &&
-    +        if( ssl->minor_ver >= SSL_MINOR_VERSION_1 &&
-                 ssl->in_msglen > ssl->minlen + SSL_MAX_CONTENT_LEN + 256 )
-             {
-                 SSL_DEBUG_MSG( 1, ( "bad message length" ) );
+```diff
+diff --git a/library/ssl_tls.c b/library/ssl_tls.c
+index 27f2172..a5d1cb1 100644
+--- a/library/ssl_tls.c
++++ b/library/ssl_tls.c
+@@ -1159,7 +1159,7 @@ int ssl_read_record( ssl_context *ssl )
+         /*
+          * TLS encrypted messages can have up to 256 bytes of padding
+          */
+-        if( ssl->minor_ver == SSL_MINOR_VERSION_1 &&
++        if( ssl->minor_ver >= SSL_MINOR_VERSION_1 &&
+             ssl->in_msglen > ssl->minlen + SSL_MAX_CONTENT_LEN + 256 )
+         {
+             SSL_DEBUG_MSG( 1, ( "bad message length" ) );
+```
 
 
 ## Advice
