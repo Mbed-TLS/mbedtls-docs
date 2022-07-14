@@ -48,7 +48,7 @@ patch.
 ## Advice
 
 We strongly advise you to consider upgrading to the 1.3 branch, or otherwise
-apply the patch, upgrade to version [1.1.8](/tech-
-updates/releases/polarssl-1.1.8-released), [1.2.9](/tech-
-updates/releases/polarssl-1.2.9-released) if outside parties are present or
-can connect to your network.
+apply the patch, upgrade to version
+[1.1.8](/tech-updates/releases/polarssl-1.1.8-released),
+[1.2.9](/tech-updates/releases/polarssl-1.2.9-released) if outside parties are
+present or can connect to your network.

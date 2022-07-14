@@ -18,7 +18,7 @@ When reviewing a PR and leaving comments, make it clear not just what you see as
 
 Reviewers should verify the following checklist against the PR and should make clear if they did any additional checks, such as building the code or testing the code, and if so, under what conditions.
 
-To help you get into the right mindset for reviewing, please see [Gilles Peskine's talk: How to be an effective reviewer](How to be an effective Mbed TLS reviewer.pdf).
+To help you get into the right mindset for reviewing, please see [Gilles Peskine's talk: How to be an effective reviewer](<How to be an effective Mbed TLS reviewer.pdf>).
 
 ### Suitability
 

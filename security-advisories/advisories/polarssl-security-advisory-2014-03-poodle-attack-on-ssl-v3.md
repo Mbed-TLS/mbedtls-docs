@@ -14,8 +14,8 @@ SSLv3.
 
 This Security Advisory only describes the impact and workaround for the POODLE
 attack. A more detailed explanation can be found in our post that puts [the
-POODLE attack in perspective](/tech-updates/blog/sslv3-and-poodle-in-
-perspective).
+POODLE attack in
+perspective](/tech-updates/blog/sslv3-and-poodle-in-perspective).
 
 ## Impact of POODLE
 
