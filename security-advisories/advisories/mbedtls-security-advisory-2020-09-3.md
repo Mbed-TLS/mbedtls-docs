@@ -13,8 +13,8 @@
 
 This is an advisory of a security vulnerability in the TLS specification,
 which has very limited impact on Mbed TLS: the Raccoon attack (for details see
-the [website](https://raccoon-attack.com/) and the [paper](https://raccoon-
-attack.com/RacoonAttack.pdf)).
+the [website](https://raccoon-attack.com/) and the
+[paper](https://raccoon-attack.com/RacoonAttack.pdf)).
 
 In the TLS protocol, the calculation of the premaster secret from the finite-
 field Diffie-Hellman (FFDH) shared secret strips the leading zero bytes. If

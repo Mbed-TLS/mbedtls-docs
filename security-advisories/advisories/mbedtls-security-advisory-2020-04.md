@@ -15,10 +15,8 @@ The modular inverse operation as implemented in Mbed TLS is vulnerable to a
 single-trace side channel attack [discovered by Alejandro Cabrera Aldaya and
 Billy Brumley](https://eprint.iacr.org/2020/055) which may allow a local
 adversary to recover the full value of the operand. (Some consequences of this
-attack on [RSA](https://tls.mbed.org/tech-updates/security-advisories/mbedtls-
-security-advisory-2020-02) and [ECDSA](https://tls.mbed.org/tech-
-updates/security-advisories/mbedtls-security-advisory-2019-12) were fixed in
-previous releases.)
+attack on [RSA](mbedtls-security-advisory-2020-02.md) and
+[ECDSA](mbedtls-security-advisory-2019-12.md) were fixed in previous releases.)
 
 Mbed TLS, like most libraries implementing ECC, uses projective coordinates to
 represent points internally. It is [known](https://eprint.iacr.org/2003/191)

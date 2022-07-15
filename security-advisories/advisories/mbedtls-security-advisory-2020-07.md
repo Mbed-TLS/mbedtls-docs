@@ -12,9 +12,8 @@
 
 The scalar multiplication function in Mbed TLS accepts a random number
 generator (RNG) as an optional argument and, if provided, uses it to protect
-against some attacks, including a [previous attack](https://tls.mbed.org/tech-
-updates/security-advisories/mbedtls-security-advisory-2020-04) by the same
-authors.
+against some attacks, including a [previous
+attack](mbedtls-security-advisory-2020-04.md) by the same authors.
 
 It is the caller's responsibility to provide a RNG if protection against side-
 channel attacks is desired; however two groups of functions in Mbed TLS itself

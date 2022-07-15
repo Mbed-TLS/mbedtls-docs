@@ -86,7 +86,7 @@ patch.
 
 ## Advice
 
-We strongly advise you to consider upgrading to version [1.1.7](/tech-
-updates/releases/polarssl-1.1.7-released) or [1.2.8](/tech-
-updates/releases/polarssl-1.2.8-released), or apply the provided path, if
-outside parties are present or can connect to your network.
+We strongly advise you to consider upgrading to version
+[1.1.7](/tech-updates/releases/polarssl-1.1.7-released) or
+[1.2.8](/tech-updates/releases/polarssl-1.2.8-released), or apply the provided
+path, if outside parties are present or can connect to your network.
