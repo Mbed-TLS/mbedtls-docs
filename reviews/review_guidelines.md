@@ -121,3 +121,8 @@ If the changes concern alternative implementations:
 * Are all required key sizes and other variants provided by the alternative implementation?
 * Does the behavior seem sensible, given public knowledge of the accelerator and its HAL?
    * E.g. sha256_update(ctx1); sha256_update(ctx2): check that there's no leak between the two contexts.
+
+
+### Restricted PRs
+
+For PRs in mbedtls-restricted, to minimise conflicts when merging with the non-restricted branch, these must be as minimal as possible. Reviewers should check for parts of the PR that could be split out and raised as a separate PR on the main repository.
