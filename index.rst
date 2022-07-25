@@ -24,10 +24,3 @@ For more information, see the following:
    security-advisories/security-advisories.md
    maintainers.md
    CONTRIBUTING.md
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
