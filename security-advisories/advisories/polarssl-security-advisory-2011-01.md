@@ -3,7 +3,7 @@
 **Title** |  Possible man in the middle in Diffie Hellman key exchange
 ---|---
 **CVE** |  CVE-2011-1923
-**Date** |  25th of February 2011
+**Date** |  25th of February 2011 ( **Updated on 12th of July 2013** )
 **Affects** |  PolarSSL library 0.14.0 and earlier and PolarSSL 0.99-pre1
 **Not affected** |  Instances not using ciphersuites that are based on Diffie-<br>Hellman key-exchange
 **Impact** |  Possible man in the middle

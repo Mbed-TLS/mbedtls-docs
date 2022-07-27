@@ -3,7 +3,7 @@
 **Title** |  Remote attack using crafted certificates
 ---|---
 **CVE** |  CVE-2015-1182
-**Date** |  19th of January 2015
+**Date** |  19th of January 2015 ( **Updated on 16th of February 2015** )
 **Affects** |  PolarSSL 1.0 and up
 **Not affected** |  mbed TLS 1.3.10 and up, PolarSSL 1.2.13 and up and any<br>version with servers not asking for client certificates
 **Impact** |  Denial of service and possible remote code execution

@@ -3,7 +3,7 @@
 **Title** |  Buffer overflow in ssl_read_record()
 ---|---
 **CVE** |  CVE-2013-5914
-**Date** |  1st of October 2013
+**Date** |  1st of October 2013 ( **Updated on 8th of October 2013** )
 **Affects** |  PolarSSL versions prior to 1.1.8
 **Not affected** |  PolarSSL 1.2.0 and above
 **Impact** |  Possible remote exploit

@@ -3,7 +3,7 @@
 **Title** |  Weak Diffie-Hellman and RSA key generation
 ---|---
 **CVE** |  CVE-2012-2130
-**Date** |  23th of April 2012
+**Date** |  23th of April 2012 ( **Updated on 14th of October 2012** )
 **Affects** |  PolarSSL 0.99-pre4 up to and including PolarSSL 1.1.1
 **Not affected** |  Instances not using Diffie-Hellman key exchange and not<br>using prime or RSA key generation
 **Impact** |  Weak prime generation and key negotiation resulting in possible<br>breach of confidentiality and integrity

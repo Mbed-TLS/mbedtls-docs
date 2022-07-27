@@ -2,7 +2,7 @@
 
 **Title** |  Cache attack against RSA key import in SGX
 ---|---
-**Date** |  20th February 2020
+**Date** |  20th February 2020 ( **Updated on 21st February 2020** )
 **Affects** |  All versions of Mbed TLS and Mbed Crypto
 **Impact** |  The RSA private key is recoverable through side channels.
 **Severity** |  Medium

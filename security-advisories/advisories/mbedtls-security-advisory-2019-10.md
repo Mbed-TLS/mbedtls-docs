@@ -3,7 +3,7 @@
 **Title** |  Side channel attack on deterministic ECDSA
 ---|---
 **CVE** |  CVE-2019-16910
-**Date** |  6th Sept 2019
+**Date** |  6th September 2019 ( **Updated on 26th September 2019** )
 **Affects** |  All versions of Mbed TLS and Mbed Crypto
 **Impact** |  If the victim can be tricked to sign the same message<br>repeatedly, the private key may be recoverable through side channels.
 **Severity** |  High

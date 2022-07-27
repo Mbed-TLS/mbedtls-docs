@@ -8,7 +8,7 @@ for each possible attack.
 **Title** |  Risk of remote code execution when truncated HMAC is enabled
 ---|---
 **CVE** |  CVE-2018-0488
-**Date** |  1st February 2018
+**Date** |  1st February 2018 ( **Updated on 5th February 2018** )
 **Affects** |  All versions of Mbed TLS from version 1.3.0 and up, including<br>all 2.1 and later releases
 **Not affected** |  Mbed TLS 1.2.19 and earlier
 **Impact** |  Enabling truncated HMAC can lead to remote code execution
@@ -54,7 +54,7 @@ configuration is practical for their application.
 **Title** |  Risk of remote code execution when verifying RSASSA-PSS<br>signatures
 ---|---
 **CVE** |  CVE-2018-0487
-**Date** |  1st February 2018
+**Date** |  1st February 2018 ( **Updated on 5th February 2018** )
 **Affects** |  All versions of Mbed TLS from version 1.3.8 and up, including<br>all 2.1 and later releases
 **Not affected** |  Mbed TLS 1.3.7 and earlier
 **Impact** |  Verifying a maliciously constructed RSASSA-PSS signature can<br>lead to remote code execution

@@ -3,7 +3,7 @@
 **Title** |  Weak random number generation within virtualized environments
 ---|---
 **CVE** |  CVE-2011-4574
-**Date** |  15th of December 2011
+**Date** |  15th of December 2011 ( **Updated on 12th of July 2013** )
 **Affects** |  All version of PolarSSL prior to 1.1.0
 **Not affected** |  Instances not running in virtualized environments
 **Impact** |  Key retrieval possible

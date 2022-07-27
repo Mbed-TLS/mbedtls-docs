@@ -3,7 +3,7 @@
 **Title** |  Denial of Service through Certificate message during handshake
 ---|---
 **CVE** |  CVE-2013-4623
-**Date** |  21th of June 2013
+**Date** |  21th of June 2013 ( **Updated on 22nd of August 2013** )
 **Affects** |  PolarSSL versions prior to 1.1.7 or 1.2.8
 **Not affected** |  PolarSSL Clients / Servers without PEM support<br>(POLARSSL_PEM_C not defined)
 **Impact** |  Denial of service through infinite loops

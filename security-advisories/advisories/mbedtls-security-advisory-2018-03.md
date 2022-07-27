@@ -3,7 +3,7 @@
 **Title** |  Local timing attack on RSA decryption
 ---|---
 **CVE** |  CVE-2018-19608
-**Date** |  30th Nov 2018
+**Date** |  30th November 2018 ( **Updated on 4th December 2018** )
 **Affects** |  All versions of Mbed TLS
 **Impact** |  Allows a local _unprivileged_ attacker to recover the plaintext<br>of RSA decryption, which is used in RSA-without-(EC)DH(E) cipher suites
 **Severity** |  High

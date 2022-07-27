@@ -3,7 +3,7 @@
 **Title** |  Side channel attack on ECDSA
 ---|---
 **CVE** |  CVE-2020-10932
-**Date** |  14th of April, 2020
+**Date** |  14th of April, 2020 ( **Updated on 16th of April, 2020** )
 **Affects** |  All versions of Mbed TLS and Mbed Crypto
 **Impact** |  A local attacker can extract the private key
 **Severity** |  High

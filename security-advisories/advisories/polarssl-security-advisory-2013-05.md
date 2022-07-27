@@ -3,7 +3,7 @@
 **Title** |  Timing Attack against protected RSA-CRT implementation used in<br>PolarSSL
 ---|---
 **CVE** |  CVE-2013-5915
-**Date** |  1st of October 2013
+**Date** |  1st of October 2013 ( **Updated on 3rd of October 2013** )
 **Affects** |  PolarSSL versions prior to 1.2.9 and 1.3.0
 **Not affected** |  PolarSSL 1.3.0 and above
 **Impact** |  Recovery of the private RSA key
