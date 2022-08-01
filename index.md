@@ -14,7 +14,7 @@ For more information, see the following:
 maxdepth: 2
 caption: Contents
 ---
-reviews/review_guidelines.md
+reviews/index.md
 architecture/proposed/long-term-plans.md
 security-advisories/security-advisories.md
 maintainers.md
