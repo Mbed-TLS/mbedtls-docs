@@ -64,18 +64,17 @@ To help you get into the right mindset for reviewing, please see [Gilles Peskine
     * Detailed description of commit in commit message
     * On its own line starting with "Fixes ", a comma separated list of GitHub issues that this commit fixes. Repeat the "fixes" keyword for each issue so that GitHub can read the issues. GitHub will close the issue automatically, so if it takes multiple commits to fix an issue, just list "Fixes" on the most recent commit.
   * Example:
- ```
-Add tests for rsa_deduce_moduli()
 
-Add tests for the new library function mbedtls_rsa_deduce_moduli() for
-deducing the prime factors (P,Q) of an RSA modulus N from knowledge of a
-pair (D,E) of public and private exponent:
+        Add tests for rsa_deduce_moduli()
 
-- Two toy examples that can be checked by hand, one fine and with bad parameters
-- Two real world examples, one fine and one with bad parameters
+        Add tests for the new library function mbedtls_rsa_deduce_moduli() for
+        deducing the prime factors (P,Q) of an RSA modulus N from knowledge of a
+        pair (D,E) of public and private exponent:
 
-Fixes #416, fixes #417
- ```
+        - Two toy examples that can be checked by hand, one fine and with bad parameters
+        - Two real world examples, one fine and one with bad parameters
+
+        Fixes #416, fixes #417
 * Commit messages must NOT contain the following
   * References to issue trackers other than the public GitHub repository 
 * Correctness

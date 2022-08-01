@@ -31,83 +31,85 @@ The patch for PolarSSL version 0.14.0 is as follows:
 
 
 
-    Index: dhm.c
-    ===================================================================
-    --- dhm.c       (revision 950)
-    +++ dhm.c       (working copy)
-    @@ -63,6 +63,35 @@
-     }
+```diff
+Index: dhm.c
+===================================================================
+--- dhm.c       (revision 950)
++++ dhm.c       (working copy)
+@@ -63,6 +63,35 @@
+ }
 
+ /*
++ * Verify sanity of public parameter with regards to P
++ *
++ * Public parameter should be: 2 <= public_param <= P - 2
++ *
++ * For more information on the attack, see:
++ *  <http://www.cl.cam.ac.uk/~rja14/Papers/psandqs.pdf>
++ *  <http://web.nvd.nist.gov/view/vuln/detail>?vulnId=CVE-2005-2643
++ */
++static int dhm_check_range( const mpi *public_param, const mpi *P )
++{
++    mpi L, U;
++    int ret = POLARSSL_ERR_DHM_BAD_INPUT_DATA;
++
++    mpi_init( &L, &U, NULL );
++    mpi_lset( &L, 2 );
++    mpi_sub_int( &U, P, 2 );
++
++    if( mpi_cmp_mpi( public_param, &L ) >= 0 &&
++        mpi_cmp_mpi( public_param, &U ) <= 0 )
++    {
++        ret = 0;
++    }
++
++    mpi_free( &L, &U, NULL );
++
++    return( ret );
++}
++
++/*
+  * Parse the ServerKeyExchange parameters
+  */
+ int dhm_read_params( dhm_context *ctx,
+@@ -78,6 +107,9 @@
+         ( ret = dhm_read_bignum( &ctx->GY, p, end ) ) != 0 )
+         return( ret );
+
++    if( ( ret = dhm_check_range( &ctx->GY, &ctx->P ) ) != 0 )
++        return( ret );
++
+     ctx->len = mpi_size( &ctx->P );
+
+     if( end - *p < 2 )
+@@ -122,6 +154,9 @@
+     MPI_CHK( mpi_exp_mod( &ctx->GX, &ctx->G, &ctx->X,
+                           &ctx->P , &ctx->RP ) );
+
++    if( ( ret = dhm_check_range( &ctx->GX, &ctx->P ) ) != 0 )
++        return( ret );
++
      /*
-    + * Verify sanity of public parameter with regards to P
-    + *
-    + * Public parameter should be: 2 <= public_param <= P - 2
-    + *
-    + * For more information on the attack, see:
-    + *  <http://www.cl.cam.ac.uk/~rja14/Papers/psandqs.pdf>
-    + *  <http://web.nvd.nist.gov/view/vuln/detail>?vulnId=CVE-2005-2643
-    + */
-    +static int dhm_check_range( const mpi *public_param, const mpi *P )
-    +{
-    +    mpi L, U;
-    +    int ret = POLARSSL_ERR_DHM_BAD_INPUT_DATA;
-    +
-    +    mpi_init( &L, &U, NULL );
-    +    mpi_lset( &L, 2 );
-    +    mpi_sub_int( &U, P, 2 );
-    +
-    +    if( mpi_cmp_mpi( public_param, &L ) >= 0 &&
-    +        mpi_cmp_mpi( public_param, &U ) <= 0 )
-    +    {
-    +        ret = 0;
-    +    }
-    +
-    +    mpi_free( &L, &U, NULL );
-    +
-    +    return( ret );
-    +}
-    +
-    +/*
-      * Parse the ServerKeyExchange parameters
+      * export P, G, GX
       */
-     int dhm_read_params( dhm_context *ctx,
-    @@ -78,6 +107,9 @@
-             ( ret = dhm_read_bignum( &ctx->GY, p, end ) ) != 0 )
-             return( ret );
+@@ -199,6 +233,9 @@
+     MPI_CHK( mpi_exp_mod( &ctx->GX, &ctx->G, &ctx->X,
+                           &ctx->P , &ctx->RP ) );
 
-    +    if( ( ret = dhm_check_range( &ctx->GY, &ctx->P ) ) != 0 )
-    +        return( ret );
-    +
-         ctx->len = mpi_size( &ctx->P );
++    if( ( ret = dhm_check_range( &ctx->GX, &ctx->P ) ) != 0 )
++        return( ret );
++
+     MPI_CHK( mpi_write_binary( &ctx->GX, output, olen ) );
 
-         if( end - *p < 2 )
-    @@ -122,6 +154,9 @@
-         MPI_CHK( mpi_exp_mod( &ctx->GX, &ctx->G, &ctx->X,
-                               &ctx->P , &ctx->RP ) );
+ cleanup:
+@@ -223,6 +260,9 @@
+     MPI_CHK( mpi_exp_mod( &ctx->K, &ctx->GY, &ctx->X,
+                           &ctx->P, &ctx->RP ) );
 
-    +    if( ( ret = dhm_check_range( &ctx->GX, &ctx->P ) ) != 0 )
-    +        return( ret );
-    +
-         /*
-          * export P, G, GX
-          */
-    @@ -199,6 +233,9 @@
-         MPI_CHK( mpi_exp_mod( &ctx->GX, &ctx->G, &ctx->X,
-                               &ctx->P , &ctx->RP ) );
++    if( ( ret = dhm_check_range( &ctx->GY, &ctx->P ) ) != 0 )
++        return( ret );
++
+     *olen = mpi_size( &ctx->K );
 
-    +    if( ( ret = dhm_check_range( &ctx->GX, &ctx->P ) ) != 0 )
-    +        return( ret );
-    +
-         MPI_CHK( mpi_write_binary( &ctx->GX, output, olen ) );
-
-     cleanup:
-    @@ -223,6 +260,9 @@
-         MPI_CHK( mpi_exp_mod( &ctx->K, &ctx->GY, &ctx->X,
-                               &ctx->P, &ctx->RP ) );
-
-    +    if( ( ret = dhm_check_range( &ctx->GY, &ctx->P ) ) != 0 )
-    +        return( ret );
-    +
-         *olen = mpi_size( &ctx->K );
-
-         MPI_CHK( mpi_write_binary( &ctx->K, output, *olen ) );
+     MPI_CHK( mpi_write_binary( &ctx->K, output, *olen ) );
+```

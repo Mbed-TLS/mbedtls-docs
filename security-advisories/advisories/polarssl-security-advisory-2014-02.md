@@ -28,28 +28,30 @@ Alternatively the following patch can be applied to your current PolarSSL
 
 
 
-    diff --git a/library/ssl_tls.c b/library/ssl_tls.c
-    index 480c5e5..a57f3f1 100644
-    --- a/library/ssl_tls.c
-    +++ b/library/ssl_tls.c
-    @@ -1416,9 +1416,15 @@ static int ssl_decrypt_buf( ssl_context *ssl )
-             size_t dec_msglen, olen, totlen;
-             unsigned char add_data[13];
-             int ret = POLARSSL_ERR_SSL_FEATURE_UNAVAILABLE;
-    +        size_t gcm_overhead = ssl->transform_in->ivlen +
-    +                              ssl->transform_in->fixed_ivlen +
-    +                              16; /* explicit IV + tag */
-    +
-    +        if( ssl->in_msglen < gcm_overhead )
-    +            return( POLARSSL_ERR_SSL_INVALID_MAC );
-    +
-    +        dec_msglen = ssl->in_msglen - gcm_overhead;
+```diff
+diff --git a/library/ssl_tls.c b/library/ssl_tls.c
+index 480c5e5..a57f3f1 100644
+--- a/library/ssl_tls.c
++++ b/library/ssl_tls.c
+@@ -1416,9 +1416,15 @@ static int ssl_decrypt_buf( ssl_context *ssl )
+         size_t dec_msglen, olen, totlen;
+         unsigned char add_data[13];
+         int ret = POLARSSL_ERR_SSL_FEATURE_UNAVAILABLE;
++        size_t gcm_overhead = ssl->transform_in->ivlen +
++                              ssl->transform_in->fixed_ivlen +
++                              16; /* explicit IV + tag */
++
++        if( ssl->in_msglen < gcm_overhead )
++            return( POLARSSL_ERR_SSL_INVALID_MAC );
++
++        dec_msglen = ssl->in_msglen - gcm_overhead;
 
-    -        dec_msglen = ssl->in_msglen - ( ssl->transform_in->ivlen -
-    -                                        ssl->transform_in->fixed_ivlen );
-    -        dec_msglen -= 16;
-             dec_msg = ssl->in_msg;
-             dec_msg_result = ssl->in_msg;
+-        dec_msglen = ssl->in_msglen - ( ssl->transform_in->ivlen -
+-                                        ssl->transform_in->fixed_ivlen );
+-        dec_msglen -= 16;
+         dec_msg = ssl->in_msg;
+         dec_msg_result = ssl->in_msg;
+```
 
 
 ## Resolution
