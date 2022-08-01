@@ -34,7 +34,5 @@ A sufficiently large value of `MBEDTLS_SSL_IN_CONTENT_LEN` avoids the vulnerabil
 * With default options regarding DTLS and only support for AEAD ciphersuites, and using the default cookie check function `mbedtls_ssl_cookie_check()`, the threshold is 210 bytes.
 * With `MBEDTLS_SSL_DTLS_CONNECTION_ID` enabled, the threshold can be up to 258 bytes if using `mbedtls_ssl_cookie_check()`.
 * In the worst case, with a custom cookie check function, the threshold can be up to 571 bytes.
-daverodgman marked this conversation as resolved.
-Show resolved
 
 Turning off `MBEDTLS_SSL_DTLS_CLIENT_PORT_REUSE` also avoids the vulnerability.
