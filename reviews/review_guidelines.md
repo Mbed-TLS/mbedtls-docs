@@ -1,10 +1,10 @@
-## Mbed TLS Review Guidelines
+# Mbed TLS Review Guidelines
 
-### Introduction
+## Introduction
 
 This document describes the process of reviewing pull requests (PRs).
 
-### Use of GitHub
+## Use of GitHub
 
 When you decide to review a PR, request your review using GitHub's request review button in order to communicate that you are actively reviewing. This helps improve communication with the rest of the community as to who is reviewing what.
 
@@ -12,7 +12,7 @@ The GitHub PR review facilities are used to submit Mbed TLS code reviews. Please
 
 Anyone can submit a review, and reviews from the community are very welcome. However, GitHub is set up so that only reviews from specific individuals (the trusted reviewers) will formally count towards the two positive reviews required to merge a PR.
 
-### Review Checklist
+## Review Checklist
 
 When reviewing a PR and leaving comments, make it clear not just what you see as wrong, or in need of clarification, but also what checks you have made and the scope of any testing.
 
@@ -20,7 +20,7 @@ Reviewers should verify the following checklist against the PR and should make c
 
 To help you get into the right mindset for reviewing, please see [Gilles Peskine's talk: How to be an effective reviewer](<How to be an effective Mbed TLS reviewer.pdf>).
 
-### Suitability
+## Suitability
 
 * Is this relevant and useful for the Mbed TLS project?
 * Backports
@@ -29,7 +29,7 @@ To help you get into the right mindset for reviewing, please see [Gilles Peskine
 * Does it fit what was needed?
   * If there's a github issue, does it match the requirements of the issue?
 
-### Quality
+## Quality
 
 * Does it pass CI?
 * Documentation
@@ -101,7 +101,7 @@ To help you get into the right mindset for reviewing, please see [Gilles Peskine
   * If the PR implements a standard or RFC, has the code been cross referenced against the standard as part of the review?
     * This is an essential step for implementing RFCs or crypto standards.
 
-### Goal
+## Goal
 
 * Does the PR resolve the issue that it's supposed to resolve?
 
@@ -111,9 +111,9 @@ To help you get into the right mindset for reviewing, please see [Gilles Peskine
 
 * Is there any follow-on work that needs to be tracked as a Github issue?
 
-### Specific areas of the code
+## Specific areas of the code
 
-#### Alternative implementations
+### Alternative implementations
 
 If the changes concern alternative implementations:
 * Is the baseline behavior preserved when the XXX_ALT macro isn't defined?
@@ -122,6 +122,6 @@ If the changes concern alternative implementations:
    * E.g. sha256_update(ctx1); sha256_update(ctx2): check that there's no leak between the two contexts.
 
 
-### Restricted PRs
+## Restricted PRs
 
 For PRs in mbedtls-restricted, to minimise conflicts when merging with the non-restricted branch, these must be as minimal as possible. Reviewers should check for parts of the PR that could be split out and raised as a separate PR on the main repository.
