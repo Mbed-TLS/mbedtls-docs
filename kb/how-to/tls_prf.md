@@ -1,4 +1,4 @@
-<h2 id="tls-prf">TLS PRF key derivation</h2>
+# TLS PRF key derivation
 
 [RFC 5246](https://tools.ietf.org/html/rfc5246) defines the pseudorandom function (PRF) as follows:
 >In addition, a construction is required to do expansion of secrets

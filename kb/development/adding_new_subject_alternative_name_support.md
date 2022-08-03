@@ -1,4 +1,4 @@
-<h1 id="san-extension">Adding support for additional subject alternative names</h1>
+# Adding support for additional subject alternative names
 
 [RFC 5280 section 4.2.1.6](https://tools.ietf.org/html/rfc5280#section-4.2.1.6) defines the following as options for a subject alternative name (SAN):
 

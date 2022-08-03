@@ -1,4 +1,4 @@
-<h1 id="random-data">Random data generation</h1>
+# Random data generation
 
 When making a security application, you may require a random data generator. Arm Mbed TLS includes the [CTR-DRBG module](ctr-drbg-source-code.html) for random generation.
 
