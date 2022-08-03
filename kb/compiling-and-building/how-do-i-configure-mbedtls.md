@@ -38,6 +38,6 @@ We provide a `check_config.h` file that checks the consistency of the configurat
 
 ## Example configurations
 
-We provide example configurations in the `configs` directory. These are often minimal configurations for a specific goal, such as supporting the `NSA suite B TLS` profile. They also often include settings to [reduce resource usage](/kb/how-to/reduce-mbedtls-memory-and-storage-footprint).
+We provide example configurations in the `configs` directory. These are often minimal configurations for a specific goal, such as supporting the `NSA suite B TLS` profile. They also often include settings to [reduce resource usage](/kb/how-to/reduce-polarssl-memory-and-storage-footprint.md).
 
 <!---",how-do-i-configure-mbedtls,"Short article on configuring Mbed TLS before compilation.",,"configuration, compiling",published,"2014-11-14 12:40:00",6,21074,"2015-07-24 11:53:00","Manuel PÃ©gouriÃ©-Gonnard"--->
