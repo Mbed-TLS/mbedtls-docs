@@ -4,7 +4,7 @@
 
 **RSASSA-PSS** is an improved probabilistic signature scheme with appendix. This means that you can use a private RSA key to sign data in combination with random input. The other side of the communication can then verify the signature with the corresponding public RSA key. Because random data is used in this signature scheme, the two signatures for the same input are different and both can be used to verify the original data.
 
-RSASSA-PSS was standardized in [PKCS#1 v2.1](!http://tools.ietf.org/html/rfc3447). It can be used as an alternative to the more widespread RSASSA algorithm in PKCS#1 v1.5.
+RSASSA-PSS was standardized in [PKCS#1 v2.1](https://tools.ietf.org/html/rfc3447). It can be used as an alternative to the more widespread RSASSA algorithm in PKCS#1 v1.5.
 
 ## RSASSA-PSS vs RSASSA (PKCS#1 v1.5)
 
