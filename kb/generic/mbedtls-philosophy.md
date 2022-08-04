@@ -22,7 +22,7 @@ The Mbed TLS modules are as loosely coupled as possible. If you want to use AES,
 
 ### Portable
 
-Mbed TLS is written in portable C code. As mentioned in the [coding standards article](/kb/development/mbedtls-coding-standards.md#restricted-c99), the library uses the C99 ISO standard.
+Mbed TLS is written in portable C code. As mentioned in the [coding standards article](../development/mbedtls-coding-standards.md#iso-c99), the library uses the C99 ISO standard.
 
 
 <!--'mbedtls-philosophy','Mbed TLS is designed according to a specific philosophy','PolarSSL, philosophy, loose-coupling, easy','philosophy, loose-coupling, easy, tests, portable','published','2012-10-07 00:00:00','1','3606','2015-07-24 11:49:00','Paul Bakker'-->

@@ -21,7 +21,7 @@ Add the following somewhere in your `main()`:
     mbedtls_entropy_init( &entropy );
 ```
 
-If your platform has a hardware TRNG or PRNG in the processor or TPM, you can hook it up to the entropy collector with `entropy_add_source()` to enhance the entropy even further. Please see our article on [how to add an entropy source to the entropy pool](add-entropy-sources-to-entropy-pool.html) for more information.
+If your platform has a hardware TRNG or PRNG in the processor or TPM, you can hook it up to the entropy collector with `entropy_add_source()` to enhance the entropy even further. Please see our article on [how to add an entropy source to the entropy pool](add-entropy-sources-to-entropy-pool.md) for more information.
 
 ## The random generator
 
