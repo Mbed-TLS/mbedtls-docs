@@ -1,20 +1,20 @@
-## How to tune Elliptic Curves resource usage
+# How to tune Elliptic Curves resource usage
 
 Like most parts of Mbed TLS, the implementation of elliptic curve operations can be tuned using various [compilation flags](https://tls.mbed.org/kb/compiling-and-building/how-do-i-configure-mbedtls). This page explains the two parameters that control trade-offs between performance and footprint in more detail than our general documentation on [reducing footprint](https://tls.mbed.org/kb/how-to/reduce-mbedtls-memory-and-storage-footprint).
 
-### Performance and RAM figures
+## Performance and RAM figures
 
 Since this page discusses performance-footprint trade-offs, it's useful to have some performance figures. For convenience, the figures quoted in this article were collected with Mbed TLS 2.2 on a machine with a 64-bit CPU. You can reproduce those results on your machine using [scripts/ecc-heap.sh](https://github.com/ARMmbed/mbedtls/blob/development/scripts/ecc-heap.sh) from the Mbed TLS sources.
 
 The RAM figures only include heap usage, not the stack. This is a limitation of the measurement script. However, these should still be useful, as most memory used by elliptic curve operations will be on the heap. Remember, however, that RAM figures may be slightly lower on a 32-bit machine.
 
-### Which curves?
+## Which curves?
 
 This page refers to "short Weierstrass" form curves. This includes NIST, Brainpool, and "Koblitz" curves such as the one used by Bitcoin—in short, all except newer curves like Curve25519 and Curve448.
 
 On the reference machine, Curve25519 performed 358 ECDHE/s (ephemeral Elliptic Curve Diffie-Hellman key exchanges per second) using around 1500 bytes on the heap.
 
-### MBEDTLS_ECP_WINDOW_SIZE
+## MBEDTLS_ECP_WINDOW_SIZE
 
 The main operation on elliptic curves is multiplication of a point by an integer, which is performed using additions and doubling. This is similar to fast exponentiation algorithms you may be familiar with. It is possible to boost performance by pre-computing some well-chosen multiples of the input point just before you multiply it by the chosen integer. This is the [comb method](https://eprint.iacr.org/2004/342.pdf).)
 
@@ -31,7 +31,7 @@ For example, for NIST P-256, the performance and RAM figures for various values 
 
 As you can see, when moving from 2 to 4, performance increases with RAM usage; larger values aren't helpful for performance. The code selects 4 as the effective value, and doesn't change RAM usage as much.
 
-### `MBEDTLS_ECP_FIXED_POINT_OPTIM`
+## `MBEDTLS_ECP_FIXED_POINT_OPTIM`
 
 The first paragraph of the previous section said some multiples are precomputed just before computation, suggesting that they are discarded once the operation is done, and computed again for the next operation. This is true, but incomplete.
 
@@ -49,7 +49,7 @@ For example, the performance and RAM figures for NIST P-256 without and with fix
 |ECDHE/s|53|76|
 |Heap bytes|3592|5360|
 
-#### Conclusion
+### Conclusion
 
 The ECC implementation in Mbed TLS uses some memory-performance trade-offs. The defaults values are chosen with performance in mind, but you can adjust them to reduce RAM usage for the trade-off that best fits your particular needs.
 

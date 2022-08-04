@@ -8,7 +8,7 @@
 
 The TLS PRF is a function that generates key material, which security protocols can use to derive a key for ciphering data. Many security protocols that rely on TLS for authentication, such as [DTLS-SRTP](https://tools.ietf.org/html/rfc5764) and [EAP-TLS](https://tools.ietf.org/html/rfc5216), use the TLS-defined PRF and other TLS handshake data (the master key and the handshake random bytes) to derive their own key material, using their own defined string label.
 
-### Exporting key material using Mbed TLS
+## Exporting key material using Mbed TLS
 
 The Mbed TLS `mbedtls_ssl_tls_prf()` API uses the `tls_prf` function, which you set as an input parameter. You must set the `tls_prf` function to one of the following options:
 
@@ -28,7 +28,7 @@ This function also receives the secret to derive the key material from. The secr
 
 The following section explains how to export the handshake-generated secret information.
 
-### Exporting the TLS handshake secret keys
+## Exporting the TLS handshake secret keys
 
 <span class="notes">**Note:** Exporting the secret information can affect the security of your application! You should not expose this information outside of your application. Clear the information after use with `mbedtls_platform_zeroize()`!</span>
 
@@ -54,11 +54,11 @@ Set the callback function in your SSL configuration structure by calling `mbedtl
 
 After you extract the required information in your callback to your given context (`p_expkey`), you can use it to call `mbedtls_ssl_tls_prf()`, which is described in the previous section, or for other purposes.
 
-### Example of tls-prf key derivation - EAP-TLS use case
+## Example of tls-prf key derivation - EAP-TLS use case
 
 Following is an example of the process described before, deriving the eap-tls key material, as described in [RFC 5216 section 2.3](https://tools.ietf.org/html/rfc5216#section-2.3).
 
-#### Defining the callback-specific context:
+### Defining the callback-specific context:
 
 ```
   typedef struct eap_tls_keys
@@ -69,7 +69,7 @@ Following is an example of the process described before, deriving the eap-tls ke
   } eap_tls_keys;
 ```
 
-#### Defining the key export callback
+### Defining the key export callback
 
 ```
   static int eap_tls_key_derivation ( void *p_expkey,
@@ -97,7 +97,7 @@ Following is an example of the process described before, deriving the eap-tls ke
   }
 ```
 
-#### The main application
+### The main application
 
 * Variable declarations:
 

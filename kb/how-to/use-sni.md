@@ -1,14 +1,14 @@
-## How to use Server Name Indication
+# How to use Server Name Indication
 
 Server Name Indication (SNI) is defined in [RFC 6066](https://tools.ietf.org/html/rfc6066). It is one of many TLS extensions, and an unofficial but accepted standard on the Internet.
 
-### Why is SNI useful?
+## Why is SNI useful?
 
 When several virtual servers are running on the same host with the same IP address but have different domain names with corresponding certificates, the host has no way of knowing which virtual server certificate to send during a handshake. This is because the peers only send application layer data like domain names after the TLS handshake finishes.
 
 One possible solution would be to have the virtual servers share a certificate. A more maintainable and flexible solution is to perform the handshake using the SNI Extension, which lets the server know the DNS hostname(s) of the target virtual server. This allows the server to respond with a server-specific certificate.
 
-### Enabling the SNI extension
+## Enabling the SNI extension
 
 SNI is enabled in the default configuration.
 
@@ -19,11 +19,11 @@ SNI is enabled in the default configuration.
 ```
 These are usual Mbed TLS compile time options, so you need to set them before compiling the library. For more information on configuring Mbed TLS please visit this [knowledge base article](https://tls.mbed.org/kb/compiling-and-building/how-do-i-configure-mbedtls).
 
-### Configuring the SNI extension
+## Configuring the SNI extension
 
 You need to configure SNI on both the [client side](#client-side) and the [server side](#server-side).
 
-#### Client side
+### Client side
 
 The SNI extension uses the same server name that the client uses to verify the server certificates during the handshake. You can set it in the same [function](https://tls.mbed.org/api/ssl_8h.html):
 ```
@@ -31,7 +31,7 @@ The SNI extension uses the same server name that the client uses to verify the s
 ```
 <span class="warnings">**Warning:** If the hostname is not set with this function, Mbed TLS will silently skip certificate verification entirely. Always set the hostname with this function - even when not using SNI!</span>
 
-#### Server side
+### Server side
 
 Mbed TLS provides a very flexible solution for selecting the right certificate. The server application developer has to implement and set a callback function that:
 1. Receives the server name and a pointer to the SSL context as a parameter.
@@ -82,7 +82,7 @@ To enable Mbed TLS using the callback function, you also have to register it:
 ```
 Here `conf` is an `mbedtls_ssl_config` structure, and the framework will pass `sni_info` to the callback function as the first parameter. Please make sure that the structure `sni_info` points to is properly initialised before calling this function, and stays consistent with the application's needs during the SSL context lifetime.
 
-### Special situations
+## Special situations
 
 Sometimes certificates are issued for IP addresses and not DNS names. Unfortunately, Mbed TLS doesn't yet support using such certificates while SNI is turned on. This means that you may be able to set IP addresses with the `mbedtls_ssl_set_hostname` function, but it will result in non-compliant behavior and limited functionality.
 
