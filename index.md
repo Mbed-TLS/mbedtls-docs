@@ -19,4 +19,5 @@ architecture/proposed/long-term-plans.md
 security-advisories/security-advisories.md
 maintainers.md
 CONTRIBUTING.md
+kb/index.md
 ```
