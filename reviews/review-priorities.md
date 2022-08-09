@@ -17,7 +17,7 @@ Classifications are done through labels, e.g.: priority-high.
 Please note that these are the priorities used by the core team. External contributors are welcome to review PRs according to their own priorities, and such review activity will help highlight PRs which should get attention from the core team.
 
 
-### priority-high
+## priority-high
 
 This classification is used for PRs which are typically one of:
 
@@ -27,7 +27,7 @@ This classification is used for PRs which are typically one of:
 These PRs should receive review promptly.
 
 
-### priority-medium
+## priority-medium
 
 This is for PRs which advance the core team's aims for Mbed TLS, but are not needed to meet delivery in the current quarter. These PRs will receive review on a best-effort basis, but assistance from the community would be helpful.
 
@@ -49,7 +49,7 @@ These would typically address one of the following areas:
   * Improvements to code-size, memory footprint and performance on embedded devices
 
 
-### priority-low
+## priority-low
 
 This is for PRs which are potentially useful or nice to have, but are unlikely to receive review soon. This might include PRs in the following areas:
 
@@ -65,6 +65,6 @@ This is for PRs which are potentially useful or nice to have, but are unlikely t
 After at least one year, some items in this category may be closed if a clear need does not emerge with time. This is more likely to happen for larger and more complex PRs.
 
 
-### priority-scheduled
+## priority-scheduled
 
 This is an additional label used for larger PRs (typically priority-medium) which require significant team bandwidth to review. These items will not be reviewed immediately, but they will be scheduled in the project roadmap with time allocated for review.
