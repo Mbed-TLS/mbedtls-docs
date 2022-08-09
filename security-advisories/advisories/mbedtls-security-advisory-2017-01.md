@@ -5,112 +5,96 @@ for each possible attack.
 
 * * *
 
-**Title** |  Remote plaintext recovery on use of CBC based ciphersuites
----|---
-**CVE** |  CVE-2018-0497
-**Date** |  25th July 2018 ( **Updated on 26th July 2018** )
-**Affects** |  All versions of Mbed TLS from version 1.2 upwards, including<br>all 2.1, 2.7 and later releases
-**Impact** |  Allows a remote attacker to partially recover the plaintext
-**Severity** |  High
-**Credit** |  Kenny Paterson, Eyal Ronen and Adi Shamir
+**Title** | Freeing of memory allocated on stack when validating a public key<br>with a secp224k1 curve
+--- | ---
+**CVE** | CVE-2017-2784
+**Date** | 10th March 2017 ( **Updated on 13th March 2017** )
+**Affects** | mbed TLS 1.4 and up
+**Not affected** | mbed TLS 1.3.19 and up, mbed TLS 2.1.7 and up, mbed TLS 2.4.2 and up,<br>and any version compiled without support for secp224k1 curves
+**Impact** | Denial of service and possible remote code execution
+**Severity** | High
+**Credit** | Aleksandar Nikolic, Cisco Talos team and [rongsaws](https://github.com/rongsaws)
 
 ## Vulnerability
 
-When using a CBC based ciphersuite, an remote attacker can partially recover
-the plaintext. To be able to mount an attack, the attacker requires the
-folllowing:
-
-  * to be able to observe and manipulate network packets
-  * for TLS, to be able to generate multiple sessions where the same secret is encrypted. For DTLS a single session is sufficient
-
-The attacker can then partially recover the plaintext of messages exploiting
-timing side-channels. The attack is feasible for all versions of TLS and DTLS,
-from 1.0 to 1.2.
-
-With DTLS, the attacker can perform the attack by sending many messages across
-the same connection. With TLS or if `mbedtls_ssl_conf_dtls_badmac_limit()` was
-used, the attack only works if the same secret (for example a HTTP cookie) has
-been repeatedly sent over connections manipulated by the attacker.
-
-The vulnerability was caused by a miscalculation for SHA-384 in a
-countermeasure to the original Lucky 13 attack.
+If a malicious peer supplies a certificate with a specially crafted secp224k1
+public key, then an attacker can cause the server or client to attempt to free
+block of memory held on stack.
 
 ## Impact
 
-If the attacker has the advantage of all the conditions of the attack
-described above, they can potentially at least partially recover the plaintext
-sent in the connection.
+Depending on the platform, this could result in a Denial of Service (client
+crash) or potentially could be exploited to allow remote code execution with the
+same privileges as the host application.
 
 ## Resolution
 
-Affected users should upgrade to one of the most recent versions of Mbed TLS,
-includng 2.12.0, 2.7.5 or 2.1.14 or later.
+Affected users should upgrade to mbed TLS 1.3.19, mbed TLS 2.1.7 or mbed TLS
+2.4.2.
 
 ## Workaround
 
-Where possible, we recommend all users upgrade to a newer version of Mbed TLS.
-
-If this is not possible, as a workaround, we recommend disable CBC based
-ciphersuites from your configuration. Connections using GCM or CCM instead of
-CBC, using hash sizes other than SHA-384, or using Encrypt-then-Mac ([RFC
-7366](https://tools.ietf.org/html/rfc7366)) are not affected.
+Users can disable the secp224k1 curve by disabling the option
+`MBEDTLS_ECP_DP_SECP224K1_ENABLED` in their `config.h` file.
 
 * * *
 
-**Title** |  Plaintext recovery on use of CBC based ciphersuites through a<br>cache based side-channel
----|---
-**CVE** |  CVE-2018-0498
-**Date** |  25th July 2018 ( **Updated on 26th July 2018** )
-**Affects** |  All versions of Mbed TLS from version 1.2 upwards, including<br>all 2.1, 2.7 and later releases
-**Impact** |  Allows partial recovery of the plaintext
-**Severity** |  High
-**Credit** |  Kenny Paterson, Eyal Ronen and Adi Shamir
+**Title** | SLOTH vulnerability
+--- | ---
+**Date** | 10th March 2017 ( **Updated on 13th March 2017** )
+**Affects** | mbed TLS 2.4.0 and mbed TLS 2.4.1
+**Not affected** | Any other version of mbed TLS
+**Impact** | Client impersonation
+**Severity** | Moderate
 
 ## Vulnerability
 
-When using a CBC based ciphersuite, an attacker with the ability to execute
-arbitrary code on the machine under attack can partially recover the plaintext
-by use of cache based side-channels. To be able to mount an attack, the
-attacker requires the folllowing:
+If the client and the server both support MD5 and the client can be tricked to
+authenticate to a malicious server, then the malicious server can impersonate
+the client. To launch this man in the middle attack, the adversary has to
+compute a chosen-prefix MD5 collision in real time. This is very expensive
+computationally, but can be practical.
 
-  * the ability to execute arbitrary code to the machine under attack
-  * to be able to observe and manipulate network packets
-
-The attacker can then partially recover the plaintext of messages exploiting
-timing side-channels. The attacks are feasible for all versions of TLS and
-DTLS, from 1.0 to 1.2.
-
-Two attacks are possible - an attack targetting an internal message digest
-buffer and an attack targeting the TLS input record buffer.
-
-For the first attack, when using DTLS, the attacker can perform the attack by
-sending many messages across the same connection. With TLS or if
-`mbedtls_ssl_conf_dtls_badmac_limit()` was used, the attack only works if the
-same secret (for example a HTTP cookie) has been repeatedly sent over
-connections manipulated by the attacker.
+This was introduced inadvertently in an interoperability fix in version 2.4.0.
 
 ## Impact
 
-If the attacker has the advantage of all the conditions of the attack
-described above, they can potentially at least partially recover the plaintext
-sent in the connection.
+Depending on the platform and how it's configured, a client could be tricked
+into authenticating to a malicious server, and then the malicious server could
+impersonate the client, thereby performing a man in the middle attack.
 
 ## Resolution
 
-Affected users should upgrade to one of the most recent versions of Mbed TLS,
-includng 2.12.0, 2.7.5 or 2.1.14 or later.
+Affected users should upgrade to mbed TLS 2.4.2.
 
-## Workaround
+* * *
 
-Where possible, we recommend all users upgrade to a newer version of Mbed TLS.
+**Title** | Denial of Service through Certificate Revocation List
+--- | ---
+**Date** | 10th March 2017 ( **Updated on 13th March 2017** )
+**Affects** | mbed TLS versions prior to 1.3.19, 2.1.7 or 2.4.2
+**Not affected** | mbed TLS 1.3.19 and up, mbed TLS 2.1.7 and up, mbed TLS 2.4.2 and up,<br>any version compiled without PEM support and when used by an application<br>not verifying CRLs
+**Impact** | Denial of service
+**Severity** | Moderate
+**Credit** | Greg Zaverucha, Microsoft
 
-If this is not possible, as a workaround, we recommend disable CBC based
-ciphersuites from your configuration. Connections using GCM or CCM instead of
-CBC, using hash sizes other than SHA-384, or using Encrypt-then-Mac ([RFC
-7366](https://tools.ietf.org/html/rfc7366)) are not affected.
+## Vulnerability
 
-We also recommend all users ensure any machine or device hosting Mbed TLS is
-properly secure:
+A bug in the logic of the parsing of a PEM encoded Certificate Revocation List
+in `mbedtls_x509_crl_parse()` can result in an infinite loop. In versions before
+1.3.10 the same bug results in an infinite recursion stack overflow that usually
+crashes the application.
 
-  * Maintain up-to-date systems with the latest security updates from the operating system vendor, and if necessary, any microcode updates issued by the processor vendor.
-  * Ensure you follow security best practices and guidelines. For example, do not run any unstrusted software.
+## Impact
+
+Methods and means of acquiring the CRLs is not part of the TLS handshake and in
+the strict TLS setting this vulnerability cannot be triggered remotely. The
+vulnerability cannot be triggered unless the application explicitely calls
+`mbedtls_x509_crl_parse()` or `mbedtls_x509_crl_parse_file()`on a PEM formatted
+CRL of untrusted origin. In which case the vulnerability can be exploited to
+launch a denial of service attack against the application.
+
+## Resolution
+
+Affected users should upgrade to mbed TLS 1.3.19, mbed TLS 2.1.7 or mbed TLS
+2.4.2.
