@@ -3,7 +3,7 @@
 **Title** |  Side channel attack on ECDSA
 ---|---
 **CVE** |  CVE-2019-18222
-**Date** |  15th January 2020
+**Date** |  15th January 2020 ( **Updated on 27th January 2020** )
 **Affects** |  All versions of Mbed TLS and Mbed Crypto
 **Impact** |  The private key is recoverable through side channels.
 **Severity** |  High

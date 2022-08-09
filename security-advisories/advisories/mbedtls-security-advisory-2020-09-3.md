@@ -3,7 +3,7 @@
 **Title** |  Protocol weakness in DHE-PSK key exchange
 ---|---
 **CVE** |  Unknown
-**Date** |  1st of September, 2020
+**Date** |  1st of September, 2020 ( **Updated on 10th of September, 2020** )
 **Affects** |  All versions of Mbed TLS
 **Impact** |  An active network attacker can learn the size of the pre-shared<br>key
 **Severity** |  Low

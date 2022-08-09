@@ -3,7 +3,7 @@
 **Title** |  RC4 ciphersuites in SSL and TLS vulnerable
 ---|---
 **CVE** |  Unknown
-**Date** |  13th of March 2013
+**Date** |  13th of March 2013 ( **Updated on 12th of July 2013** )
 **Affects** |  all SSL libraries including PolarSSL
 **Not affected** |  AES-GCM-based or CBC-based ciphersuites. Servers and<br>clients that only communicate over a private network
 **Impact** |  Possible (partial) recovery of plaintext

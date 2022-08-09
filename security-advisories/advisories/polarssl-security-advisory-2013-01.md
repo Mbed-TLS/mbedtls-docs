@@ -3,7 +3,7 @@
 **Title** |  Lucky thirteen - timing side channel during decryption
 ---|---
 **CVE** |  CVE-2013-0169
-**Date** |  4th of February 2013 ( **Updated on 11th of March 2013** )
+**Date** |  4th of February 2013 ( **Updated on 12th of July 2013** )
 **Affects** |  all checked SSL libraries including PolarSSL versions prior to<br>PolarSSL 1.2.6
 **Not affected** |  AES-GCM-based or RC4-based ciphersuites. Servers and<br>clients that only communicate over a private network
 **Impact** |  Possible (partial) recovery of plaintext
