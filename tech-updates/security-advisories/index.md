@@ -11,6 +11,6 @@ maxdepth: 1
 glob:
 reversed:
 ---
-advisories/polarssl-*
-advisories/*
+polarssl-*
+*
 ```
