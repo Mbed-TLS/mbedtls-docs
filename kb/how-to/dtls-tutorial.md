@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This tutorial introduces the specifics of using DTLS (as opposed to TLS) with Mbed TLS. It assumes you're familiar with using TLS connections with Mbed TLS, otherwise, we recommend starting with the [Mbed TLS tutorial](/kb/how-to/mbedtls-tutorial.md).
+This tutorial introduces the specifics of using DTLS (as opposed to TLS) with Mbed TLS. It assumes you're familiar with using TLS connections with Mbed TLS, otherwise, we recommend starting with the [Mbed TLS tutorial](mbedtls-tutorial.md).
 
 ## Short version
 

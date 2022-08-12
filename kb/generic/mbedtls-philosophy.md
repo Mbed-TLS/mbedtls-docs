@@ -12,7 +12,7 @@ Mbed TLS has a large amount of documentation online, including the [full doxygen
 
 ### Tested
 
-The automatic test suites contain over 6000 unit tests for cryptographic validation, regression testing and code coverage, over 200 functional tests and over 2000 interoperability tests. See our [quality assurance page](/kb/generic/what-tests-and-checks-are-run-for-polarssl.md) for more details.
+The automatic test suites contain over 6000 unit tests for cryptographic validation, regression testing and code coverage, over 200 functional tests and over 2000 interoperability tests. See our [quality assurance page](what-tests-and-checks-are-run-for-polarssl.md) for more details.
 
 
 ### Loosely coupled

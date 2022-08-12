@@ -14,10 +14,10 @@ The random generators themselves, like CTR-DRBG, do not require new entropy ever
 
 ## Advice for threaded environments
 
-Regarding entropy, our advice is to use a central entropy collector. Initialize once. This makes sure that the entropy collector gets the best entropy from its sources as it does not have to share with sibling entropy collectors. For more details, see [Thread Safety and Multi Threading](/kb/development/thread-safety-and-multi-threading.md).
+Regarding entropy, our advice is to use a central entropy collector. Initialize once. This makes sure that the entropy collector gets the best entropy from its sources as it does not have to share with sibling entropy collectors. For more details, see [Thread Safety and Multi Threading](thread-safety-and-multi-threading.md).
 
 You have two options:
 
 * For each thread, use a separate CTR-DRBG or HMAC-DRBG random generator using a thread-specific value (like the thread ID) for the custom personalization string. Provide the DRBG with `mbedtls_entropy_func()` as its entropy callback. This ensures that the random generators between the different threads have the least amount of correlation possible and can thus be considered as independent as possible.
  
-* Use a central CTR-DRBG or HMAC-DRBG context initialized once in the main thread, and share in across threads. The DRBG modules are thread-safe, as they contain locks within the contexts, which are used within the modules if threading is enabled, see [Thread Safety and Multi Threading](/kb/development/thread-safety-and-multi-threading.md).
+* Use a central CTR-DRBG or HMAC-DRBG context initialized once in the main thread, and share in across threads. The DRBG modules are thread-safe, as they contain locks within the contexts, which are used within the modules if threading is enabled, see [Thread Safety and Multi Threading](thread-safety-and-multi-threading.md).

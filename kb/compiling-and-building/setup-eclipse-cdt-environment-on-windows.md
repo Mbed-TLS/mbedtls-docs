@@ -17,7 +17,7 @@ Your experience may differ based on the software versions you use.
 
 ## Install Cygwin or MinGW
 
-We recommend Cygwin, so this tutorial doesn't cover the MinGW installation. For more on MinGW, look at [Compiling Mbed TLS in MinGW](/kb/compiling-and-building/compiling-mbedtls-in-mingw.md).
+We recommend Cygwin, so this tutorial doesn't cover the MinGW installation. For more on MinGW, look at [Compiling Mbed TLS in MinGW](compiling-mbedtls-in-mingw.md).
 
   * Download and install Cygwin by following the first three steps in the [tutorial](http://www3.ntu.edu.sg/home/ehchua/programming/howto/cygwin_howto.html). Make sure that you select `gcc`, `g++`, `gdb`, and `make` packages under the `Devel` (Development) category, since these packages are not part of the default installation.
 

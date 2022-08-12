@@ -1,6 +1,6 @@
 # RSA key pair generator
 
-To use RSA with Mbed TLS or any other application, you will most likely need an RSA key pair. An RSA key pair is often stored in [either a PEM file or a DER file](/kb/cryptography/asn1-key-structures-in-der-and-pem.md).
+To use RSA with Mbed TLS or any other application, you will most likely need an RSA key pair. An RSA key pair is often stored in [either a PEM file or a DER file](asn1-key-structures-in-der-and-pem.md).
 
 ## Building the RSA key pair generator
 

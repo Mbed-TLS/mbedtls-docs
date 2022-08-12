@@ -35,7 +35,7 @@ The callbacks can be replaced by coding your own functions for blocking or non-b
 
 The provided timing module `timing.c` works on Windows, Linux and BSD (including OS X). It is only optionally used by the SSL/TLS module through callback functions for DTLS and can be disabled at compilation without affecting the rest of the library.
 
-If you are not using DTLS, you do not need a timing function. If you are using DTLS, you need to write your own timer callbacks suitable to pass to the function [`mbedtls_ssl_set_timer_cb()`](/api/ssl_8h.html). This is discussed in more detail in our [DTLS tutorial](/kb/how-to/dtls-tutorial.md).
+If you are not using DTLS, you do not need a timing function. If you are using DTLS, you need to write your own timer callbacks suitable to pass to the function [`mbedtls_ssl_set_timer_cb()`](/api/ssl_8h.html). This is discussed in more detail in our [DTLS tutorial](dtls-tutorial.md).
 
 ## Default entropy sources
 

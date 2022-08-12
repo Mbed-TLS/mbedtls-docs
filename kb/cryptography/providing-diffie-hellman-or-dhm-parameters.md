@@ -18,4 +18,4 @@ We used to recommend using standard parameters rather than generating your own. 
 
 1,024 bits is considered within reach of the most powerful adversaries, and 2,048 bits safe according to public knowledge. If you absolutely must use 1,024 bit parameters for compatibility with old clients, it is highly desirable to generate your own rather than use the standard parameters, as long as you take into consideration [backdoor vulnerabilities](/tech-updates/blog/dh-backdoors). If you can use parameters of 2,048 bits or more, then you are safe either way.
 
-An alternative is to switch to Elliptic Curve Diffie-Hellman (ECDH ciphersuite), which does not have this security issue and also improves the performance, as [this article](/kb/cryptography/ephemeral-diffie-hellman.md) describes.
+An alternative is to switch to Elliptic Curve Diffie-Hellman (ECDH ciphersuite), which does not have this security issue and also improves the performance, as [this article](ephemeral-diffie-hellman.md) describes.

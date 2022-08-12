@@ -1,6 +1,6 @@
 # How to tune Elliptic Curves resource usage
 
-Like most parts of Mbed TLS, the implementation of elliptic curve operations can be tuned using various [compilation flags](/kb/compiling-and-building/how-do-i-configure-mbedtls.md). This page explains the two parameters that control trade-offs between performance and footprint in more detail than our general documentation on [reducing footprint](/kb/how-to/reduce-polarssl-memory-and-storage-footprint.md).
+Like most parts of Mbed TLS, the implementation of elliptic curve operations can be tuned using various [compilation flags](/kb/compiling-and-building/how-do-i-configure-mbedtls.md). This page explains the two parameters that control trade-offs between performance and footprint in more detail than our general documentation on [reducing footprint](reduce-polarssl-memory-and-storage-footprint.md).
 
 ## Performance and RAM figures
 
