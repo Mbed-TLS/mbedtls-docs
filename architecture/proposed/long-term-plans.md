@@ -31,7 +31,7 @@ In Mbed TLS 3.0, existing ALT implementations continue to work, since PSA driver
 
 ### Automated and standardised code styling
 
-Our [coding standards](https://tls.mbed.org/kb/development/mbedtls-coding-standards) are currently enforced by manual code reviews which can lead to inconsistencies across the code base and places the burden on reviewers to spot these errors. It would be much more effective and efficient to automate the enforcement of the coding standards so that non-compliance is found and reported via an appropriate error.
+Our [coding standards](/kb/development/mbedtls-coding-standards.md) are currently enforced by manual code reviews which can lead to inconsistencies across the code base and places the burden on reviewers to spot these errors. It would be much more effective and efficient to automate the enforcement of the coding standards so that non-compliance is found and reported via an appropriate error.
 
 In order to facilitate automation, the coding standards should be revised to remove inconsistencies such as putting spaces inside parentheses *except* for `#if defined(XXX)`.
 

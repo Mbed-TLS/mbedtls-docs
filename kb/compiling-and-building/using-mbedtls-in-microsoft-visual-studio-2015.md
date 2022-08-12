@@ -1,6 +1,6 @@
 # Arm Mbed TLS in Microsoft Visual Studio 2015
 
-This tutorial shows how to get started with the Mbed TLS cryptography library in a Windows environment, using Microsoft Visual Studio 2015. This tutorial uses the sample client application (from [this example](https://tls.mbed.org/kb/how-to/mbedtls-tutorial)). This application sends an HTTP request to read an HTML page from a server.This tutorial uses Mbed TLS to enable encrypting our communication with the server with TLS. Note that Mbed TLS supports Visual Studio starting from version 2010.
+This tutorial shows how to get started with the Mbed TLS cryptography library in a Windows environment, using Microsoft Visual Studio 2015. This tutorial uses the sample client application (from [this example](/kb/how-to/mbedtls-tutorial.md)). This application sends an HTTP request to read an HTML page from a server.This tutorial uses Mbed TLS to enable encrypting our communication with the server with TLS. Note that Mbed TLS supports Visual Studio starting from version 2010.
 
 There are two possible ways to build Mbed TLS on Windows:
 
@@ -13,7 +13,7 @@ The sample application is a command-line program, written in C. You can just as 
 
 ## Download Mbed TLS
 
-First, you need to get the Mbed TLS source code. Download `mbedtls-<version\>-gpl.tgz` from [the Mbed TLS dowload location](https://tls.mbed.org/download). To unpack this file, you can use a tool like [7-zip](http://www.7-zip.org/).
+First, you need to get the Mbed TLS source code. Download `mbedtls-<version\>-gpl.tgz` from [the Mbed TLS dowload location](/download). To unpack this file, you can use a tool like [7-zip](http://www.7-zip.org/).
 
 The default installation of Visual Studio creates this folder: My Documents\Visual Studio 2015\Projects. Extract the contents of the .tgz file to this location. Make sure to extract the second occurrence of the `mbedtls-<version>` folder. Otherwise, the paths given later in this tutorial won't match.
 
@@ -280,7 +280,7 @@ You can use Mbed TLS to create a TLS server and client by providing a framework 
 
 ### Modify application to use TLS
 
-[This tutorial](https://tls.mbed.org/kb/how-to/mbedtls-tutorial) describes how to add Mbed TLS to the sample application. For now, replace the code in the `client.c` file by copying and pasting this code over the existing code:
+[This tutorial](/kb/how-to/mbedtls-tutorial.md) describes how to add Mbed TLS to the sample application. For now, replace the code in the `client.c` file by copying and pasting this code over the existing code:
 
 ```
 #include <string.h>

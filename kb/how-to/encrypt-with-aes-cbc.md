@@ -1,8 +1,8 @@
 # Encrypt data with AES-CBC mode
 
-To encrypt data with [AES](https://tls.mbed.org/aes-source-code), you need a key. If you are not familiar with key generation, please check out [How to generate an AES key](/kb/how-to/generate-an-aes-key) for more information.
+To encrypt data with [AES](/aes-source-code), you need a key. If you are not familiar with key generation, please check out [How to generate an AES key](/kb/how-to/generate-an-aes-key) for more information.
 
-<span class="notes">**Note:** Please understand that only encrypting data with AES-CBC does not keep the data safe from modification or viewing. You still have to protect the **key** from others and the **integrity** of the data. This article only shows you how to use the [AES API](https://tls.mbed.org/api/aes_8h.html) to encrypt some data with the AES-CBC mode.</span>
+<span class="notes">**Note:** Please understand that only encrypting data with AES-CBC does not keep the data safe from modification or viewing. You still have to protect the **key** from others and the **integrity** of the data. This article only shows you how to use the [AES API](/api/aes_8h.html) to encrypt some data with the AES-CBC mode.</span>
 
 To start using AES, add the header file for the module to your file:
 

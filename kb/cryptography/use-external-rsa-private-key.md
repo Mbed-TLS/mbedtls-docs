@@ -16,4 +16,4 @@ You can then use the normal `mbedtls_set_own_cert()` function. From the perspect
 
 If you are using a smartcard, you don't have to write your own logic. You can use the `libpkcs11-helper` library.
 
-Mbed TLS includes a helper class for using the `libpkcs11-helper` when you enable `MBEDTLS_PKCS11_C` in `config.h`. See [How do I configure Mbed TLS](https://tls.mbed.org/kb/compiling-and-building/how-do-i-configure-mbedtls).
+Mbed TLS includes a helper class for using the `libpkcs11-helper` when you enable `MBEDTLS_PKCS11_C` in `config.h`. See [How do I configure Mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md).

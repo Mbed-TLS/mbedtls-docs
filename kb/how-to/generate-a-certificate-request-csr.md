@@ -30,7 +30,7 @@ This key generation application accepts the following arguments:
     filename=%s           default: keyfile.key
     format=pem|der        default: pem
 ```
-The following command generates a 2048 bit RSA key file, as explained [here](https://tls.mbed.org/kb/cryptography/rsa-key-pair-generator):
+The following command generates a 2048 bit RSA key file, as explained [here](/kb/cryptography/rsa-key-pair-generator.md):
 ```
 programs/pkey/gen_key type=rsa rsa_keysize=2048 filename=example.com.key
 ```

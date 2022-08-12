@@ -4,7 +4,7 @@ Mbed TLS should build out-of-the box on a large variety of platforms. However, y
 
 ## The configuration file
 
-The default configuration file is located in `include/mbedtls/config.h`. It is [fully documented](https://tls.mbed.org/api/config_8h.html) and contains the following sections:
+The default configuration file is located in `include/mbedtls/config.h`. It is [fully documented](/api/config_8h.html) and contains the following sections:
 
 * Select options depending on your platform in **System support**: does your compiler support inline assembly, does your libc/network stack provide IPv6, and so on.
 * Select which features you want to enable for corresponding modules in **Mbed TLS feature support**: which TLS version to support, which key exchanges, which specific elliptic curves, and so on.

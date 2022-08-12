@@ -4,7 +4,7 @@
 
 Mbed TLS is as loosely coupled as possible and does not rely on any external libraries for its code. It does use a number of standard `libc` function calls. This page describes which external calls are present and how you can remove them if no support for that function is available; it focuses on the core library only (excluding the example programs and test suites, but including the self test functions as they are part of the library).
 
-Configuration flags control some of the dependencies. Please see [How do I configure mbed TLS](https://tls.mbed.org/kb/compiling-and-building/how-do-i-configure-mbedtls) and [How do I port Mbed TLS to a new environment or OS](https://tls.mbed.org/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS) for a full description of how to set the configuration flags to port Mbed TLS to a new environment.
+Configuration flags control some of the dependencies. Please see [How do I configure mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md) and [How do I port Mbed TLS to a new environment or OS](/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS.md) for a full description of how to set the configuration flags to port Mbed TLS to a new environment.
 
 ## Signals and alarms
 
@@ -24,7 +24,7 @@ Only `net_sockets.c` uses `select()`, for the purposes of sleeping (only used in
 
 ## Network/socket based functions
 
-The network and socket based functions are only used in the *Network* module (`net_sockets.c`). As the TLS part only uses function pointers, you can replace these dependencies with something else (such as lwIP) as long as the behavior is similar. To use different networking functions, disable `MBEDTLS_NET_C`, and implement your own socket module, as described in [the porting article](https://tls.mbed.org/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS).
+The network and socket based functions are only used in the *Network* module (`net_sockets.c`). As the TLS part only uses function pointers, you can replace these dependencies with something else (such as lwIP) as long as the behavior is similar. To use different networking functions, disable `MBEDTLS_NET_C`, and implement your own socket module, as described in [the porting article](/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS.md).
 
 **Functions covered:** on Windows, functions from the Windows Sockets API, and on Unix:
 
@@ -96,7 +96,7 @@ You can disable all by commenting `MBEDTLS_FS_IO` in `config.h`.
 
 ## Dynamic memory functions
 
-A number of modules (ASN1, Bignum/MPI, Cipher, CMAC, DHM, ECP, MD, PEM, PK, PKCS11, RSA, TLS, X.509) use dynamic memory allocation. You can provide your own implementations, and we even provide a buffer-based memory allocator. For further details, read [Letting Mbed TLS use static memory instead of the heap](https://tls.mbed.org/kb/how-to/using-static-memory-instead-of-the-heap).
+A number of modules (ASN1, Bignum/MPI, Cipher, CMAC, DHM, ECP, MD, PEM, PK, PKCS11, RSA, TLS, X.509) use dynamic memory allocation. You can provide your own implementations, and we even provide a buffer-based memory allocator. For further details, read [Letting Mbed TLS use static memory instead of the heap](/kb/how-to/using-static-memory-instead-of-the-heap.md).
 
 **Functions covered:** 
 

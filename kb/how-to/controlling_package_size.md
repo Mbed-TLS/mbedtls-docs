@@ -9,7 +9,7 @@ This article reviews the following topics:
 1. [Configuring Mbed TLS in networks with high loss rates](#configuring-mbed-tls-in-lossy-networks): using `MBEDTLS_SSL_DTLS_MAX_BUFFERING` and `mbedtls_ssl_set_datagram_packing()` to control two features improving DTLS
    handshake reliability.
 
-<span class="notes">**Note:** This article is _not_ meant as an introduction to Mbed TLS; you can find that in the separate [Mbed TLS tutorial](https://tls.mbed.org/kb/how-to/mbedtls-tutorial). Also, this article is about _DTLS only_ (the MFL extension exists in TLS, too, but currently Mbed TLS does not comprehensively support it), and it assumes that you are familiar with what DTLS is, why you would want to use it, and how to configure Mbed TLS to implement it. If you are looking for answers to those questions, please see the [DTLS tutorial](https://tls.mbed.org/kb/how-to/dtls-tutorial).</span>
+<span class="notes">**Note:** This article is _not_ meant as an introduction to Mbed TLS; you can find that in the separate [Mbed TLS tutorial](/kb/how-to/mbedtls-tutorial.md). Also, this article is about _DTLS only_ (the MFL extension exists in TLS, too, but currently Mbed TLS does not comprehensively support it), and it assumes that you are familiar with what DTLS is, why you would want to use it, and how to configure Mbed TLS to implement it. If you are looking for answers to those questions, please see the [DTLS tutorial](/kb/how-to/dtls-tutorial.md).</span>
 
 ## Configuring Mbed TLS in networks with low MTU
 

@@ -6,7 +6,7 @@ To perform RSA encryption or decryption, you will need an RSA key. In the case o
 
 More information on generating an RSA key pair is in our article on [RSA key pair generation](/kb/cryptography/rsa-key-pair-generator). For now, we assume you have **already generated one or already have one in your possession**.
 
-You can recognize a PEM formatted RSA key pair because it starts with a line with dashes around the string `BEGIN RSA PRIVATE KEY` or `BEGIN PRIVATE KEY`. In the case of the latter, it is not necessarily an RSA key, because `BEGIN PRIVATE KEY` is also used for Elliptic Curve and other types of keys. Information on the PEM formatted key structure can be found in [this article](https://tls.mbed.org/kb/cryptography/asn1-key-structures-in-der-and-pem).
+You can recognize a PEM formatted RSA key pair because it starts with a line with dashes around the string `BEGIN RSA PRIVATE KEY` or `BEGIN PRIVATE KEY`. In the case of the latter, it is not necessarily an RSA key, because `BEGIN PRIVATE KEY` is also used for Elliptic Curve and other types of keys. Information on the PEM formatted key structure can be found in [this article](/kb/cryptography/asn1-key-structures-in-der-and-pem.md).
 
 You will need to start by [adding a random number generator (RNG)](/kb/how-to/add-a-random-generator) to your application. In this tutorial, the RNG is the CTR-DRBG generator, and the context is called `ctr_drbg`. The RSA public key is called `our-key.pub`, and the RSA private key is called `our-key.pem`.
 

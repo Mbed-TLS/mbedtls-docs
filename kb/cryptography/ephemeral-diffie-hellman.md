@@ -25,4 +25,4 @@ There are a lot of ciphersuites that support Ephemeral Diffie-Hellman. The key e
 - Elliptic Curve Ephemeral Diffie Hellman with ECDSA (ECDHE-ECDSA) key exchange
 - Pre Shared Key with Diffie Hellman (DHE-PSK) key exchange
 - Pre Shared Key with Elliptic Curve Diffie Hellman (ECDHE-PSK) key exchange
-The full list of ciphersuites can be found in our [list of supported SSL ciphersuites](https://tls.mbed.org/supported-ssl-ciphersuites).
+The full list of ciphersuites can be found in our [list of supported SSL ciphersuites](/supported-ssl-ciphersuites).

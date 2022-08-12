@@ -40,11 +40,11 @@ By default, the `MBEDTLS_ECP_MAX_BITS` is set to `521` to support 521 bits ellip
 
 ### Reducing the ECP window size
 
-By default, elliptic curve multiplications use a window size (`MBEDTLS_ECP_WINDOW_SIZE`) of up to 6. You can reduce this value down to 2, which reduces the memory used to the detriment of performance. The larger the elliptic curves, the bigger the impact. See also [How to tune ECC resource usage](https://tls.mbed.org/kb/how-to/how-do-i-tune-elliptic-curves-resource-usage).
+By default, elliptic curve multiplications use a window size (`MBEDTLS_ECP_WINDOW_SIZE`) of up to 6. You can reduce this value down to 2, which reduces the memory used to the detriment of performance. The larger the elliptic curves, the bigger the impact. See also [How to tune ECC resource usage](/kb/how-to/how-do-i-tune-elliptic-curves-resource-usage.md).
 
 ### Disabling the ECP fixed point optimizations
 
-If you disable the ECP fixed point optimizations (`MBEDTLS_ECP_FIXED_POINT_OPTIM`), you lose some performance but use less memory. See also [How to tune ECC resource usage](https://tls.mbed.org/kb/how-to/how-do-i-tune-elliptic-curves-resource-usage).
+If you disable the ECP fixed point optimizations (`MBEDTLS_ECP_FIXED_POINT_OPTIM`), you lose some performance but use less memory. See also [How to tune ECC resource usage](/kb/how-to/how-do-i-tune-elliptic-curves-resource-usage.md).
 
 ## SSL/TLS
 

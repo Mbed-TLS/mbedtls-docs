@@ -7,7 +7,7 @@ An AES key is a random bitstring of the right length.
 
 If you need to generate your own AES key for encrypting data, you should use a good random source. The strength of the key depends on the unpredictability of the random.
 
-Mbed TLS includes the [CTR-DRBG module](https://tls.mbed.org/ctr-drbg-source-code) and an [Entropy Collection module](https://tls.mbed.org/entropy-source-code) to help you with making an AES key generator for your key.
+Mbed TLS includes the [CTR-DRBG module](/ctr-drbg-source-code) and an [Entropy Collection module](/entropy-source-code) to help you with making an AES key generator for your key.
 
 To use the AES generator, you need to have the modules enabled in the `config.h` files (`MBEDTLS_CTR_DRBG_C` and `MBEDTLS_ENTROPY_C`), see [How do I configure Mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls).
 

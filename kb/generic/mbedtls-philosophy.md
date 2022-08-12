@@ -7,12 +7,12 @@ Mbed TLS takes a lean-and-mean approach to software development. We have designe
 
 ### Documented
 
-Mbed TLS has a large amount of documentation online, including the [full doxygen API documentation](https://tls.mbed.org/api), the [Design Documentation for security evaluations](https://tls.mbed.org/high-level-design), [example applications](https://tls.mbed.org/source-code) and more.
+Mbed TLS has a large amount of documentation online, including the [full doxygen API documentation](/api), the [Design Documentation for security evaluations](/high-level-design), [example applications](/source-code) and more.
 
 
 ### Tested
 
-The automatic test suites contain over 6000 unit tests for cryptographic validation, regression testing and code coverage, over 200 functional tests and over 2000 interoperability tests. See our [quality assurance page](https://tls.mbed.org/kb/generic/what-tests-and-checks-are-run-for-mbedtls) for more details.
+The automatic test suites contain over 6000 unit tests for cryptographic validation, regression testing and code coverage, over 200 functional tests and over 2000 interoperability tests. See our [quality assurance page](/kb/generic/what-tests-and-checks-are-run-for-polarssl.md) for more details.
 
 
 ### Loosely coupled

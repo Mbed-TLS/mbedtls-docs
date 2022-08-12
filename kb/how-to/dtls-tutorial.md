@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This tutorial introduces the specifics of using DTLS (as opposed to TLS) with Mbed TLS. It assumes you're familiar with using TLS connections with Mbed TLS, otherwise, we recommend starting with the [Mbed TLS tutorial](https://tls.mbed.org/kb/how-to/mbedtls-tutorial).
+This tutorial introduces the specifics of using DTLS (as opposed to TLS) with Mbed TLS. It assumes you're familiar with using TLS connections with Mbed TLS, otherwise, we recommend starting with the [Mbed TLS tutorial](/kb/how-to/mbedtls-tutorial.md).
 
 ## Short version
 
@@ -39,7 +39,7 @@ The callbacks have the following interface:
   void mbedtls_timing_set_delay( void *data, uint32_t int_ms, uint32_t fin_ms );
   int mbedtls_timing_get_delay( void *data );
 ```
-In both cases, `data` is a context shared by the callbacks. The **setting** function accepts two delays: an **intermediate** and a **final** one, and the **getting** function tells the caller which of these delays are expired, if any (see the documentation of [`mbedtls_ssl_set_timer_cb()`](https://tls.mbed.org/api/ssl_8h.html#a335ee78886daf7f8fb369fa925b3cca8) for details). The final delay is used to indicate when retransmission should happen, while the intermediate delay is an internal implementation detail whose semantic may evolve in future versions.
+In both cases, `data` is a context shared by the callbacks. The **setting** function accepts two delays: an **intermediate** and a **final** one, and the **getting** function tells the caller which of these delays are expired, if any (see the documentation of [`mbedtls_ssl_set_timer_cb()`](/api/ssl_8h.html#a335ee78886daf7f8fb369fa925b3cca8) for details). The final delay is used to indicate when retransmission should happen, while the intermediate delay is an internal implementation detail whose semantic may evolve in future versions.
 
 The interface was designed to allow a variety of implementation strategies, two of which two are:
 

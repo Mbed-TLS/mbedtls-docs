@@ -53,7 +53,7 @@ To help you get into the right mindset for reviewing, please see [Gilles Peskine
   * Do sample applications need to be updated?
   * Should there be a new sample application, or an extension to an existing one?
 * Code quality
-  * Does the PR follow our code style rules (https://tls.mbed.org/kb/development/mbedtls-coding-standards)?
+  * Does the PR follow our [code style rules](/kb/development/mbedtls-coding-standards.md)?
   * Is the code clean and readable?
   * Is the code portable?
   * Is the PR consistent with the principles of the library? (separate, independent object modules)
