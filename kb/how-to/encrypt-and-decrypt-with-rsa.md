@@ -4,11 +4,11 @@
 
 To perform RSA encryption or decryption, you will need an RSA key. In the case of an RSA-2048 decryption, you will need a **2048-bit RSA key**.
 
-More information on generating an RSA key pair is in our article on [RSA key pair generation](/kb/cryptography/rsa-key-pair-generator). For now, we assume you have **already generated one or already have one in your possession**.
+More information on generating an RSA key pair is in our article on [RSA key pair generation](/kb/cryptography/rsa-key-pair-generator.md). For now, we assume you have **already generated one or already have one in your possession**.
 
 You can recognize a PEM formatted RSA key pair because it starts with a line with dashes around the string `BEGIN RSA PRIVATE KEY` or `BEGIN PRIVATE KEY`. In the case of the latter, it is not necessarily an RSA key, because `BEGIN PRIVATE KEY` is also used for Elliptic Curve and other types of keys. Information on the PEM formatted key structure can be found in [this article](/kb/cryptography/asn1-key-structures-in-der-and-pem.md).
 
-You will need to start by [adding a random number generator (RNG)](/kb/how-to/add-a-random-generator) to your application. In this tutorial, the RNG is the CTR-DRBG generator, and the context is called `ctr_drbg`. The RSA public key is called `our-key.pub`, and the RSA private key is called `our-key.pem`.
+You will need to start by [adding a random number generator (RNG)](/kb/how-to/add-a-random-generator.md) to your application. In this tutorial, the RNG is the CTR-DRBG generator, and the context is called `ctr_drbg`. The RSA public key is called `our-key.pub`, and the RSA private key is called `our-key.pem`.
 
 Mbed TLS supports two ways for using RSA:
 
@@ -41,7 +41,7 @@ Start by initializing the public key context and reading in the public key:
         goto exit;
     }
 ```
-<span class="notes">**Note:** There is a [maximum amount of data you can encrypt with RSA](/kb/cryptography/rsa-encryption-maximum-data-size). For a 2048 bit RSA key, the maximum you can encrypt is 245 bytes (or 1960 bits).</span>
+<span class="notes">**Note:** There is a [maximum amount of data you can encrypt with RSA](/kb/cryptography/rsa-encryption-maximum-data-size.md). For a 2048 bit RSA key, the maximum you can encrypt is 245 bytes (or 1960 bits).</span>
 
 Store the data to be encrypted and its length in variables. This tutorial uses `to_encrypt` for the data, and its length in `to_encrypt_len`:
 ```

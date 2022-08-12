@@ -7,7 +7,7 @@ This tutorial will show how to compile Mbed TLS to a static `.a ` library file i
 
 * Ensure Cygwin and Eclipse CDT are properly installed on your Windows system.
 
- * If not, check our manual [How to set up the Eclipse CDT environment on Windows](/kb/compiling-and-building/setup-eclipse-cdt-environment-on-windows "How to setup Eclipse CDT environment on Windows") to get you started.
+ * If not, check our manual [How to set up the Eclipse CDT environment on Windows](/kb/compiling-and-building/setup-eclipse-cdt-environment-on-windows.md) to get you started.
 
 ## Download Mbed TLS
 * Download the [latest version of Mbed TLS](/download).
