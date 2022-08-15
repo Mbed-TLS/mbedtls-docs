@@ -17,7 +17,7 @@ SNI is enabled in the default configuration.
     ./scripts/config.pl set MBEDTLS_X509_CRT_PARSE_C
     ./scripts/config.pl set MBEDTLS_SSL_SERVER_NAME_INDICATION
 ```
-These are usual Mbed TLS compile time options, so you need to set them before compiling the library. For more information on configuring Mbed TLS please visit this [knowledge base article](https://tls.mbed.org/kb/compiling-and-building/how-do-i-configure-mbedtls).
+These are usual Mbed TLS compile time options, so you need to set them before compiling the library. For more information on configuring Mbed TLS please visit this [knowledge base article](/kb/compiling-and-building/how-do-i-configure-mbedtls.md).
 
 ## Configuring the SNI extension
 
@@ -25,7 +25,7 @@ You need to configure SNI on both the [client side](#client-side) and the [serve
 
 ### Client side
 
-The SNI extension uses the same server name that the client uses to verify the server certificates during the handshake. You can set it in the same [function](https://tls.mbed.org/api/ssl_8h.html):
+The SNI extension uses the same server name that the client uses to verify the server certificates during the handshake. You can set it in the same [function](/api/ssl_8h.html):
 ```
     mbedtls_ssl_set_hostname( context, "virtualserver15.myhost.com" );
 ```

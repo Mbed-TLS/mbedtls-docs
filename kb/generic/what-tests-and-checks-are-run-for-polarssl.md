@@ -45,7 +45,7 @@ AES-256-ECB Decrypt NIST KAT #12 .................................. PASS
 PASSED (77 / 77 tests (0 skipped))
 ```
 
-More information on the test suites and how to add more tests can be found in [this article](https://tls.mbed.org/kb/development/test_suites).
+More information on the test suites and how to add more tests can be found in [this article](/kb/development/test_suites.md).
 
 ### Interoperability testing
 Because our test vectors can only test individual functions, we also run interoperability tests to check live SSL connections against OpenSSL and GnuTLS.

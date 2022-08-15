@@ -200,7 +200,7 @@ Structure functions to exit or `goto` the exit code as early as possible. This p
 
 ### External function dependencies
 
-Mbed TLS code should minimize use of external functions. Standard `libc` functions are allowed, but should be documented in the [KB article on external dependencies](/kb/development/what-external-dependencies-does-mbedtls-rely-on).
+Mbed TLS code should minimize use of external functions. Standard `libc` functions are allowed, but should be documented in the [KB article on external dependencies](what-external-dependencies-does-mbedtls-rely-on.md).
 
 ### Minimize code based on precompiler directives
 

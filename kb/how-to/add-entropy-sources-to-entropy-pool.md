@@ -4,7 +4,7 @@ Good entropy is the fundamental basis for good cryptography and SSL or TLS. If y
 
 Therefore, you want to have at least one, but preferably multiple sources of good or reasonable entropy.
 
-For that purpose, Arm Mbed TLS provides the [entropy collector](https://tls.mbed.org/entropy-source-code). The entropy collector takes entropy from multiple sources and combines it into a single entropy source for use.
+For that purpose, Arm Mbed TLS provides the [entropy collector](/entropy-source-code). The entropy collector takes entropy from multiple sources and combines it into a single entropy source for use.
 
 ## Default entropy sources
 

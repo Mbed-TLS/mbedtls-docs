@@ -2,7 +2,7 @@
 
 Embedded platforms have memory limitations. Deciding what library to use on your product is important, to save overall code size. Therefore, you need the code size of Mbed TLS. This article is relevant for platforms running on Cortex M3/M4.
 
-Mbed TLS is a configurable library, so its code size varies, depending on the configuration used. For more information on how to control and reduce the code size, see [https://tls.mbed.org/kb/how-to/reduce-mbedtls-memory-and-storage-footprint](https://tls.mbed.org/kb/how-to/reduce-mbedtls-memory-and-storage-footprint).
+Mbed TLS is a configurable library, so its code size varies, depending on the configuration used. For more information on how to control and reduce the code size, see [Reducing Mbed TLS memory and storage footprint](reduce-polarssl-memory-and-storage-footprint.md).
 
 Obtain the code size of the library by using the `arm-none-eabi-size -t` command (when using the `arm-none-eabi` toolchain).
 

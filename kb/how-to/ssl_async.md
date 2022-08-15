@@ -33,14 +33,14 @@ Private key operation callbacks allow you to offload operations on a server's pr
 
 The interface has four callback functions:
 
-* [`f_async_sign_start`](https://tls.mbed.org/api/ssl_8h.html#ad57308aa77db11dbc3551fd92deb2520) receives the data to sign and must initiate the signature operation.
-* [`f_async_decrypt_start`](https://tls.mbed.org/api/ssl_8h.html#ac18191035f2598e3311d24a3ae40a0fa) receives the data to decrypt and must initiate the decryption operation.
-* [`f_async_resume`](https://tls.mbed.org/api/ssl_8h.html#a6a67de0c00f4aff4500ece33645a96cd) is called after `f_async_sign_start` or `f_async_decrypt_start`, and must return the signature or the decrypted data.
-* [`f_async_cancel`](https://tls.mbed.org/api/ssl_8h.html#a084ed94ac531cfde7dcd0d0c05d392bd) is called if the TLS connection is closed after a call to `f_async_sign_start` or `f_async_decrypt_start`, and before `f_async_resume` has returned the result.
+* [`f_async_sign_start`](/api/ssl_8h.html#ad57308aa77db11dbc3551fd92deb2520) receives the data to sign and must initiate the signature operation.
+* [`f_async_decrypt_start`](/api/ssl_8h.html#ac18191035f2598e3311d24a3ae40a0fa) receives the data to decrypt and must initiate the decryption operation.
+* [`f_async_resume`](/api/ssl_8h.html#a6a67de0c00f4aff4500ece33645a96cd) is called after `f_async_sign_start` or `f_async_decrypt_start`, and must return the signature or the decrypted data.
+* [`f_async_cancel`](/api/ssl_8h.html#a084ed94ac531cfde7dcd0d0c05d392bd) is called if the TLS connection is closed after a call to `f_async_sign_start` or `f_async_decrypt_start`, and before `f_async_resume` has returned the result.
 
 The interface defines separate `start` and `resume` functions, to allow **asynchronous** calls to the external cryptoprocessor. For example, the `start` functions may send the request to the external cryptoprocessor and return without waiting for a response, and the `resume` function would read the response when it is available. In the sections below, we show how to [use the callbacks in the synchronous case](#using-private-key-operation-callbacks-synchronously), then how to [run a non-blocking server with asynchronous callbacks](#using-private-key-operation-callbacks-asynchonously).
 
-To declare the callbacks, call the function [`mbedtls_ssl_conf_async_private_cb`](https://tls.mbed.org/api/ssl_8h.html#a0675aed5a2b2b9ff219a62ed28b50819):
+To declare the callbacks, call the function [`mbedtls_ssl_conf_async_private_cb`](/api/ssl_8h.html#a0675aed5a2b2b9ff219a62ed28b50819):
 ```
 mbedtls_ssl_conf_async_private_cb( ssl->config,
                                    f_async_sign_start,
@@ -52,7 +52,7 @@ mbedtls_ssl_conf_async_private_cb( ssl->config,
 
 If you don't use any decryption-based cipher suite, or if the decryption keys are on the server, you can set `f_async_decrypt_start` to `NULL`. In this case, the TLS stack doesn't try to use an external cryptoprocessor for decryption. Likewise, you can set `f_async_sign_start` to `NULL`, and the TLS stack doesn't call the external cryptoprocessor to sign anything. You can also pass `NULL` for `f_async_cancel` if you don't have any data to clean up when a TLS connection is closed during the cryptographic operation.
 
-If you need to return an error from the callbacks, you should use an [`MBEDTLS_PK_xxx`](https://tls.mbed.org/api/pk_8h.html#define-members) error code. This is because the callbacks simulate calls to the `pk` module. Do not use `MBEDTLS_SSL_xxx` error codes except as directed in the callback documentation.
+If you need to return an error from the callbacks, you should use an [`MBEDTLS_PK_xxx`](/api/pk_8h.html#define-members) error code. This is because the callbacks simulate calls to the `pk` module. Do not use `MBEDTLS_SSL_xxx` error codes except as directed in the callback documentation.
 
 ## Cryptographic data formats
 
@@ -60,13 +60,13 @@ The `start` callbacks take a `cert` argument, which is a pointer to the server c
 
 In simple cases, the pointer `cert` is one of the pointers passed to `mbedtls_ssl_conf_own_cert` when configuring the TLS connection. However, if you also use other callbacks, this may not apply. For example, if you register an SNI callback with `mbedtls_ssl_conf_sni()`, then this callback determines what certificate object the asynchronous callbacks receive.
 
-Please refer to the documentation on [signature](https://tls.mbed.org/api/ssl_8h.html#ad57308aa77db11dbc3551fd92deb2520) and [decryption](https://tls.mbed.org/api/ssl_8h.html#ac18191035f2598e3311d24a3ae40a0fa) callbacks for information about the input and output formats for cryptographic operations.
+Please refer to the documentation on [signature](/api/ssl_8h.html#ad57308aa77db11dbc3551fd92deb2520) and [decryption](/api/ssl_8h.html#ac18191035f2598e3311d24a3ae40a0fa) callbacks for information about the input and output formats for cryptographic operations.
 
 ## Using private key operation callbacks synchronously
 
 In `f_async_sign_start` or `f_async_decrypt_start`, make the required calculation, store the result somewhere, and return `0`. The TLS stack first calls the appropriate `start` function, then calls the resume callback. In the resume callback, copy the result to the output buffer.
 
-You can call [`mbedtls_ssl_set_async_operation_data`](https://tls.mbed.org/api/ssl_8h.html#ac57fb2abf2a5cd821d0ec8c3d6c59daf) and [`mbedtls_ssl_get_async_operation_data`](https://tls.mbed.org/api/ssl_8h.html#a7e424db2d8ccc9f0d5fe4ed0a9a5bab2) to store a pointer in the TLS context, in order to remember it between the start and resume calls.
+You can call [`mbedtls_ssl_set_async_operation_data`](/api/ssl_8h.html#ac57fb2abf2a5cd821d0ec8c3d6c59daf) and [`mbedtls_ssl_get_async_operation_data`](/api/ssl_8h.html#a7e424db2d8ccc9f0d5fe4ed0a9a5bab2) to store a pointer in the TLS context, in order to remember it between the start and resume calls.
 
 You can define callbacks that use an external cryptoprocessor synchronously:
 

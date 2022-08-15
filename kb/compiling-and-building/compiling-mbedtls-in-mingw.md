@@ -38,7 +38,7 @@ If you choose not to install one of these environments, you will have access onl
 
 ## Download Mbed TLS
 
-Download the latest version of [Mbed TLS](http://tls.mbed.org/download). You can use a tool like [7-zip](http://www.7-zip.org/) to unzip the file. Unzip to a location like `c:\mingw-64\projects`. This gives you the directory `C:\mingw-64\projects\mbedtls-x.y.z`.
+Download the latest version of [Mbed TLS](/download). You can use a tool like [7-zip](http://www.7-zip.org/) to unzip the file. Unzip to a location like `c:\mingw-64\projects`. This gives you the directory `C:\mingw-64\projects\mbedtls-x.y.z`.
 
 ## Build Mbed TLS
 
