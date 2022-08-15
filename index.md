@@ -16,7 +16,7 @@ caption: Contents
 ---
 reviews/index.md
 architecture/proposed/long-term-plans.md
-security-advisories/security-advisories.md
+tech-updates/security-advisories/index.md
 maintainers.md
 CONTRIBUTING.md
 kb/index.md
