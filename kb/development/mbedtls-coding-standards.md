@@ -315,7 +315,6 @@ Source files are structured as follows:
 #if !defined(MBEDTLS_AES_ALT)
 ```
 * Private local defines and portability code.
-* Static variables.
 * Function definitions.
 * If applicable, precompiler directive for marking the end of an alternative implementation:
 ```
