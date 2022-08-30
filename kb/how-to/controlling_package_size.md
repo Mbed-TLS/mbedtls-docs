@@ -30,7 +30,7 @@ mbedtls_ssl_set_mtu()
 This function may be called at any point during the lifetime of an SSL context, depending on when information about the underlying datagram link's MTU becomes available or gets updated (for example, when the rate of package loss indicates that your MTU configuration is too large). It takes effect immediately, ensuring that no datagram of a size exceeding the MTU is sent, and fragmenting handshake messages if necessary to guarantee this.
 
 
-For example, to set the initial MTU value used for the handshake, the function should be called after the SSL context has been set up using `mbedtls_ssl_setup()`, but before performing the handshake using `mbedtls_ssl_handshake()`. This is exemplified in the [ssl_server2](https://github.com/ARMmbed/mbedtls/blob/development/programs/ssl/ssl_server2.c) and [ssl_client2](https://github.com/ARMmbed/mbedtls/blob/development/programs/ssl/ssl_client2.c) example programs.
+For example, to set the initial MTU value used for the handshake, the function should be called after the SSL context has been set up using `mbedtls_ssl_setup()`, but before performing the handshake using `mbedtls_ssl_handshake()`. This is exemplified in the [ssl_server2](https://github.com/Mbed-TLS/mbedtls/blob/development/programs/ssl/ssl_server2.c) and [ssl_client2](https://github.com/Mbed-TLS/mbedtls/blob/development/programs/ssl/ssl_client2.c) example programs.
 
 ### Getting the maximum application data size
 

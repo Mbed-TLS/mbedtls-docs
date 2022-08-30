@@ -54,7 +54,7 @@ An optional addition `depends_on:` has same usage as in the `.data` files. The s
 
 ## `helpers.function` file
 
-This file, as its name indicates, contains useful common helper functions that can be used in the test functions. There are several functions, which are described in [`helpers.function`](https://github.com/ARMmbed/mbedtls/blob/development/tests/suites/helpers.function) itself. Following are a few common functions:
+This file, as its name indicates, contains useful common helper functions that can be used in the test functions. There are several functions, which are described in [`helpers.function`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/suites/helpers.function) itself. Following are a few common functions:
 
 * `hexify()` - A function converting binary data into a null-terminated string. You can be use it to convert a binary output to a string buffer, to be compared with expected output given as a string parameter.
 * `unhexify()` - A function converting a null-terminated string buffer into a binary buffer, returning the length of the data in the buffer. You can use it to convert the input string parameters to binary output for the function you are calling.
@@ -63,7 +63,7 @@ This file, as its name indicates, contains useful common helper functions that c
 
 ## Building your test suites
 
-The test suite `.c` files are auto generated with the `generate_code.pl` script. You could either use this script directly, or run `make` in the `tests/` folder, as the [`Makefile`](https://github.com/ARMmbed/mbedtls/blob/development/tests/Makefile) utilizes this script. Once the `.c` files are generated, you could build the test suite executables running `make` again. Running `make` from the Mbed TLS root folder will also generate the test suite source code, and build the test suite executables.
+The test suite `.c` files are auto generated with the `generate_code.pl` script. You could either use this script directly, or run `make` in the `tests/` folder, as the [`Makefile`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/Makefile) utilizes this script. Once the `.c` files are generated, you could build the test suite executables running `make` again. Running `make` from the Mbed TLS root folder will also generate the test suite source code, and build the test suite executables.
 
 ## Introducing new tests
 
@@ -72,7 +72,7 @@ When you want to introduce a new test, if the test function:
 * Already exists and it only missing the test data, then update the .data file with the additional test data. If required, you can add a resource file to the `data_files/` subfolder.
 * Doesn't exist, you can implement a new test function in the relevant `.function` file following the guidelines mentioned above and add test cases to the .data file to test your new feature.
 
-If you need to define a new test suite, for example when you introduce a new cryptography module, update the [`Makefile`](https://github.com/ARMmbed/mbedtls/blob/development/tests/Makefile) to build your test suite.
+If you need to define a new test suite, for example when you introduce a new cryptography module, update the [`Makefile`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/Makefile) to build your test suite.
 
 You should write your test code in the same platform abstraction as the library, and should not assume the existence of platform-specific functions.
 

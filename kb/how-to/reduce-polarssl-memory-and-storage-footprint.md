@@ -4,7 +4,7 @@ This page includes some of the optimizations that can help you reduce the RAM an
 
 All of the settings described on this page are available in `mbedtls_config.h`, see [How do I configure Mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md).
 
-If you need to reduce your memory footprint even more or have related questions, please submit a query in our [support forum](https://forums.mbed.com/c/mbed-tls.html) or open an issue in our [GitHub repository](https://github.com/ARMmbed/mbedtls/issues.html). We welcome ideas you may have to further reduce the size in RAM or ROM storage. Please, let us know if you have suggestions for improvements.
+If you need to reduce your memory footprint even more or have related questions, please submit a query in our [support forum](https://forums.mbed.com/c/mbed-tls.html) or open an issue in our [GitHub repository](https://github.com/Mbed-TLS/mbedtls/issues.html). We welcome ideas you may have to further reduce the size in RAM or ROM storage. Please, let us know if you have suggestions for improvements.
 
 # Binary footprint
 
@@ -76,7 +76,7 @@ int mbedtls_x509_crt_parse_der_nocopy( mbedtls_x509_crt *chain,
 ```
 
 The only difference between `mbedtls_x509_crt_parse_der_nocopy()` and `mbedtls_x509_crt_parse_der()` is that the buffer passed to `mbedtls_x509_crt_parse_der_nocopy()` holding the raw DER-encoded certificate must stay unmodified for the lifetime of the established
-X.509 certificate context. See the [documentation](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/x509_crt.h) for more information.
+X.509 certificate context. See the [documentation](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/x509_crt.h) for more information.
 
 _Example:_ If your own certificate and/or the trusted CA certificates are hardcoded in ROM, you may use `mbedtls_x509_parse_der_nocopy()` to create X.509 certificate contexts from them without an additional copy in RAM.
 
@@ -91,5 +91,5 @@ If you need to inspect the peer certificate during or immediately after the hand
 
 We provide a few example configurations in the `configs` directory. Two of them feature footprint optimization for a specific usage profile:
 
-* [`config-suite-b.h`](https://github.com/ARMmbed/mbedtls/blob/development/configs/config-suite-b.h) is a minimal configuration supporting NSA Suite B.
-* [`config-ccm-psk-tls1_2.h`](https://github.com/ARMmbed/mbedtls/blob/development/configs/config-ccm-psk-tls1_2.h) is a minimal configuration supporting pre-shared key and with AES-CCM.
+* [`config-suite-b.h`](https://github.com/Mbed-TLS/mbedtls/blob/development/configs/config-suite-b.h) is a minimal configuration supporting NSA Suite B.
+* [`config-ccm-psk-tls1_2.h`](https://github.com/Mbed-TLS/mbedtls/blob/development/configs/config-ccm-psk-tls1_2.h) is a minimal configuration supporting pre-shared key and with AES-CCM.

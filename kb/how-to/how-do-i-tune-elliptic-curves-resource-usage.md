@@ -4,7 +4,7 @@ Like most parts of Mbed TLS, the implementation of elliptic curve operations can
 
 ## Performance and RAM figures
 
-Since this page discusses performance-footprint trade-offs, it's useful to have some performance figures. For convenience, the figures quoted in this article were collected with Mbed TLS 2.2 on a machine with a 64-bit CPU. You can reproduce those results on your machine using [scripts/ecc-heap.sh](https://github.com/ARMmbed/mbedtls/blob/development/scripts/ecc-heap.sh) from the Mbed TLS sources.
+Since this page discusses performance-footprint trade-offs, it's useful to have some performance figures. For convenience, the figures quoted in this article were collected with Mbed TLS 2.2 on a machine with a 64-bit CPU. You can reproduce those results on your machine using [scripts/ecc-heap.sh](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/ecc-heap.sh) from the Mbed TLS sources.
 
 The RAM figures only include heap usage, not the stack. This is a limitation of the measurement script. However, these should still be useful, as most memory used by elliptic curve operations will be on the heap. Remember, however, that RAM figures may be slightly lower on a 32-bit machine.
 
