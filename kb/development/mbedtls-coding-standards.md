@@ -266,7 +266,7 @@ Structure header files as follows:
 #ifndef MBEDTLS_AES_H
 #define MBEDTLS_AES_H
 ```
-* Includes.
+* Includes. Always include `<mbedtls/build_info.h>` before anything that might depend on the compile-time configuration.
 * Public defines (Generic and error codes) and portability code.
 * C++ wrapper for C code:
 ```
