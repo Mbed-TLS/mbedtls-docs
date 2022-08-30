@@ -259,7 +259,8 @@ Each module should keep loose coupling with external modules and functions in mi
 
 Structure header files as follows:
 
-* License Part (APACHE).
+* Brief description of the file.
+* Copyright notice and license indication.
 * Header file define for `MBEDTLS_ {MODULE_NAME} _H`:
 ```
 #ifndef MBEDTLS_AES_H
@@ -301,7 +302,8 @@ extern "C" {
 
 Source files are structured as follows:
 
-* License Part (APACHE).
+* Brief description of the file.
+* Copyright notice and license indication.
 * Comments on possible standard documents used.
 * Precompiler directive for module:
 ```
