@@ -1,192 +1,78 @@
-# Using loose modules without the full library
+# Using only a few modules from the library
 
-## Separate application
+Mbed TLS is a critical security component. While the developers do their best to avoid bugs and achieve the highest level of security, bugs can happen, including security-critical ones. As a consequence, if you make an application that includes code from Mbed TLS, you should be prepared to upgrade Mbed TLS.
 
-If you want to make an application by using parts or modules of Mbed TLS, rather than building and including the entire Mbed TLS library, then rest assured.  Mbed TLS was made for this.
+You don't have to use the whole library, however! Mbed TLS is designed so you can include only the modules that you need.
 
+## Making a minimal configuration
 
-## Simple random number generator
+The file `include/mbedtls/mbedtls_config.h` contains a list of features and build-time options. To design a minimal configuration, start with a blank file and add the options you need. The documentation of each option describes its dependencies, if any.
 
-In the example below, we make an application called `rng` that generates random data. The application needs the `CTR_DRBG` module, which depends on the `Entropy` module, the `SHA-512` module and the `AES` module.
+Where to put your own configuration file? There are three choices:
 
-To make the application, follow these steps:
+* You can edit the file in place, if you wish.
+* You can place a file called `mbedtls/mbedtls_config.h` at some location in the include file search path that comes before the `include` directory from the Mbed TLS source tree.
+* You can give your configuration file a different name and set the preprocessor symbol `MBEDTLS_CONFIG_FILE` to the location of that file, including surrounding quotes.
 
-* Make a directory structure to work in.
-* Copy the relevant Mbed TLS files to the correct location.
-* Write a `Makefile`.
-* Write a `config.h` file for Mbed TLS.
-* Write the `rng.c` source file for the application.
-* Make the application.
-* Run the application that generates random data.
+For more information, see [How to configure Mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md).
 
-## 1. The directory
-Make a directory structure as follows:
+### Random generator example
 
-```
-my_dir/
-  mbedtls/
-```
+For example, suppose you want a cryptographically secure random generator and nothing else. A random generator consists of two parts: an entropy source, and a pseudorandom generator seeded by the entropy source. Mbed TLS provides an interface to the system's entropy sources in the `entropy` module enabled by `MBEDTLS_ENTROPY_C`. For the pseudorandom generator, there are two choices: CTR\_DRBG or HMAC\_DRBG, enabled with `MBEDTLS_CTR_DRBG_C` and `MBEDTLS_HMAC_DRBG_C` respectively.
 
-## 2. The Mbed TLS files
+The documentation of `MBEDTLS_ENTROPY_C` states that it requires either `MBEDTLS_SHA512_C` or `MBEDTLS_SHA256_C`. The CTR\_DRBG module requires ``MBEDTLS_AES_C`. The HMAC\_DRBG module requires `MBEDTLS_MD_C`, which in turn requires at least one hash module.
 
-Copy the following files from the Mbed TLS source directory `library/` to `my_dir/`:
-
-* `aes.c`
-* `entropy.c`
-* `entropy_poll.c`
-* `mbedtls_sha512.c`
-* `ctr_drbg.c`
-
-In addition, copy the following files from the Mbed TLS include directory `include/mbedtls/` to `my_dir/mbedtls/`:
-
-* `aes.h`
-* `entropy.h`
-* `entropy_poll.h`
-* `mbedtls_sha512.h`
-* `ctr_drbg.h`
-
-## 3. The Makefile
-
-Because we are using Linux, we will write a very straightforward `Makefile` to build the application in `my_dir/Makefile`:
+You decide to use HMAC\_DRBG, and use SHA-512 as the hash function both for entropy and for the DRBG. As a conseqence, you write the following configuration file:
 
 ```
-CFLAGS  += -I. -D_FILE_OFFSET_BITS=64 -Wall -W -Wdeclaration-after-statement
-OFLAGS  = -O2
-
-OBJS=   entropy.o       entropy_poll.o  ctr_drbg.o      mbedtls_sha512.o        aes.o
-
-all: rng
-
-.SILENT:
-
-.c.o:
-        echo "  CC    $<"
-        $(CC) $(CFLAGS) $(OFLAGS) -c $<
-
-rng: rng.c $(OBJS)
-        echo   "  CC    rng"
-        $(CC) $(CFLAGS) $(OFLAGS) rng.c -o $@ $(OBJS)
-
-clean:
-    rm -f *.o rng
-```
-
-## 4. The configuration: config.h
-
-We need to tell the Mbed TLS modules which parts they should activate during compilation. To enable compilation of the actual modules, Mbed TLS uses a configuration file, which should also be located in `mbedtls/`. We only want to activate basic functionality in our example application, so use the following file for `mbedtls/config.h`:
-
-```
-#define MBEDTLS_AES_C
 #define MBEDTLS_ENTROPY_C
-#define MBEDTLS_CTR_DRBG_C
+#define MBEDTLS_HMAC_DRBG_C
+#define MBEDTLS_MD_C
 #define MBEDTLS_SHA512_C
 ```
 
-This ensures that the content compiles.
+### Notes about Mbed TLS 2.x
 
-## 5. The Application: rng.c
+In Mbed TLS 2.x, the configuration file is located at `include/mbedtls/config.h`.
 
-Write a `rng.c` source file for the application. This application generates 1024 bytes of random and writes them to `output.rnd`:
-
+You should add the following line at the end of your configuration file:
 ```
-/**
- *  \brief Simple RNG generation example
- */
-
-#include "mbedtls/config.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #include "mbedtls/check_config.h"
+```
+This will cause compilation errors with descriptive messages if the configuration is inconsistent.
 
-#include <stdio.h>
+## Building Mbed TLS files directly in an application
 
-int main( void )
-{
-    FILE *f;
-    int ret;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
-    unsigned char buf[1024];
+Mbed TLS comes with build scripts for GNU make (`Makefile`), CMake (`CMakeLists.txt`) and Visual Studio (`visualc/VS2010/mbedTLS.sln`). By default, these create static libraries `mbedcrypto`, `mbedx509` and `mbedtls` which you can link into your application. (You don't need to link `mbedx509` or `mbedtls` if you don't use these features.) For more information, see [How to compile and build Mbed TLS](../compiling-and-building/how-do-i-build-compile-mbedtls.md).
 
-    if( ( f = fopen( "output.rnd", "wb+" ) ) == NULL )
-    {
-        printf( "failed to open 'output.rnd' for writing.\n" );
-        return( 1 );
-    }
+If you prefer, you can include the Mbed TLS source files in your own build scripts. All the library code is in the `library` subdirectory, except for aa few features that use code from the `3rdparty` directory tree. All the public headers are in the `include` directory tree.
 
-    mbedtls_entropy_init( &entropy );
-    if( ( ret = mbedtls_ctr_drbg_init( &ctr_drbg, mbedtls_entropy_func, &entropy,
-                               (const unsigned char *) "RANDOM_GEN",
-                               10 ) ) != 0 )
-    {
-        printf( "failed in ctr_drbg_init\n");
-        goto cleanup;
-    }
+### Compiling with Mbed TLS headers
 
-    if( ( ret = mbedtls_ctr_drbg_random( &ctr_drbg, buf, sizeof( buf ) ) ) != 0 )
-    {
-        printf("failed in ctr_drbg_random!\n");
-        goto cleanup;
-    }
-
-    fwrite( buf, 1, sizeof( buf ), f );
-
-    ret = 0;
-    printf("Random generated in 'output.rng'\n");
-
-cleanup:
-    fclose( f );
-    mbedtls_entropy_free( &entropy );
-
-    return( ret );
-}
+Both when building your application and when building Mbed TLS source files, make sure that the `include` directory of the Mbed TLS source tree is present in the header search path. For example, if Mbed TLS is in the subdirectory `external/mbedtls`:
+```
+cc -I external/mbedtls/include …
 ```
 
-### Final directory content
-The file structure should now look like this:
-
+If you have a custom configuration file with the same name in a different directory, it must come first on the header search path. For example, if your Mbed TLS configuration file is located at `configs/mbedtls/mbedtls_config.h` and the Mbed TLS source tree is located at `external/mbedtls`:
 ```
-my_dir/
-  aes.c
-  ctr_drbg.c
-  entropy.c
-  entropy_poll.c
-  Makefile
-  mbedtls/
-    aes.h
-    config.h
-    ctr_drbg.h
-    entropy.h
-    entropy_poll.h
-    mbedtls_sha512.h
-  rng.c
-  mbedtls_sha512.c
+cc -I configs -I external/mbedtls/include …
 ```
 
-## 6. Make the application
-
-To make the application, type `make` in the `my_dir/` directory:
+Recall that alternatively, you can give your configuration file a different name and specify its location with the preprocessor symbol `MBEDTLS_CONFIG_FILE`. For example, if your Mbed TLS configuration file is located at `my_mbedtls_config.h` and the Mbed TLS source tree is located at `external/mbedtls`.
 
 ```
-$ make
-  CC    entropy.c
-  CC    entropy_poll.c
-  CC    ctr_drbg.c
-  CC    mbedtls_sha512.c
-  CC    aes.c
-  CC    rng
-$
+cc -DMBEDTLS_CONFIG_FILE='"my_mbedtls_config.h"' -I configs -I external/mbedtls/include …
 ```
 
-## Run the application that generates random data
+Note that **you must pass the same configuration when building Mbed TLS and building your application**. Passing a different configuration is likely to result in misbehavior at runtime.
 
-Now, run the `rng` application to generate random data:
+### Linking Mbed TLS objects
 
-```
-$ ./rng
-Random generated in 'output.rnd'
-$
-```
+When you build Mbed TLS with the provided build scripts, all the source files are compiled. However, the resulting object files are empty for features that are disabled.
 
+If you wish, you can link selectively with just the object files you need. Generally speaking, a feature called `MBEDTLS_XXX_C` is provided by the file `library/xxx.c`. There are a few exceptions:
 
-<!--",using-loose-modules-without-the-full-library,"Step-by-step guide on how to make an application with loose modules from Mbed TLS without including or building the entire library",,"modules, example, tutorial, random",published,"2014-03-28 10:58:00",2,4038,"2015-07-24 09:51:00","Paul Bakker"-->
+* The Everest implementation of Curve25519 (`MBEDTLS_ECDH_VARIANT_EVEREST_ENABLED`) requires files from `3rdparty/everest`.
+* The PSA cryptography interface (`MBEDTLS_PSA_CRYPTO_C`) requires several files `library/psa_crypto_*.c` in addition to `library/psa_crypto.c` itself.
+* The TLS protocol implementation requires `library/ssl_msg.c` and possibly more files `ssl_tls1*.c` depending on which protocol versions are enabled, in addition to `library/ssl_tls.c`.
