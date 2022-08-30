@@ -206,6 +206,8 @@ Use of `goto` is allowed in functions that have to do cleaning up before returni
 
 Structure functions to exit or `goto` the exit code as early as possible. This prevents nesting of code blocks and improves code readability.
 
+Most functions that need cleanup have a single cleanup block at the end. The label for this block can be `cleanup:` or `exit:` (or `error:` if the block is skipped on success); follow the established convention when extending an existing module. Code that uses bignum must use `cleanup:` for the sake of `MBEDTLS_MPI_CHK`.
+
 ### External function dependencies
 
 Mbed TLS code should minimize use of external functions. Standard `libc` functions are allowed, but should be documented in the [KB article on external dependencies](what-external-dependencies-does-mbedtls-rely-on.md).
