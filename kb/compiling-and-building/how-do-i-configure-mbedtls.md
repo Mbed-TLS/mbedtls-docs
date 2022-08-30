@@ -13,12 +13,12 @@ The default configuration file is located in `include/mbedtls/mbedtls_config.h` 
 
 ## The configuration script
 
-You can edit the configuration file manually with a text editor of your choice. In some cases, however, it may be useful to set options in a more programmatic way. We provide a Perl script `scripts/config.pl` for doing so:
+You can edit the configuration file manually with a text editor of your choice. In some cases, however, it may be useful to set options in a more programmatic way. We provide a Python script `scripts/config.py` for doing so:
     ```
-    scripts/config.pl unset <name>
-    scripts/config.pl set <name> [<value>]
+    scripts/config.py unset <name>
+    scripts/config.py set <name> [<value>]
     ```
-The `config.pl` script automatically finds the `mbedtls_config.h` file when it runs this way from Mbed TLS' root directory. If you want to run it from another directory or on another configuration file (see below), you need to use the `-f` option.
+The `config.py` script automatically finds the `mbedtls_config.h` file when it runs this way from Mbed TLS' root directory. If you want to run it from another directory or on another configuration file (see below), you need to use the `-f` option.
 
 ## Alternative configuration files
 

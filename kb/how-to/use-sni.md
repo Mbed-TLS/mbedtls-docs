@@ -14,8 +14,8 @@ SNI is enabled in the default configuration.
 
 **SNI requires X509 certificates**, so the first step is to enable X509 in your Mbed TLS [configuration file](../compiling-and-building/how-do-i-configure-mbedtls.md):
 ```
-    ./scripts/config.pl set MBEDTLS_X509_CRT_PARSE_C
-    ./scripts/config.pl set MBEDTLS_SSL_SERVER_NAME_INDICATION
+    ./scripts/config.py set MBEDTLS_X509_CRT_PARSE_C
+    ./scripts/config.py set MBEDTLS_SSL_SERVER_NAME_INDICATION
 ```
 These are usual Mbed TLS compile time options, so you need to set them before compiling the library. For more information on configuring Mbed TLS please visit this [knowledge base article](/kb/compiling-and-building/how-do-i-configure-mbedtls.md).
 
