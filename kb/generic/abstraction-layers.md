@@ -12,9 +12,9 @@ These are standard functions from libc that are always needed. However, they wil
 
 Examples: `calloc()`, `free()`, `printf()` and `fprintf()`.
 
-These standard functions are abstracted in the **platform layer**. The layer core is enabled by default in `config.h` with `MBEDTLS_PLATFORM_C`, and allows the runtime customization of the relevant function.
+These standard functions are abstracted in the **platform layer**. The layer core is enabled by default in `mbedtls_config.h` with `MBEDTLS_PLATFORM_C`, and allows the runtime customization of the relevant function.
 
-The `MBEDTLS_PLATFORM_XXX` defined in `config.h` enables support for abstracting different functions.
+The `MBEDTLS_PLATFORM_XXX` defined in `mbedtls_config.h` enables support for abstracting different functions.
 
 For example, after enabling `MBEDTLS_PLATFORM_PRINTF_ALT`, you can set an alternative for `printf()` by calling `mbedtls_platform_set_printf()`.
 
@@ -24,7 +24,7 @@ These are additional functions from external libraries or OS that are needed onl
 
 Examples: threading.
 
-These abstractions are implemented in their own module and enabled or disabled with a single define, for example, `MBEDTLS_THREADING_C` in `config.h*`. They may also require additional configuration options. The threading library, for example, requires you to indicate which threading library you are using: pthread or an alternative.
+These abstractions are implemented in their own module and enabled or disabled with a single define, for example, `MBEDTLS_THREADING_C` in `mbedtls_config.h`. They may also require additional configuration options. The threading library, for example, requires you to indicate which threading library you are using: pthread or an alternative.
 
 ## Implementation abstraction
 
@@ -33,7 +33,7 @@ These are abstractions for functions that we already provide an implementation f
 Examples: AES, MD5 and Timing.
 
 To enable an implementation abstraction:
-- You'll need to enable the relevant macro: `MBEDTLS_XXX_ALT` in `config.h`.
+- You'll need to enable the relevant macro: `MBEDTLS_XXX_ALT` in `mbedtls_config.h`.
 - Provide a custom header, named: `xxx_alt.h`.
 - Provide an implementation.
 

@@ -4,7 +4,7 @@ Mbed TLS should build out-of-the box on a large variety of platforms. However, y
 
 ## The configuration file
 
-The default configuration file is located in `include/mbedtls/config.h`. It is [fully documented](/api/config_8h.html) and contains the following sections:
+The default configuration file is located in `include/mbedtls/mbedtls_config.h` (`include/mbedtls/config.h` up to Mbed TLS 2.28). It is [fully documented](/api/config_8h.html) and contains the following sections:
 
 * Select options depending on your platform in **System support**: does your compiler support inline assembly, does your libc/network stack provide IPv6, and so on.
 * Select which features you want to enable for corresponding modules in **Mbed TLS feature support**: which TLS version to support, which key exchanges, which specific elliptic curves, and so on.
@@ -18,7 +18,7 @@ You can edit the configuration file manually with a text editor of your choice. 
     scripts/config.pl unset <name>
     scripts/config.pl set <name> [<value>]
     ```
-The `config.pl` script automatically finds the `config.h` file when it runs this way from Mbed TLS' root directory. If you want to run it from another directory or on another configuration file (see below), you need to use the `-f` option.
+The `config.pl` script automatically finds the `mbedtls_config.h` file when it runs this way from Mbed TLS' root directory. If you want to run it from another directory or on another configuration file (see below), you need to use the `-f` option.
 
 ## Alternative configuration files
 
@@ -34,7 +34,7 @@ or, using **Cmake**:
     CFLAGS="-Ipath/to/config -DMBEDTLS_CONFIG_FILE='<my_config.h>'" cmake .
     make
     ```
-We provide a `check_config.h` file that checks the consistency of the configuration file. We highly recommended to `include` it at the end of your custom configuration file. If you use the above setup, you may need to adapt the `include` directive depending on your compiler.
+**Mbed TLS 2.2x only:** We provide a `check_config.h` file that checks the consistency of the configuration file. We highly recommended to `include` it at the end of your custom configuration file. If you use the above setup, you may need to adapt the `include` directive depending on your compiler. (Since Mbed TLS 3.0, `check_config.h` is included automatically.)
 
 ## Example configurations
 

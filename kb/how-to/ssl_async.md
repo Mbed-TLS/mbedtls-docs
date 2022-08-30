@@ -20,7 +20,7 @@ Support for private key operation callbacks in TLS is turned off by default. To 
 ```
 scripts/config.pl set MBEDTLS_SSL_ASYNC_PRIVATE
 ```
-Alternatively, ensure that the file `include/mbedtls/config.h` contains the following line (a commented-out version of this line is in the default configuration):
+Alternatively, ensure that the [configuration file](../compiling-and-building/how-do-i-configure-mbedtls.md) contains the following line (a commented-out version of this line is in the default configuration):
 ```
 #define MBEDTLS_SSL_ASYNC_PRIVATE
 ```

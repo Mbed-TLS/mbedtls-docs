@@ -11,7 +11,7 @@ You expect a reasonable performance speed for your SSL connection as well. Howev
 
 ## Explanation
 
-The overhead of the SSL debug module should be negligible when `mbedtls_debug_set_threshold( 0 );` is called. You may still want to [disable **MBEDTLS_DEBUG_C** in `config.h`](/kb/compiling-and-building/how-do-i-configure-mbedtls.md) in order to reduce the footprint and get the last few percent of performance improvement.
+The overhead of the SSL debug module should be negligible when `mbedtls_debug_set_threshold( 0 );` is called. You may still want to [disable **MBEDTLS_DEBUG_C** in `mbedtls_config.h`](/kb/compiling-and-building/how-do-i-configure-mbedtls.md) in order to reduce the footprint and get the last few percent of performance improvement.
 
 <!---increasing_ssl_performance_and_tls_performance
 ,"Small article on increasing the performance of your SSL connection or TLS connection with Mbed TLS",,"performance, debug, speed, optimizations",published,"2014-01-23 15:21:00",2,4163,"2015-07-24 11:52:00","Paul Bakker"--->

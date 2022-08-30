@@ -104,6 +104,6 @@ The cookie callbacks that are registered by default always fail. The rationale i
 You can, **if you are sure that amplification attacks against third parties are not an issue** in your particular deployment, disable `ClientHello` verification at run-time:
 
 * Register `NULL` callbacks.
-* Alternatively, at compilation: Undefine **MBEDTLS_SSL_DTLS_HELLO_VERIFY** in `config.h`.
+* Alternatively, at compilation: Undefine **MBEDTLS_SSL_DTLS_HELLO_VERIFY** in `mbedtls_config.h`.
 
 <!---",dtls-tutorial,"Article on the DTLS implementation inside Mbed TLS",,"dtls, tutorial",published,"2015-07-24 08:51:00",2,17496,"2016-02-17 17:31:00","Manuel PÃgouriÃ-Gonnard"--->

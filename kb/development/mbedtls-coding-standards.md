@@ -204,7 +204,7 @@ Mbed TLS code should minimize use of external functions. Standard `libc` functio
 
 ### Minimize code based on precompiler directives
 
-To minimize the code size and external dependencies, the availability of modules and module functionality is controlled by precompiler directives located in `config.h`. Each module should have at least its own module define for enabling or disabling the module altogether. Other files using the module header should only include the header file if the module is actually available.
+To minimize the code size and external dependencies, the availability of modules and module functionality is controlled by precompiler directives located in `mbedtls/mbedtls_config.h`. Each module should have at least its own module define for enabling or disabling the module altogether. Other files using the module header should only include the header file if the module is actually available.
 
 Since often systems that use Mbed TLS do not have a file system, functions specifically using the file system should be contained in `MBEDTLS_FS_IO` directives.
 
@@ -303,25 +303,19 @@ Source files are structured as follows:
 
 * License Part (APACHE).
 * Comments on possible standard documents used.
-* Config include and precompiler directive for module:
+* Precompiler directive for module:
 ```
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
-
 #if defined(MBEDTLS_AES_C)
 ```
-* Includes.
-* Precompiler directive for alternative implementation:
+* Includes. All library source files start by including `"common.h"`.
+* If applicable, precompiler directive for alternative implementation:
 ```
 #if !defined(MBEDTLS_AES_ALT)
 ```
 * Private local defines and portability code.
 * Static variables.
 * Function definitions.
-* Precompiler directive for marking the end of an alternative implementation:
+* If applicable, precompiler directive for marking the end of an alternative implementation:
 ```
 #endif /* !MBEDTLS_AES_ALT */
 ```

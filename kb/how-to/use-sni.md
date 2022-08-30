@@ -12,7 +12,7 @@ One possible solution would be to have the virtual servers share a certificate. 
 
 SNI is enabled in the default configuration.
 
-**SNI requires X509 certificates**, so the first step is to enable X509 in your Mbed TLS `config.h` file:
+**SNI requires X509 certificates**, so the first step is to enable X509 in your Mbed TLS [configuration file](../compiling-and-building/how-do-i-configure-mbedtls.md):
 ```
     ./scripts/config.pl set MBEDTLS_X509_CRT_PARSE_C
     ./scripts/config.pl set MBEDTLS_SSL_SERVER_NAME_INDICATION

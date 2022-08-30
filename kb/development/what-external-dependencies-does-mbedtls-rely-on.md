@@ -53,7 +53,7 @@ The *Timing* module may also use `gettimeofday()` if it doesn't know how to acce
 
 **Functions covered:** `gettimeofday()`
 
-The `time()` function is abstracted as `mbedtls_time()`, in case `MBEDTLS_HAVE_TIME` is defined, and no alternative implementation was given with the definition of `MBEDTLS_PLATFORM_TIME_ALT` or no `MBEDTLS_PLATFORM_TIME_MACRO` was set. The `mbedtls_timetime()` function will be used by the *TLS core* modules, as well as the provided implementation of the following callbacks: SSL session cache, SSL session tickets, DTLS hello cookies. All these modules only rely on time differences. In other words, they do not need `time()` to return the correct time, much less the correct date. You can remove this dependency by disabling `MBEDTLS_HAVE_TIME` in the `config.h` file, but you may loose some features, such as time-based rotation of session ticket keys. Alternatively, you can supply a different implementation for `mbedtls_time()`, by defining `MBEDTLS_PLATFORM_TIME_ALT()` and call `mbedtls_platform_set_time()` to set your own time function.
+The `time()` function is abstracted as `mbedtls_time()`, in case `MBEDTLS_HAVE_TIME` is defined, and no alternative implementation was given with the definition of `MBEDTLS_PLATFORM_TIME_ALT` or no `MBEDTLS_PLATFORM_TIME_MACRO` was set. The `mbedtls_timetime()` function will be used by the *TLS core* modules, as well as the provided implementation of the following callbacks: SSL session cache, SSL session tickets, DTLS hello cookies. All these modules only rely on time differences. In other words, they do not need `time()` to return the correct time, much less the correct date. You can remove this dependency by disabling `MBEDTLS_HAVE_TIME` in the `mbedtls_config.h` file, but you may loose some features, such as time-based rotation of session ticket keys. Alternatively, you can supply a different implementation for `mbedtls_time()`, by defining `MBEDTLS_PLATFORM_TIME_ALT()` and call `mbedtls_platform_set_time()` to set your own time function.
 
 If your platform supports a time function, with a different name, but same functionality, you can set it as `MBEDTLS_PLATFORM_TIME_MACRO` (with a possibility of defining `MBEDTLS_PLATFORM_TIME_TYPE_MACRO` as well).
 
@@ -78,7 +78,7 @@ If `MBEDTLS_FS_IO` is defined, the file functions are used in several Mbed TLS m
 - The entropy, *CTR-DRBG* and *HMAC_DRBG* modules use file functions for reading and updating seed files.
 - The *DHM* module uses file operations to read DH parameters files (`mbedtls_dhm_parse_dhmfile`).
 
-You can disable all by commenting `MBEDTLS_FS_IO` in `config.h`.
+You can disable all by commenting `MBEDTLS_FS_IO` in `mbedtls_config.h`.
 
 **Functions covered:** 
 
@@ -119,7 +119,7 @@ The `memmove()` function is used as an optimization in the *TLS* module. It is a
 
 ## String functions
 
-The `printf()` function is used in all self test functions as `mbedtls_printf()`, controlled by the `MBEDTLS_SELF_TEST` configuration flags. In addition, in the *MPI* module (`bignum.c`), `mbedtls_mpi_write_file()` uses `mbedtls_printf()` to print to `stdout` if `MBEDTLS_FS_IO` is defined. You can disable these dependencies in the `config.h` file. You can also provide your own implementation through the platform layer, see `MBEDTLS_PLATFORM_PRINTF_ALT` for an example. If your platform supports a print function with a different name, you can set it as `MBEDTLS_PLATFORM_PRINTF_MACRO`.
+The `printf()` function is used in all self test functions as `mbedtls_printf()`, controlled by the `MBEDTLS_SELF_TEST` configuration flags. In addition, in the *MPI* module (`bignum.c`), `mbedtls_mpi_write_file()` uses `mbedtls_printf()` to print to `stdout` if `MBEDTLS_FS_IO` is defined. You can disable these dependencies in the `mbedtls_config.h` file. You can also provide your own implementation through the platform layer, see `MBEDTLS_PLATFORM_PRINTF_ALT` for an example. If your platform supports a print function with a different name, you can set it as `MBEDTLS_PLATFORM_PRINTF_MACRO`.
 
 **Functions covered:** `printf()`
 

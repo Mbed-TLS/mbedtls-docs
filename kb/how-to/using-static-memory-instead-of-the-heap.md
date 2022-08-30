@@ -7,7 +7,7 @@ This currently gives you two options:
 1. Provide your own allocation and freeing functions.
 2. Use the buffer allocator feature in Mbed TLS.
 
-To enable the memory allocation layer, define `MBEDTLS_PLATFORM_C` and `MBEDTLS_PLATFORM_MEMORY` in the `config.h` file. See [How do I configure Mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md).
+To enable the memory allocation layer, define `MBEDTLS_PLATFORM_C` and `MBEDTLS_PLATFORM_MEMORY` in the `mbedtls_config.h` file. See [How do I configure Mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md).
 
 If you do not enable the layer, the libc standard `calloc()` and `free()` are used.
 
@@ -24,7 +24,7 @@ The prototypes for these functions are identical to the `libc` standard `calloc(
 
 If your system does not have a `libc` equivalent, you will get compile errors as `calloc()` or `free()` cannot be found.
 
-Defining `MBEDTLS_PLATFORM_NO_STD_FUNCTIONS` in the `config.h` file prevents Mbed TLS from ever knowing about those functions.
+Defining `MBEDTLS_PLATFORM_NO_STD_FUNCTIONS` in the `mbedtls_config.h` file prevents Mbed TLS from ever knowing about those functions.
 
 ### Providing your own hooks
 
@@ -35,7 +35,7 @@ If your operating system already provides an alternative to the `libc` allocator
 
 ## Using the Mbed TLS buffer allocator
 
-If you want Mbed TLS to allocate everything inside a static buffer, you can enable the buffer allocator by defining `MBEDTLS_MEMORY_BUFFER_ALLOC_C` in the `config.h` file.
+If you want Mbed TLS to allocate everything inside a static buffer, you can enable the buffer allocator by defining `MBEDTLS_MEMORY_BUFFER_ALLOC_C` in the `mbedtls_config.h` file.
 
 Before calling any other Mbed TLS functions, enable the buffer allocator as follows:
 

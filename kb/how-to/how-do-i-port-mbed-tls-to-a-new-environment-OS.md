@@ -21,7 +21,7 @@ The only parts of the library that potentially interact with the environment are
 
 In short, in order to compile Mbed TLS for a bare-metal environment which already has a standard C library, [configure your build](/kb/compiling-and-building/how-do-i-configure-mbedtls.md) by disabling `MBEDTLS_NET_C`, `MBEDTLS_TIMING_C` and `MBEDTLS_ENTROPY_PLATFORM`, and potentially `MBEDTLS_FS_IO`, `MBEDTLS_HAVE_TIME_DATE` and `MBEDTLS_HAVE_TIME`.
 
-This is more thoroughly documented in [`config.h`](/api/config_8h.html).
+This is more thoroughly documented in [`mbedtls_config.h`](/api/config_8h.html).
 
 The following sections give more detail on how to replace the missing parts.
 
