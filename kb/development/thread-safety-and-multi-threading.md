@@ -11,6 +11,8 @@ The default philosophy is that a single thread should only use or access one con
 - The documentation for the functions that access the shared context explicitly states the function is thread-safe, or
 - You perform explicit locking yourself (perhaps in a wrapper function).
 
+**Warning: In Mbed TLS 2.x, and in Mbed TLS 3.x at the time of writing, [the PSA API is not thread-safe](https://github.com/Mbed-TLS/mbedtls/issues/3263).**
+
 ## Thread safety with different versions
 
 Mbed TLS has a generic threading layer that handles default locks and mutexes for the user and abstracts the threading layer to allow easy pluging in any thread-library.
