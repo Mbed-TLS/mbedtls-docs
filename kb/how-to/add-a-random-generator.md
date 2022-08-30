@@ -66,6 +66,6 @@ Another way to add entropy at the start of your application is to use a seed fil
 
 ## Multithreaded use
 
-If you intend to use the CTR-DRBG module in multiple threads, please read our article on [entropy collection, random generation with threads](/kb/development/entropy-collection-and-random-generation-in-threaded-environment.md).
+If you intend to use the CTR-DRBG module in multiple threads, please read our article on [entropy collection, random generation with threads](../development/entropy-collection-and-random-generation-in-threaded-environment.md).
 
 <!--- "add-a-random-generator","Short article on how to add a good random generator to your application. Complete with source code examples!",,"entropy, random data, random number generator, RNG, ctr-drbg, entropy pool, security",published,"2013-09-11 12:10:00",2,11128,"2017-04-24 11:16:00","Paul Bakker" --->

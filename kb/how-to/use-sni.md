@@ -17,7 +17,7 @@ SNI is enabled in the default configuration.
     ./scripts/config.py set MBEDTLS_X509_CRT_PARSE_C
     ./scripts/config.py set MBEDTLS_SSL_SERVER_NAME_INDICATION
 ```
-These are usual Mbed TLS compile time options, so you need to set them before compiling the library. For more information on configuring Mbed TLS please visit this [knowledge base article](/kb/compiling-and-building/how-do-i-configure-mbedtls.md).
+These are usual Mbed TLS compile time options, so you need to set them before compiling the library. For more information on configuring Mbed TLS please visit this [knowledge base article](../compiling-and-building/how-do-i-configure-mbedtls.md).
 
 ## Configuring the SNI extension
 

@@ -7,7 +7,7 @@ This currently gives you two options:
 1. Provide your own allocation and freeing functions.
 2. Use the buffer allocator feature in Mbed TLS.
 
-To enable the memory allocation layer, define `MBEDTLS_PLATFORM_C` and `MBEDTLS_PLATFORM_MEMORY` in the `mbedtls_config.h` file. See [How do I configure Mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md).
+To enable the memory allocation layer, define `MBEDTLS_PLATFORM_C` and `MBEDTLS_PLATFORM_MEMORY` in the `mbedtls_config.h` file. See [How do I configure Mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md).
 
 If you do not enable the layer, the libc standard `calloc()` and `free()` are used.
 

@@ -4,7 +4,7 @@ To use RSA with Mbed TLS or any other application, you will most likely need an 
 
 ## Building the RSA key pair generator
 
-Mbed TLS ships with the source code for an RSA key pair generator application, called **gen_key**. To build the executable for the application, please check out the [building Mbed TLS](/kb/compiling-and-building/how-do-i-build-compile-mbedtls.md).
+Mbed TLS ships with the source code for an RSA key pair generator application, called **gen_key**. To build the executable for the application, please check out the [building Mbed TLS](../compiling-and-building/how-do-i-build-compile-mbedtls.md).
 
 After the compilation, the executable is often located in `programs/pkey/gen_key`.
 

@@ -23,7 +23,7 @@ This tutorial will show how to compile Mbed TLS to a static `.a ` library file i
 * Create your new C project by choosing  **File** > **New C Project**.
 * The **C Project** dialog pops up:
 
-![Eclipse new project popup](/kb/assets/mbedtls-tutorial-eclipse-static-lib-1.png)
+![Eclipse new project popup](../assets/mbedtls-tutorial-eclipse-static-lib-1.png)
 
 * In the **Project name** field, enter your project name (for example, "Mbedtls").
 
@@ -49,13 +49,13 @@ In this step, you import the Mbed TLS code into the project and make it ready fo
 Since we are using a mixture of Windows- and Unix-based tools, we will encounter our first problem:
 
 **Option 1:** Windows-style path:
-![Windows-style path](/kb/assets/mbedtls-tutorial-eclipse-static-lib-2.png)
+![Windows-style path](../assets/mbedtls-tutorial-eclipse-static-lib-2.png)
 
 If you add a Windows-style path like `C:/mbed/include`, project rebuilds will fail and `make` returns a `multiple target` error caused by the ``:`` character in your path.
 One solution is to always clean the project before a new rebuild.
 
 **Option 2:** Cygwin-style path:
-![Cygwin-style path](/kb/assets/mbedtls-tutorial-eclipse-static-lib-3.png)
+![Cygwin-style path](../assets/mbedtls-tutorial-eclipse-static-lib-3.png)
 
 If you add a Cygwin-style path like `/cygdrive/c/mbed/include` Eclipse will warn you that the directory cannot be found, and all your includes get an unresolved warning.
 **The project will compile anyway.**
@@ -63,7 +63,7 @@ If you add a Cygwin-style path like `/cygdrive/c/mbed/include` Eclipse will warn
 * Right click on your project and click **Import**.
 * Choose **General** > **Filesystem** and  **Next**.
 
-![Import Code](/kb/assets/mbedtls-tutorial-eclipse-static-lib-4.png)
+![Import Code](../assets/mbedtls-tutorial-eclipse-static-lib-4.png)
 
 * Navigate to the **MbedTLS** library folder
 * Select all the `.c` files

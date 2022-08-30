@@ -1,6 +1,6 @@
 # Arm Mbed TLS in Microsoft Visual Studio 2015
 
-This tutorial shows how to get started with the Mbed TLS cryptography library in a Windows environment, using Microsoft Visual Studio 2015. This tutorial uses the sample client application (from [this example](/kb/how-to/mbedtls-tutorial.md)). This application sends an HTTP request to read an HTML page from a server.This tutorial uses Mbed TLS to enable encrypting our communication with the server with TLS. Note that Mbed TLS supports Visual Studio starting from version 2010.
+This tutorial shows how to get started with the Mbed TLS cryptography library in a Windows environment, using Microsoft Visual Studio 2015. This tutorial uses the sample client application (from [this example](../how-to/mbedtls-tutorial.md)). This application sends an HTTP request to read an HTML page from a server.This tutorial uses Mbed TLS to enable encrypting our communication with the server with TLS. Note that Mbed TLS supports Visual Studio starting from version 2010.
 
 There are two possible ways to build Mbed TLS on Windows:
 
@@ -280,7 +280,7 @@ You can use Mbed TLS to create a TLS server and client by providing a framework 
 
 ### Modify application to use TLS
 
-[This tutorial](/kb/how-to/mbedtls-tutorial.md) describes how to add Mbed TLS to the sample application. For now, replace the code in the `client.c` file by copying and pasting this code over the existing code:
+[This tutorial](../how-to/mbedtls-tutorial.md) describes how to add Mbed TLS to the sample application. For now, replace the code in the `client.c` file by copying and pasting this code over the existing code:
 
 ```
 #include <string.h>

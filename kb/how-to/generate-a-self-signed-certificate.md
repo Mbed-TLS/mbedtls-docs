@@ -22,7 +22,7 @@ This key generation application accepts the following arguments:
     filename=%s           default: keyfile.key
     format=pem|der        default: pem
 ```
-The following command generates a 4096 bit RSA key file, as explained [here](/kb/cryptography/rsa-key-pair-generator.md):
+The following command generates a 4096 bit RSA key file, as explained [here](../cryptography/rsa-key-pair-generator.md):
 ```
 programs/pkey/gen_key type=rsa rsa_keysize=4096 filename=our_key.key
 ```

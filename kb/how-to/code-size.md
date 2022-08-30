@@ -18,7 +18,7 @@ Mbed TLS supplies a script that checks the [footprint](https://github.com/Mbed-T
 * `arm-none-eabi` toolchain installed and found in the `PATH` environment variable.
 * `make`.
 * POSIX shell.
-* Updated `include/mbedtls/mbedtls_config.h` with the required configuration. See [How do I configure Mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md) for more information.
+* Updated `include/mbedtls/mbedtls_config.h` with the required configuration. See [How do I configure Mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md) for more information.
 
 Note: The `arm-none-eabi` toolchain may give different results than other toolchains, such as `ARMCC` or `IAR.
 

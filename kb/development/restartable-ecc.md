@@ -6,7 +6,7 @@ Continue reading to learn about the workflow of the restartable ECC feature, sta
 
 ## Enabling the restartable ECC feature, generic flow
 
-* At configuration time, define `MBEDTLS_ECP_RESTARTABLE` in `mbedtls/mbedtls_config.h`. See [How do I configure Mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md) for more information.
+* At configuration time, define `MBEDTLS_ECP_RESTARTABLE` in `mbedtls/mbedtls_config.h`. See [How do I configure Mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md) for more information.
 * Set the maximal number of operations that you want to run in a row with the `ECP` module, using `mbedtls_ecp_set_max_ops()`.
 * Allocate the restart context, and initialize it by calling `mbedtls_xxx_restart_init()`.
 * `ECP`, `ECDSA`, `PK` and `X.509` need an explicit restart context, and `ECDH` and `SSL` don't, though `ECDH` requires an additional call to `mbedtls_ecdh_enable_restart()`.
