@@ -2,7 +2,7 @@
 
 Mbed TLS supplies several sample applications that demonstrate common use cases of the API. **These are sample programs only and do not cover full functionality of the API, or all use cases!**
 
-These examples are in the [*programs*](https://github.com/ARMmbed/mbedtls/tree/development/programs) folder, separated into subfolders according to their theme.  
+These examples are in the [*programs*](https://github.com/Mbed-TLS/mbedtls/tree/development/programs) folder, separated into subfolders according to their theme.  
 
 For more information, check the applications' `usage`.
 
@@ -33,12 +33,12 @@ These sample applications demonstrate the usage of asymmetric cryptography APIs 
 - `key_app_writer` - An example that demonstrates how to write a key file in different formats (`PEM` and `DER`), from a given key.
 - `key_app` - A program demonstrating how to read and parse a key.
 - `mpi_demo` - An application demonstrating how to use the multiple precision integers (`mpi`) APIs.
-- `pk_decrypt` - A reference application that demonstrates how to use the Public key-based decryption, using the [`pk`](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
-- `pk_encrypt` - A reference application that demonstrates how to use the Public key-based encryption, using the [`pk`](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
-- `pk_sign` - A reference application that demonstrates how to use the Public key-based signature creation, using the [`pk`](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
-- `pk_verify` - A reference application that demonstrates how to use the Public key-based signature verification, using the [`pk`](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
-- `rsa_decrypt` - An RSA decryption reference program, using the [`rsa`](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/rsa.h) APIs.
-- `rsa_encrypt` - An RSA encryption reference program, using the [`rsa`](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/rsa.h) APIs.
+- `pk_decrypt` - A reference application that demonstrates how to use the Public key-based decryption, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
+- `pk_encrypt` - A reference application that demonstrates how to use the Public key-based encryption, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
+- `pk_sign` - A reference application that demonstrates how to use the Public key-based signature creation, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
+- `pk_verify` - A reference application that demonstrates how to use the Public key-based signature verification, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
+- `rsa_decrypt` - An RSA decryption reference program, using the [`rsa`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/rsa.h) APIs.
+- `rsa_encrypt` - An RSA encryption reference program, using the [`rsa`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/rsa.h) APIs.
 - `rsa_genkey` - An application demonstrating how to generate an RSA key pair.
 - `rsa_sign_pss` - An application demonstrating how to create a signature with the [PKCS #1 v2.1](https://www.ietf.org/rfc/rfc3447.txt) padding scheme.
 - `rsa_sign` - An application demonstrating how create a signature with the [PKCS #1 v1.5](https://tools.ietf.org/html/rfc2313) padding scheme.
@@ -57,7 +57,7 @@ These applications demonstrate how to use Mbed TLS TRNG and PRNG APIs.
 
 These applications demonstrate common use cases for the SSL\TLS stack APIs.  
 
-**Note: These applications use the [Mbed TLS test root certificate](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/certs.h) and are meant to work with one another. To test the client applications with an external server, the root certificate needs to be set correctly by calling the [`mbedtls_ssl_conf_ca_chain()`](/api/ssl_8h.html#a85c3bb6b682ba361d13de1c0a1eb69fb). Alternatively, some applications allow to optionally set the CA root certificate file through the command-line. To test the server applications with external clients, they need to replace `mbedtls_x509_crt_parse()` with [`mbedtls_x509_crt_parse_file()`](/api/group__x509__module.html#gad4da63133d3590aa311488497d4c38ec) to read the server and CA certificates, as well as replacing `mbedtls_pk_parse_key()` with [`mbedtls_pk_parse_keyfile()`](/api/pk_8h.html#a935d710e542409462d0209f2381da83e).**
+**Note: These applications use the [Mbed TLS test root certificate](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/certs.h) and are meant to work with one another. To test the client applications with an external server, the root certificate needs to be set correctly by calling the [`mbedtls_ssl_conf_ca_chain()`](/api/ssl_8h.html#a85c3bb6b682ba361d13de1c0a1eb69fb). Alternatively, some applications allow to optionally set the CA root certificate file through the command-line. To test the server applications with external clients, they need to replace `mbedtls_x509_crt_parse()` with [`mbedtls_x509_crt_parse_file()`](/api/group__x509__module.html#gad4da63133d3590aa311488497d4c38ec) to read the server and CA certificates, as well as replacing `mbedtls_pk_parse_key()` with [`mbedtls_pk_parse_keyfile()`](/api/pk_8h.html#a935d710e542409462d0209f2381da83e).**
 
 - `dtls_client` - A DTLS client demonstration program.
 - `dtls_server` - A DTLS server demonstration program.

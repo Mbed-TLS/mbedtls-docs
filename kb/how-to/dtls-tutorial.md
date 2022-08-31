@@ -66,7 +66,7 @@ With event-based I/O, **don't** use read timeouts by calling `mbedtls_ssl_conf_r
 
 The retransmission delay starts with a minimum value, then doubles on each retransmission until its maximum value is reached, in which case a handshake timeout is reported to the application. The minimum and maximum can be set using `mbedtls_ssl_conf_handshake_timeout()` (default: 1 to 60 seconds).
 
-See [the documentation of this function](https://github.com/ARMmbed/mbedtls/blob/edb1a483971c836e84e95d7b73ee39bd6b450675/include/mbedtls/ssl.h#L1300) for the meaning of those values if you need to tune them according to the characteristics of your network in order to achieve optimal performance/reliability. Even if your timeout values are perfectly tuned, your application should still be prepared to see failing handshakes and react appropriately.
+See [the documentation of this function](https://github.com/Mbed-TLS/mbedtls/blob/edb1a483971c836e84e95d7b73ee39bd6b450675/include/mbedtls/ssl.h#L1300) for the meaning of those values if you need to tune them according to the characteristics of your network in order to achieve optimal performance/reliability. Even if your timeout values are perfectly tuned, your application should still be prepared to see failing handshakes and react appropriately.
 
 <span class="notes">**Note:**: There might seem to be a parallel between `mbedtls_ssl_conf_handshake_timeout()` and `set_delay()` as they both accept two durations as arguments, but this is not the case. The **final delay** will take various values from `min` to `max`, doubling every time, while the **intermediate delay** is an internal implementation detail.</span>
 
@@ -104,6 +104,6 @@ The cookie callbacks that are registered by default always fail. The rationale i
 You can, **if you are sure that amplification attacks against third parties are not an issue** in your particular deployment, disable `ClientHello` verification at run-time:
 
 * Register `NULL` callbacks.
-* Alternatively, at compilation: Undefine **MBEDTLS_SSL_DTLS_HELLO_VERIFY** in `config.h`.
+* Alternatively, at compilation: Undefine **MBEDTLS_SSL_DTLS_HELLO_VERIFY** in `mbedtls_config.h`.
 
 <!---",dtls-tutorial,"Article on the DTLS implementation inside Mbed TLS",,"dtls, tutorial",published,"2015-07-24 08:51:00",2,17496,"2016-02-17 17:31:00","Manuel PÃgouriÃ-Gonnard"--->

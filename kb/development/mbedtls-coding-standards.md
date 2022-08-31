@@ -116,6 +116,8 @@ All public names (functions, variables, types, `enum` constants, macros) must st
     mbedtls_aes_setkey_decrypt()
 ```
 
+Exception: code implementing the PSA crypto API uses the `PSA_` and `psa_` prefixes. This includes official APIs as well as draft APIs that are on the PSA standards track. API extensions which are meant to remain specific to Mbed TLS, and internal functions, should use the `MBEDTLS_/mbedtls_` prefix, however there are many existing cases of using the `PSA_/psa_` prefix.
+
 ### Local names
 
 Static functions and macros that are not in public headers follow the same convention except the initial `MBEDTLS_` or `mbedtls_` prefix: they start directly with the function name.
@@ -127,6 +129,8 @@ Function parameters and local variables need no name spacing. They should use de
 By default all lengths and sizes are in bytes (or in number of elements, for arrays). If a name refers to a length or size in bits (as is often the case for key sizes) then the name must explicitly include `bit`, for example `mbedtls_pk_get_bitlen()` returns the size of the key in bits, while `mbedtls_pk_get_len()` returns the size in bytes. In addition, the documentation should always mention explicitly if key sizes are in bits or in bytes.
 
 ## API conventions
+
+This section applies fully to classic `mbedtls_xxx()` APIs and mostly to the newer `psa_xxx()` APIs. PSA have their own [conventions described in the PSA Crypto API specification](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html) which take precedence in case of conflicts.
 
 ### Module contexts
 
@@ -148,6 +152,7 @@ Most functions should return `int`, more specifically `0` on success (the operat
 
 * Functions that can never fail should either return `void` (such as `mbedtls_cipher_init()`) or directly the information requested (such as `mbedtls_mpi_get_bit()`).
 * Functions that look up some information should return either a pointer to this information or `NULL` if it wasn't found.
+* PSA functions that can fail return a [`psa_status_t` value](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#return-status).
 * Some functions may multiplex the return value, such as `mbedtls_asn1_write_len()` returns the length written on success or a negative error code. This mimics the behavior of some standard functions such as `write()` and `read()`, except there is no equivalent to `errno`: the return code should be specific enough.
 * Some internal functions may return `-1` on errors rather than a specific error code; it is then up to the calling function to pick a more appropriate error code if the error is to be propagated back to the user.
 * Functions whose name clearly indicates a boolean (such as, the name contains "has", "is" or "can") should return `0` for false and `1` for true. The name must be clear: for example, `mbdtls_has_foobar_support()` will return `1` if support for foobar is present; by contrast, `mbedtls_check_foobar_support()` will return `0` if support for foobar is present (success) and `-1` or a more specific error code if not. All functions named `check` must follow this rule and return `0` to indicate acceptable/valid/present/etc. Preference should generally be given to `check` names in order to avoid a mixture of `== 0` and `!= 0` tests.
@@ -161,6 +166,9 @@ Function should avoid in-out parameters for length (multiplexing buffer size on 
     mbedtls_write_thing( void *thing, unsigned char *buf, size_t buflen,
                          size_t *outlen ); // yes
 ```
+
+For PSA functions, [input buffers](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#input-buffer-sizes) have a `size_t xxx_size` parameter after the buffer pointer, and [output buffers](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#output-buffer-sizes) have a `size_t xxx_size` parameter for the buffer size followed by a `size_t *xxx_length` parameter for the output length. This convention is also preferred in new `mbedtls_xxx` code, but older modules often use different conventions.
+
 You can use in-out parameters for functions that receive a pointer to some buffer, and update it after parsing from or writing to that buffer:
 ```
     mbedtls_asn1_get_int( unsigned char **p,
@@ -198,13 +206,15 @@ Use of `goto` is allowed in functions that have to do cleaning up before returni
 
 Structure functions to exit or `goto` the exit code as early as possible. This prevents nesting of code blocks and improves code readability.
 
+Most functions that need cleanup have a single cleanup block at the end. The label for this block can be `cleanup:` or `exit:` (or `error:` if the block is skipped on success); follow the established convention when extending an existing module. Code that uses bignum must use `cleanup:` for the sake of `MBEDTLS_MPI_CHK`.
+
 ### External function dependencies
 
 Mbed TLS code should minimize use of external functions. Standard `libc` functions are allowed, but should be documented in the [KB article on external dependencies](what-external-dependencies-does-mbedtls-rely-on.md).
 
 ### Minimize code based on precompiler directives
 
-To minimize the code size and external dependencies, the availability of modules and module functionality is controlled by precompiler directives located in `config.h`. Each module should have at least its own module define for enabling or disabling the module altogether. Other files using the module header should only include the header file if the module is actually available.
+To minimize the code size and external dependencies, the availability of modules and module functionality is controlled by precompiler directives located in `mbedtls/mbedtls_config.h`. Each module should have at least its own module define for enabling or disabling the module altogether. Other files using the module header should only include the header file if the module is actually available.
 
 Since often systems that use Mbed TLS do not have a file system, functions specifically using the file system should be contained in `MBEDTLS_FS_IO` directives.
 
@@ -259,13 +269,14 @@ Each module should keep loose coupling with external modules and functions in mi
 
 Structure header files as follows:
 
-* License Part (APACHE).
+* Brief description of the file.
+* Copyright notice and license indication.
 * Header file define for `MBEDTLS_ {MODULE_NAME} _H`:
 ```
 #ifndef MBEDTLS_AES_H
 #define MBEDTLS_AES_H
 ```
-* Includes.
+* Includes. Always include `<mbedtls/build_info.h>` before anything that might depend on the compile-time configuration.
 * Public defines (Generic and error codes) and portability code.
 * C++ wrapper for C code:
 ```
@@ -301,27 +312,21 @@ extern "C" {
 
 Source files are structured as follows:
 
-* License Part (APACHE).
+* Brief description of the file.
+* Copyright notice and license indication.
 * Comments on possible standard documents used.
-* Config include and precompiler directive for module:
+* Precompiler directive for module:
 ```
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
-
 #if defined(MBEDTLS_AES_C)
 ```
-* Includes.
-* Precompiler directive for alternative implementation:
+* Includes. All library source files start by including `"common.h"`.
+* If applicable, precompiler directive for alternative implementation:
 ```
 #if !defined(MBEDTLS_AES_ALT)
 ```
 * Private local defines and portability code.
-* Static variables.
 * Function definitions.
-* Precompiler directive for marking the end of an alternative implementation:
+* If applicable, precompiler directive for marking the end of an alternative implementation:
 ```
 #endif /* !MBEDTLS_AES_ALT */
 ```

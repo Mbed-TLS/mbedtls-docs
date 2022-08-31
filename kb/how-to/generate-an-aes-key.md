@@ -9,7 +9,7 @@ If you need to generate your own AES key for encrypting data, you should use a g
 
 Mbed TLS includes the [CTR-DRBG module](/ctr-drbg-source-code) and an [Entropy Collection module](/entropy-source-code) to help you with making an AES key generator for your key.
 
-To use the AES generator, you need to have the modules enabled in the `config.h` files (`MBEDTLS_CTR_DRBG_C` and `MBEDTLS_ENTROPY_C`), see [How do I configure Mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md).
+To use the AES generator, you need to have the modules enabled in the `mbedtls/config.h` files (`MBEDTLS_CTR_DRBG_C` and `MBEDTLS_ENTROPY_C`), see [How do I configure Mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md).
 
 Include the following headers in your code:
 

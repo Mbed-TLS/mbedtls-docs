@@ -13,7 +13,7 @@ A test data file consists of a sequence of paragraphs separated by a single empt
 Each paragraph describes one test case and must consist of:
 
 1. One line, which is the test case name.
-1. An optional line starting with the 11-character prefix `depends_on:`. This line consists of a list of compile-time options separated by the character ':', with no whitespace. The test case is executed only if all of these configuration options are enabled in `config.h`. Note that this filtering is done at run time.
+1. An optional line starting with the 11-character prefix `depends_on:`. This line consists of a list of compile-time options separated by the character ':', with no whitespace. The test case is executed only if all of these configuration options are enabled in `mbedtls_config.h`. Note that this filtering is done at run time.
 1. A line containing the test case function to execute and its parameters. This last line contains a test function name and a list of parameters separated by the character ':'. Each parameter can be any C expression of the correct type (only `int` or `char *` are allowed as parameters).
 
 For example:
@@ -29,13 +29,13 @@ pk_parse_keyfile_rsa:"data_files/keyfile.aes256":"testkey":0
 Code file that contains the actual test functions. The file contains a series of code sequences that the following delimit:
 
 * `BEGIN_HEADER` / `END_HEADER` - Code that will be added to the header of the generated `.c` file. It could contain include directives, global variables, type definitions and static functions.
-* `BEGIN_DEPENDENCIES` / `END_DEPENDENCIES` - A list of configuration options that this test suite depends on. The test suite will only be generated if all of these options are enabled in `config.h`.
+* `BEGIN_DEPENDENCIES` / `END_DEPENDENCIES` - A list of configuration options that this test suite depends on. The test suite will only be generated if all of these options are enabled in `mbedtls_config.h`.
 * `BEGIN_SUITE_HELPERS` / `END_SUITE_HELPERS` - Similar to `XXXX_HEADER` sequence, except that this code will be added after the header sequence, in the generated `.c` file.
 * `BEGIN_CASE` / `END_CASE` - The test case functions in the test suite. Between each of these pairs, you should write *exactly* one function that is used to create the dispatch code. Between the `BEGIN_CASE` directive and the function definition, you shouldn't add anything, not even a comment.
 
-An optional addition `depends_on:` has same usage as in the `.data` files. The section with this annotation will only be generated if all of the specified options are enabled in `config.h`. It can be added to the following delimiters:
+An optional addition `depends_on:` has same usage as in the `.data` files. The section with this annotation will only be generated if all of the specified options are enabled in `mbedtls_config.h`. It can be added to the following delimiters:
 
-* `BEGIN_DEPENDENCIES` - When added in this delimiter section, the whole test suite will be generated only if all the configuration options are defined in `config.h`.
+* `BEGIN_DEPENDENCIES` - When added in this delimiter section, the whole test suite will be generated only if all the configuration options are defined in `mbedtls_config.h`.
 
     For example:
     ```
@@ -45,7 +45,7 @@ An optional addition `depends_on:` has same usage as in the `.data` files. The s
      */
     ```
 
-* `BEGIN_CASE` - When added to this delimiter, this specific test case will be generated at compile time only if the configuration option is defined in `config.h`.
+* `BEGIN_CASE` - When added to this delimiter, this specific test case will be generated at compile time only if the configuration option is defined in `mbedtls_config.h`.
 
     For example:
     ```
@@ -54,7 +54,7 @@ An optional addition `depends_on:` has same usage as in the `.data` files. The s
 
 ## `helpers.function` file
 
-This file, as its name indicates, contains useful common helper functions that can be used in the test functions. There are several functions, which are described in [`helpers.function`](https://github.com/ARMmbed/mbedtls/blob/development/tests/suites/helpers.function) itself. Following are a few common functions:
+This file, as its name indicates, contains useful common helper functions that can be used in the test functions. There are several functions, which are described in [`helpers.function`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/suites/helpers.function) itself. Following are a few common functions:
 
 * `hexify()` - A function converting binary data into a null-terminated string. You can be use it to convert a binary output to a string buffer, to be compared with expected output given as a string parameter.
 * `unhexify()` - A function converting a null-terminated string buffer into a binary buffer, returning the length of the data in the buffer. You can use it to convert the input string parameters to binary output for the function you are calling.
@@ -63,7 +63,7 @@ This file, as its name indicates, contains useful common helper functions that c
 
 ## Building your test suites
 
-The test suite `.c` files are auto generated with the `generate_code.pl` script. You could either use this script directly, or run `make` in the `tests/` folder, as the [`Makefile`](https://github.com/ARMmbed/mbedtls/blob/development/tests/Makefile) utilizes this script. Once the `.c` files are generated, you could build the test suite executables running `make` again. Running `make` from the Mbed TLS root folder will also generate the test suite source code, and build the test suite executables.
+The test suite `.c` files are auto generated with the `generate_code.pl` script. You could either use this script directly, or run `make` in the `tests/` folder, as the [`Makefile`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/Makefile) utilizes this script. Once the `.c` files are generated, you could build the test suite executables running `make` again. Running `make` from the Mbed TLS root folder will also generate the test suite source code, and build the test suite executables.
 
 ## Introducing new tests
 
@@ -72,7 +72,7 @@ When you want to introduce a new test, if the test function:
 * Already exists and it only missing the test data, then update the .data file with the additional test data. If required, you can add a resource file to the `data_files/` subfolder.
 * Doesn't exist, you can implement a new test function in the relevant `.function` file following the guidelines mentioned above and add test cases to the .data file to test your new feature.
 
-If you need to define a new test suite, for example when you introduce a new cryptography module, update the [`Makefile`](https://github.com/ARMmbed/mbedtls/blob/development/tests/Makefile) to build your test suite.
+If you need to define a new test suite, for example when you introduce a new cryptography module, update the [`Makefile`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/Makefile) to build your test suite.
 
 You should write your test code in the same platform abstraction as the library, and should not assume the existence of platform-specific functions.
 

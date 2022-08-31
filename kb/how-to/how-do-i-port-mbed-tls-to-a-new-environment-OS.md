@@ -8,7 +8,7 @@ This page explains how to port Mbed TLS to a new environment.
 
 ## Overview
 
-Mbed TLS has a modular design. Many of the modules are completely independent of any runtime, environment, or other module dependencies, with the exception of [those dependent on the C library](/kb/development/what-external-dependencies-does-mbedtls-rely-on.md).
+Mbed TLS has a modular design. Many of the modules are completely independent of any runtime, environment, or other module dependencies, with the exception of [those dependent on the C library](../development/what-external-dependencies-does-mbedtls-rely-on.md).
 
 The only parts of the library that potentially interact with the environment are:
 
@@ -19,9 +19,9 @@ The only parts of the library that potentially interact with the environment are
 * Functions that need the current time from a real-time clock. You can disable them, although that limits what validation is possible for certificates.
 * Functions that print messages, generally used for debug and diagnosis. You can disable or replace them to output messages to another platform-specific debug.
 
-In short, in order to compile Mbed TLS for a bare-metal environment which already has a standard C library, [configure your build](/kb/compiling-and-building/how-do-i-configure-mbedtls.md) by disabling `MBEDTLS_NET_C`, `MBEDTLS_TIMING_C` and `MBEDTLS_ENTROPY_PLATFORM`, and potentially `MBEDTLS_FS_IO`, `MBEDTLS_HAVE_TIME_DATE` and `MBEDTLS_HAVE_TIME`.
+In short, in order to compile Mbed TLS for a bare-metal environment which already has a standard C library, [configure your build](../compiling-and-building/how-do-i-configure-mbedtls.md) by disabling `MBEDTLS_NET_C`, `MBEDTLS_TIMING_C` and `MBEDTLS_ENTROPY_PLATFORM`, and potentially `MBEDTLS_FS_IO`, `MBEDTLS_HAVE_TIME_DATE` and `MBEDTLS_HAVE_TIME`.
 
-This is more thoroughly documented in [`config.h`](/api/config_8h.html).
+This is more thoroughly documented in [`mbedtls_config.h`](/api/config_8h.html).
 
 The following sections give more detail on how to replace the missing parts.
 
@@ -49,7 +49,7 @@ Please note that, for security reasons, the entropy module will refuse to output
 
 ## Hardware Acceleration
 
-You can substitute alternative implementations of cryptographic primitives in most modules that implement them to take advantage of the hardware acceleration that may be present. This can be achieved by defining the appropriate `MBEDTLS_*_ALT` preprocessor symbol for each module that needs to be replaced. For example `MBEDTLS_AES_ALT` may be defined to replace the whole AES API with a hardware accelerated AES driver, and `MBEDTLS_AES_ENCRYPT_ALT` may be defined for replacing only the AES block encrypt functionality. For more information, see the [hardware accelerator guidelines](/kb/development/hw_acc_guidelines.md).
+You can substitute alternative implementations of cryptographic primitives in most modules that implement them to take advantage of the hardware acceleration that may be present. This can be achieved by defining the appropriate `MBEDTLS_*_ALT` preprocessor symbol for each module that needs to be replaced. For example `MBEDTLS_AES_ALT` may be defined to replace the whole AES API with a hardware accelerated AES driver, and `MBEDTLS_AES_ENCRYPT_ALT` may be defined for replacing only the AES block encrypt functionality. For more information, see the [hardware accelerator guidelines](../development/hw_acc_guidelines.md).
 
 ## File system access
 

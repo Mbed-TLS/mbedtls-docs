@@ -6,7 +6,7 @@ Developers have the option to set the DHM parameters for SSL servers with `mbedt
 
 ## Default DHM parameters
 
-The DHM parameters that the TLS handshake uses are set by default to the 2048-bit MODP parameters from [RFC 3526](https://www.ietf.org/rfc/rfc3526.txt) (`MBEDTLS_DHM_RFC3526_MODP_2048_P_BIN` and `MBEDTLS_DHM_RFC3526_MODP_2048_G_BIN`). From a security perspective, it is desirable to use a larger value, unless you have clients for which this will cause interoperability issues. Larger values are provided in [dhm.h](https://github.com/ARMmbed/mbedtls/blob/development/include/mbedtls/dhm.h).
+The DHM parameters that the TLS handshake uses are set by default to the 2048-bit MODP parameters from [RFC 3526](https://www.ietf.org/rfc/rfc3526.txt) (`MBEDTLS_DHM_RFC3526_MODP_2048_P_BIN` and `MBEDTLS_DHM_RFC3526_MODP_2048_G_BIN`). From a security perspective, it is desirable to use a larger value, unless you have clients for which this will cause interoperability issues. Larger values are provided in [dhm.h](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/dhm.h).
 
 ## Custom parameters
 

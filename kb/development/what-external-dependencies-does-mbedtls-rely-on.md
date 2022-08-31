@@ -4,7 +4,7 @@
 
 Mbed TLS is as loosely coupled as possible and does not rely on any external libraries for its code. It does use a number of standard `libc` function calls. This page describes which external calls are present and how you can remove them if no support for that function is available; it focuses on the core library only (excluding the example programs and test suites, but including the self test functions as they are part of the library).
 
-Configuration flags control some of the dependencies. Please see [How do I configure mbed TLS](/kb/compiling-and-building/how-do-i-configure-mbedtls.md) and [How do I port Mbed TLS to a new environment or OS](/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS.md) for a full description of how to set the configuration flags to port Mbed TLS to a new environment.
+Configuration flags control some of the dependencies. Please see [How do I configure mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md) and [How do I port Mbed TLS to a new environment or OS](../how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS.md) for a full description of how to set the configuration flags to port Mbed TLS to a new environment.
 
 ## Signals and alarms
 
@@ -24,7 +24,7 @@ Only `net_sockets.c` uses `select()`, for the purposes of sleeping (only used in
 
 ## Network/socket based functions
 
-The network and socket based functions are only used in the *Network* module (`net_sockets.c`). As the TLS part only uses function pointers, you can replace these dependencies with something else (such as lwIP) as long as the behavior is similar. To use different networking functions, disable `MBEDTLS_NET_C`, and implement your own socket module, as described in [the porting article](/kb/how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS.md).
+The network and socket based functions are only used in the *Network* module (`net_sockets.c`). As the TLS part only uses function pointers, you can replace these dependencies with something else (such as lwIP) as long as the behavior is similar. To use different networking functions, disable `MBEDTLS_NET_C`, and implement your own socket module, as described in [the porting article](../how-to/how-do-i-port-mbed-tls-to-a-new-environment-OS.md).
 
 **Functions covered:** on Windows, functions from the Windows Sockets API, and on Unix:
 
@@ -53,7 +53,7 @@ The *Timing* module may also use `gettimeofday()` if it doesn't know how to acce
 
 **Functions covered:** `gettimeofday()`
 
-The `time()` function is abstracted as `mbedtls_time()`, in case `MBEDTLS_HAVE_TIME` is defined, and no alternative implementation was given with the definition of `MBEDTLS_PLATFORM_TIME_ALT` or no `MBEDTLS_PLATFORM_TIME_MACRO` was set. The `mbedtls_timetime()` function will be used by the *TLS core* modules, as well as the provided implementation of the following callbacks: SSL session cache, SSL session tickets, DTLS hello cookies. All these modules only rely on time differences. In other words, they do not need `time()` to return the correct time, much less the correct date. You can remove this dependency by disabling `MBEDTLS_HAVE_TIME` in the `config.h` file, but you may loose some features, such as time-based rotation of session ticket keys. Alternatively, you can supply a different implementation for `mbedtls_time()`, by defining `MBEDTLS_PLATFORM_TIME_ALT()` and call `mbedtls_platform_set_time()` to set your own time function.
+The `time()` function is abstracted as `mbedtls_time()`, in case `MBEDTLS_HAVE_TIME` is defined, and no alternative implementation was given with the definition of `MBEDTLS_PLATFORM_TIME_ALT` or no `MBEDTLS_PLATFORM_TIME_MACRO` was set. The `mbedtls_timetime()` function will be used by the *TLS core* modules, as well as the provided implementation of the following callbacks: SSL session cache, SSL session tickets, DTLS hello cookies. All these modules only rely on time differences. In other words, they do not need `time()` to return the correct time, much less the correct date. You can remove this dependency by disabling `MBEDTLS_HAVE_TIME` in the `mbedtls_config.h` file, but you may loose some features, such as time-based rotation of session ticket keys. Alternatively, you can supply a different implementation for `mbedtls_time()`, by defining `MBEDTLS_PLATFORM_TIME_ALT()` and call `mbedtls_platform_set_time()` to set your own time function.
 
 If your platform supports a time function, with a different name, but same functionality, you can set it as `MBEDTLS_PLATFORM_TIME_MACRO` (with a possibility of defining `MBEDTLS_PLATFORM_TIME_TYPE_MACRO` as well).
 
@@ -78,7 +78,7 @@ If `MBEDTLS_FS_IO` is defined, the file functions are used in several Mbed TLS m
 - The entropy, *CTR-DRBG* and *HMAC_DRBG* modules use file functions for reading and updating seed files.
 - The *DHM* module uses file operations to read DH parameters files (`mbedtls_dhm_parse_dhmfile`).
 
-You can disable all by commenting `MBEDTLS_FS_IO` in `config.h`.
+You can disable all by commenting `MBEDTLS_FS_IO` in `mbedtls_config.h`.
 
 **Functions covered:** 
 
@@ -96,7 +96,7 @@ You can disable all by commenting `MBEDTLS_FS_IO` in `config.h`.
 
 ## Dynamic memory functions
 
-A number of modules (ASN1, Bignum/MPI, Cipher, CMAC, DHM, ECP, MD, PEM, PK, PKCS11, RSA, TLS, X.509) use dynamic memory allocation. You can provide your own implementations, and we even provide a buffer-based memory allocator. For further details, read [Letting Mbed TLS use static memory instead of the heap](/kb/how-to/using-static-memory-instead-of-the-heap.md).
+A number of modules (ASN1, Bignum/MPI, Cipher, CMAC, DHM, ECP, MD, PEM, PK, PKCS11, RSA, TLS, X.509) use dynamic memory allocation. You can provide your own implementations, and we even provide a buffer-based memory allocator. For further details, read [Letting Mbed TLS use static memory instead of the heap](../how-to/using-static-memory-instead-of-the-heap.md).
 
 **Functions covered:** 
 
@@ -119,7 +119,7 @@ The `memmove()` function is used as an optimization in the *TLS* module. It is a
 
 ## String functions
 
-The `printf()` function is used in all self test functions as `mbedtls_printf()`, controlled by the `MBEDTLS_SELF_TEST` configuration flags. In addition, in the *MPI* module (`bignum.c`), `mbedtls_mpi_write_file()` uses `mbedtls_printf()` to print to `stdout` if `MBEDTLS_FS_IO` is defined. You can disable these dependencies in the `config.h` file. You can also provide your own implementation through the platform layer, see `MBEDTLS_PLATFORM_PRINTF_ALT` for an example. If your platform supports a print function with a different name, you can set it as `MBEDTLS_PLATFORM_PRINTF_MACRO`.
+The `printf()` function is used in all self test functions as `mbedtls_printf()`, controlled by the `MBEDTLS_SELF_TEST` configuration flags. In addition, in the *MPI* module (`bignum.c`), `mbedtls_mpi_write_file()` uses `mbedtls_printf()` to print to `stdout` if `MBEDTLS_FS_IO` is defined. You can disable these dependencies in the `mbedtls_config.h` file. You can also provide your own implementation through the platform layer, see `MBEDTLS_PLATFORM_PRINTF_ALT` for an example. If your platform supports a print function with a different name, you can set it as `MBEDTLS_PLATFORM_PRINTF_MACRO`.
 
 **Functions covered:** `printf()`
 

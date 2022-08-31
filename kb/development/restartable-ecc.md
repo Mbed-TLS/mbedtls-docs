@@ -1,12 +1,12 @@
 # Nonblocking ECC
 
-ECC operations are expensive. They're the most expensive operations in a typical TLS handshake, which includes many of them. On small boards, for example, based on a Cortex M0 core, a TLS handshake can spend several seconds on ECC operations. In a threaded environment, such as Mbed OS, this is not a problem because other threads can execute concurrently. In nonthreaded environments, blocking for several seconds on an operation is not acceptable if the system needs to attend to other tasks in a timely fashion. In order to support that case, Mbed TLS provides a restartable version of `ECC` operations, and all operations that depend on them (such as TLS handshakes), through the configuration option `MBEDTLS_ECP_RESTARTABLE` in *config.h*. Restartable functions enable collaborative multitasking by returning after a configurable amount of computations, so that you can attend to other tasks. They then continue the operation, and so on, until it completes. The `ECP`, `ECDSA`, `ECDH`, `PK`, `X.509` and `SSL` modules support this feature. Curve25519 does not support this feature at this time.
+ECC operations are expensive. They're the most expensive operations in a typical TLS handshake, which includes many of them. On small boards, for example, based on a Cortex M0 core, a TLS handshake can spend several seconds on ECC operations. In a threaded environment, such as Mbed OS, this is not a problem because other threads can execute concurrently. In nonthreaded environments, blocking for several seconds on an operation is not acceptable if the system needs to attend to other tasks in a timely fashion. In order to support that case, Mbed TLS provides a restartable version of `ECC` operations, and all operations that depend on them (such as TLS handshakes), through the configuration option `MBEDTLS_ECP_RESTARTABLE` in the configuration header (`mbedtls/mbedtls_config.h`). Restartable functions enable collaborative multitasking by returning after a configurable amount of computations, so that you can attend to other tasks. They then continue the operation, and so on, until it completes. The `ECP`, `ECDSA`, `ECDH`, `PK`, `X.509` and `SSL` modules support this feature. Curve25519 does not support this feature at this time.
 
 Continue reading to learn about the workflow of the restartable ECC feature, starting with the broad concept followed by specific examples.
 
 ## Enabling the restartable ECC feature, generic flow
 
-* At configuration time, define `MBEDTLS_ECP_RESTARTABLE` in *config.h*.
+* At configuration time, define `MBEDTLS_ECP_RESTARTABLE` in `mbedtls/mbedtls_config.h`. See [How do I configure Mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md) for more information.
 * Set the maximal number of operations that you want to run in a row with the `ECP` module, using `mbedtls_ecp_set_max_ops()`.
 * Allocate the restart context, and initialize it by calling `mbedtls_xxx_restart_init()`.
 * `ECP`, `ECDSA`, `PK` and `X.509` need an explicit restart context, and `ECDH` and `SSL` don't, though `ECDH` requires an additional call to `mbedtls_ecdh_enable_restart()`.
@@ -176,7 +176,7 @@ For example:
 
 The restartable feature is done automatically, as long as:
 
-1. You define `MBEDTLS_ECP_RESTARTABLE` in *config.h*.
+1. You define `MBEDTLS_ECP_RESTARTABLE` in `mbedtls/mbedtls_config.h`.
 1. The TLS protocol is TLS 1.2 and higher.
 1. The negotiated key exchange is `MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA`.
 1. You call `mbedtls_ecp_set_max_ops()`.

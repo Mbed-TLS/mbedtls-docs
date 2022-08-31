@@ -6,9 +6,9 @@ Mbed TLS is a configurable library, so its code size varies, depending on the co
 
 Obtain the code size of the library by using the `arm-none-eabi-size -t` command (when using the `arm-none-eabi` toolchain).
 
-Mbed TLS supplies a script that checks the [footprint](https://github.com/ARMmbed/mbedtls/blob/development/scripts/footprint.sh) of the library. The script shows the code size of the library compiled with several configuration files:
+Mbed TLS supplies a script that checks the [footprint](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/footprint.sh) of the library. The script shows the code size of the library compiled with several configuration files:
 
-* `include/mbedtls/config.h` - The default configuration file, unless modified by the user.
+* `include/mbedtls/mbedtls_config.h` (`include/mbedtls/config.h` in Mbed TLS 2.x) - The default configuration file, unless modified by the user.
 * `configs/config-thread.h` - A minimal configuration example of Mbed TLS using Thread networking protocol.
 * `configs/config-suite-b.h` - A minimal configuration example supporting NSA Suite B.
 * `configs/config-ccm-psk-tls1_2.h` - A minimal configuration example supporting preshared key and with AES-CCM.
@@ -18,7 +18,7 @@ Mbed TLS supplies a script that checks the [footprint](https://github.com/ARMmbe
 * `arm-none-eabi` toolchain installed and found in the `PATH` environment variable.
 * `make`.
 * POSIX shell.
-* Updated `include/mbedtls/config.h` with the required configuration.
+* Updated `include/mbedtls/mbedtls_config.h` with the required configuration. See [How do I configure Mbed TLS](../compiling-and-building/how-do-i-configure-mbedtls.md) for more information.
 
 Note: The `arm-none-eabi` toolchain may give different results than other toolchains, such as `ARMCC` or `IAR.
 

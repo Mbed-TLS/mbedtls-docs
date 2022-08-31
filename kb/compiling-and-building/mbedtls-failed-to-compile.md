@@ -2,7 +2,7 @@
 
 This can happen. We cannot anticipate all interactions between software version and platforms.
 
-We have an ever-expanding set of hardware and OS platforms on which Mbed TLS is automatically built. Please [open a discussion or file a ticket on Github](https://github.com/ARMmbed/mbedtls/issues), or [contact us directly](/contact).
+We have an ever-expanding set of hardware and OS platforms on which Mbed TLS is automatically built. Please [open a discussion or file a ticket on Github](https://github.com/Mbed-TLS/mbedtls/issues), or [contact us directly](/contact).
 
 Please provide us with as much information as possible on:
 

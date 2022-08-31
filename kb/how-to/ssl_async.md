@@ -18,9 +18,9 @@ This feature is only available for server-side asymmetric cryptography. In Mbed 
 
 Support for private key operation callbacks in TLS is turned off by default. To activate it, build the library with the option `MBEDTLS_SSL_ASYNC_PRIVATE` turned on in the configuration. You can use the following command in the Mbed TLS build tree:
 ```
-scripts/config.pl set MBEDTLS_SSL_ASYNC_PRIVATE
+scripts/config.py set MBEDTLS_SSL_ASYNC_PRIVATE
 ```
-Alternatively, ensure that the file `include/mbedtls/config.h` contains the following line (a commented-out version of this line is in the default configuration):
+Alternatively, ensure that the [configuration file](../compiling-and-building/how-do-i-configure-mbedtls.md) contains the following line (a commented-out version of this line is in the default configuration):
 ```
 #define MBEDTLS_SSL_ASYNC_PRIVATE
 ```

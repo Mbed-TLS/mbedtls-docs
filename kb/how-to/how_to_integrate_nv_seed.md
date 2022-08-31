@@ -8,7 +8,7 @@ This makes Mbed TLS use a fixed amount of entropy as a seed and update this seed
 
 # Enabling NV seed entropy source support
 
-You should define `MBEDTLS_ENTROPY_NV_SEED` in your configuration, as described in [this article](/kb/compiling-and-building/how-do-i-configure-mbedtls.md). This ensures the entropy pool knows it can use the NV seed entropy source. You should set the following functions to make the entropy collector call them:
+You should define `MBEDTLS_ENTROPY_NV_SEED` in your configuration, as described in [this article](../compiling-and-building/how-do-i-configure-mbedtls.md). This ensures the entropy pool knows it can use the NV seed entropy source. You should set the following functions to make the entropy collector call them:
 
     int (*mbedtls_nv_seed_write)( unsigned char *buf, size_t buf_len );
     int (*mbedtls_nv_seed_read)( unsigned char *buf, size_t buf_len );

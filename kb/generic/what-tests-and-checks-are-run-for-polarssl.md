@@ -24,7 +24,7 @@ Mbed TLS uses a Buildbot environment to run these tests on a number of different
 ### Test Framework
 Currently, there are over 6000 automated test vectors that run in the `tests/` directory when `make check` is run. In CMake, `make memcheck` runs these tests under Valgrind.
 
-We have our own test framework for running these tests, which combines generic test functions with specific test values. The build system generates parsing-test applications, such as `test_suite_aes.ecb`, and runs them with the different test case inputs available. The system remains aware of the current configuration from `config.h` and ensures that only relevant tests are run.
+We have our own test framework for running these tests, which combines generic test functions with specific test values. The build system generates parsing-test applications, such as `test_suite_aes.ecb`, and runs them with the different test case inputs available. The system remains aware of the current configuration from `mbedtls_config.h` and ensures that only relevant tests are run.
 
 A sample output for these tests looks like this:
 
@@ -45,7 +45,7 @@ AES-256-ECB Decrypt NIST KAT #12 .................................. PASS
 PASSED (77 / 77 tests (0 skipped))
 ```
 
-More information on the test suites and how to add more tests can be found in [this article](/kb/development/test_suites.md).
+More information on the test suites and how to add more tests can be found in [this article](../development/test_suites.md).
 
 ### Interoperability testing
 Because our test vectors can only test individual functions, we also run interoperability tests to check live SSL connections against OpenSSL and GnuTLS.
