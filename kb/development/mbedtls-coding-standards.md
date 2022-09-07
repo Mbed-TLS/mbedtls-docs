@@ -124,6 +124,8 @@ Exception: code implementing the PSA crypto API uses the `PSA_` and `psa_` prefi
 
 Static functions and macros that are not in public headers follow the same convention except the initial `MBEDTLS_` or `mbedtls_` prefix: they start directly with the function name.
 
+Exception: macros defined in headers used by alternative implementations or PSA drivers (including headers that they include) must start with with `MBEDTLS_` or `PSA_`.
+
 Function parameters and local variables need no name spacing. They should use descriptive names unless they're very short-lived or are used for simple looping or are "standard" names (such as `p` for a pointer to the current position in a buffer).
 
 ### Lengths and sizes
