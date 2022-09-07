@@ -116,6 +116,8 @@ All public names (functions, variables, types, `enum` constants, macros) must st
     mbedtls_aes_setkey_decrypt()
 ```
 
+Note that all externally linked functions must have a name starting with `mbedtls_` to avoid link-time conflicts, even if they are not declared in a public header. This also applies to global variables (which should be used very sparingly).
+
 Exception: code implementing the PSA crypto API uses the `PSA_` and `psa_` prefixes. This includes official APIs as well as draft APIs that are on the PSA standards track. API extensions which are meant to remain specific to Mbed TLS, and internal functions, should use the `MBEDTLS_/mbedtls_` prefix, however there are many existing cases of using the `PSA_/psa_` prefix.
 
 ### Local names
