@@ -24,7 +24,7 @@ The documentation of `MBEDTLS_ENTROPY_C` states that it requires either `MBEDTLS
 
 You decide to use HMAC\_DRBG, and use SHA-512 as the hash function both for entropy and for the DRBG. As a conseqence, you write the following configuration file:
 
-```
+```c
 #define MBEDTLS_ENTROPY_C
 #define MBEDTLS_HMAC_DRBG_C
 #define MBEDTLS_MD_C
@@ -36,7 +36,7 @@ You decide to use HMAC\_DRBG, and use SHA-512 as the hash function both for entr
 In Mbed TLS 2.x, the configuration file is located at `include/mbedtls/config.h`.
 
 You should add the following line at the end of your configuration file:
-```
+```c
 #include "mbedtls/check_config.h"
 ```
 This will cause compilation errors with descriptive messages if the configuration is inconsistent.
@@ -50,19 +50,19 @@ If you prefer, you can include the Mbed TLS source files in your own build scrip
 ### Compiling with Mbed TLS headers
 
 Both when building your application and when building Mbed TLS source files, make sure that the `include` directory of the Mbed TLS source tree is present in the header search path. For example, if Mbed TLS is in the subdirectory `external/mbedtls`:
-```
-cc -I external/mbedtls/include …
+```console
+$ cc -I external/mbedtls/include …
 ```
 
 If you have a custom configuration file with the same name in a different directory, it must come first on the header search path. For example, if your Mbed TLS configuration file is located at `configs/mbedtls/mbedtls_config.h` and the Mbed TLS source tree is located at `external/mbedtls`:
-```
-cc -I configs -I external/mbedtls/include …
+```console
+$ cc -I configs -I external/mbedtls/include …
 ```
 
 Recall that alternatively, you can give your configuration file a different name and specify its location with the preprocessor symbol `MBEDTLS_CONFIG_FILE`. For example, if your Mbed TLS configuration file is located at `my_mbedtls_config.h` and the Mbed TLS source tree is located at `external/mbedtls`.
 
-```
-cc -DMBEDTLS_CONFIG_FILE='"my_mbedtls_config.h"' -I configs -I external/mbedtls/include …
+```console
+$ cc -DMBEDTLS_CONFIG_FILE='"my_mbedtls_config.h"' -I configs -I external/mbedtls/include …
 ```
 
 Note that **you must pass the same configuration when building Mbed TLS and building your application**. Passing a different configuration is likely to result in misbehavior at runtime.
