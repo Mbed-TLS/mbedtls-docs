@@ -20,5 +20,4 @@ tech-updates/security-advisories/index.md
 maintainers.md
 CONTRIBUTING.md
 kb/index.md
-tool-versions-lts-distributions.md
 ```
