@@ -22,7 +22,7 @@ For example, suppose you want a cryptographically secure random generator and no
 
 The documentation of `MBEDTLS_ENTROPY_C` states that it requires either `MBEDTLS_SHA512_C` or `MBEDTLS_SHA256_C`. The CTR\_DRBG module requires `MBEDTLS_AES_C`. The HMAC\_DRBG module requires `MBEDTLS_MD_C`, which in turn requires at least one hash module.
 
-You decide to use HMAC\_DRBG, and use SHA-512 as the hash function both for entropy and for the DRBG. As a conseqence, you write the following configuration file:
+You decide to use HMAC\_DRBG, and use SHA-512 as the hash function both for entropy and for the DRBG. As a consequence, you write the following configuration file:
 
 ```c
 #define MBEDTLS_ENTROPY_C
