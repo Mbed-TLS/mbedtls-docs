@@ -45,7 +45,7 @@ This will cause compilation errors with descriptive messages if the configuratio
 
 Mbed TLS comes with build scripts for GNU make (`Makefile`), CMake (`CMakeLists.txt`) and Visual Studio (`visualc/VS2010/mbedTLS.sln`). By default, these create static libraries `mbedcrypto`, `mbedx509` and `mbedtls` which you can link into your application. (You don't need to link `mbedx509` or `mbedtls` if you don't use these features.) For more information, see [How to compile and build Mbed TLS](../compiling-and-building/how-do-i-build-compile-mbedtls.md).
 
-If you prefer, you can include the Mbed TLS source files in your own build scripts. All the library code is in the `library` subdirectory, except for aa few features that use code from the `3rdparty` directory tree. All the public headers are in the `include` directory tree.
+If you prefer, you can include the Mbed TLS source files in your own build scripts. All the library code is in the `library` subdirectory, except for a few features that use code from the `3rdparty` directory tree. All the public headers are in the `include` directory tree.
 
 ### Compiling with Mbed TLS headers
 
