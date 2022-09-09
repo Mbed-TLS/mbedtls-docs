@@ -126,6 +126,8 @@ Static functions can use the same naming scheme as non-static functions (`mbedtl
 
 Macros defined only in the `library` directory should follow the same naming scheme as non-static functions (`MBEDTLS_MODULE_FOO` or `PSA_FOO`).The can use shorter names (omitting `MBEDTLS_`, the module name, or both) if it's convenient. However, avoid names without underscores as some embedded platforms define short macro names in their system headers. Exception: macros defined in headers used by alternative implementations or PSA drivers (including headers that they include) must start with with `MBEDTLS_` or `PSA_`.
 
+All macros must have uppercase names unless they are function-like (expanding to an expression that evaluates each argument exactly once). Using all-uppercase names for preprocessor constants is recommended. Function-like macros, and macros without arguments that expand to function name, usually follow the lowercase naming convention for functions.
+
 Function parameters and local variables need no name spacing. They should use descriptive names unless they're very short-lived or are used for simple looping or are "standard" names (such as `p` for a pointer to the current position in a buffer).
 
 ### Lengths and sizes
