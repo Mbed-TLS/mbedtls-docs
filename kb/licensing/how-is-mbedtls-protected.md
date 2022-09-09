@@ -4,7 +4,7 @@
 
 The copyright in the source code primarily protects Mbed TLS (formerly known as PolarSSL). We own all the copyright in the source code. For code that is contributed to us, we request the original author to share the copyright with us.
 
-We offer all the code under the GPL license so that projects can see and use Mbed TLS and PolarSSL as Open Source.
+We offer all the code under the Apache 2.0 license so that projects can see and use Mbed TLS and PolarSSL as Open Source.
 
 ## Trademark
 
