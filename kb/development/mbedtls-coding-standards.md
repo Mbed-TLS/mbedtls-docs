@@ -130,8 +130,6 @@ By default all lengths and sizes are in bytes (or in number of elements, for arr
 
 `size` should refer to the capacity of a buffer, and `length` to the length of the contents. Most of the time these are interchangeable. A typical exception is when the output is written in a buffer, but the exact length is not known by the caller.
 
-In PSA code `length` and `size` in the name always implies bytes, when referring to number of elements, `count` is used.
-
 ### Modules: `bignum_core`, `bignum_mod` and `bignum_mod_raw`
 
 Generic conventions:
@@ -143,7 +141,7 @@ Generic conventions:
 
 Length parameters:
 
-- For length of `mbedtls_mpi_uint *` buffers we use `limbs` instead of `count`.
+- For length of `mbedtls_mpi_uint *` buffers we use `limbs`.
 - Length parameters are qualified if possible (e.g. `input_length` or `A_limbs`)
 
 ## API conventions
