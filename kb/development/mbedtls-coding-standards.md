@@ -128,6 +128,10 @@ Function parameters and local variables need no name spacing. They should use de
 
 By default all lengths and sizes are in bytes (or in number of elements, for arrays). If a name refers to a length or size in bits (as is often the case for key sizes) then the name must explicitly include `bit`, for example `mbedtls_pk_get_bitlen()` returns the size of the key in bits, while `mbedtls_pk_get_len()` returns the size in bytes. In addition, the documentation should always mention explicitly if key sizes are in bits or in bytes.
 
+Size refers to the capacity of the buffer, while length to the length of the contents. Most of the time these are interchangeable. A typical exception is when the output is written in a buffer, but the exact length is not known by the caller.
+
+In PSA code `length` and `size` in the name always implies bytes, when referring to number of elements, `count` is used.
+
 ## API conventions
 
 This section applies fully to classic `mbedtls_xxx()` APIs and mostly to the newer `psa_xxx()` APIs. PSA have their own [conventions described in the PSA Crypto API specification](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html) which take precedence in case of conflicts.
