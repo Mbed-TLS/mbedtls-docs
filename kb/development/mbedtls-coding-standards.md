@@ -122,9 +122,9 @@ Exception: code implementing the PSA crypto API uses the `PSA_` and `psa_` prefi
 
 ### Local names
 
-Static functions do not need to have the `mbedtls_` prefix. They usually start with the module name (which makes it slightly easier to follow call stacks across modules), but this is not compulsory.
+Static functions can use the same naming scheme as non-static functions (`mbedtls_MODULE_frobnicate()` or `psa_frobnicate()`). This is convenient if they are made non-static later, for example for testing. They can also have shorter names if it's convenient. Keeping the module name (`MODULE_frobnicate()`) as a prefix makes it makes it slightly easier to follow call stacks across modules, but it is not compulsory.
 
-Macros defined only in the `library` directory should have the `MBEDTLS_` prefix. It's ok to use shorter names if it's convenient, but avoid names without underscores as some embedded platforms define short macro names in their system headers. Exception: macros defined in headers used by alternative implementations or PSA drivers (including headers that they include) must start with with `MBEDTLS_` or `PSA_`.
+Macros defined only in the `library` directory should follow the same naming scheme as non-static functions (`MBEDTLS_MODULE_FOO` or `PSA_FOO`).The can use shorter names (omitting `MBEDTLS_`, the module name, or both) if it's convenient. However, avoid names without underscores as some embedded platforms define short macro names in their system headers. Exception: macros defined in headers used by alternative implementations or PSA drivers (including headers that they include) must start with with `MBEDTLS_` or `PSA_`.
 
 Function parameters and local variables need no name spacing. They should use descriptive names unless they're very short-lived or are used for simple looping or are "standard" names (such as `p` for a pointer to the current position in a buffer).
 
