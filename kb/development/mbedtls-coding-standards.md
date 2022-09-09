@@ -132,6 +132,20 @@ Size refers to the capacity of the buffer, while length to the length of the con
 
 In PSA code `length` and `size` in the name always implies bytes, when referring to number of elements, `count` is used.
 
+### Modules: `bignum_core`, `bignum_mod` and `bignum_mod_raw`
+
+Generic conventions:
+
+- `mbedtls_mpi_uint*` operands should be named by capital letters starting at the beginning of the alphabet (`A`, `B`, `C`, ...).
+- `mbedtls_mpi_uint` operands in turn should be named by lower case letters starting at the beginning of the alphabet (`a`, `b`, `c`)
+- For the result `X` or `x` should be used depending on the type.
+- One of the exceptions from this convention is where the naming of function parameters and local variables follows the literature (eg. Handbook of Applied Cryptography)
+
+Length parameters:
+
+- For length of `mbedtls_mpi_uint*` buffers we use `limbs` instead of `count`.
+- Length parameters are qualified if possible (eg. `input_length` or `A_limbs`)
+
 ## API conventions
 
 This section applies fully to classic `mbedtls_xxx()` APIs and mostly to the newer `psa_xxx()` APIs. PSA have their own [conventions described in the PSA Crypto API specification](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html) which take precedence in case of conflicts.
