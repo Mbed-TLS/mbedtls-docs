@@ -137,7 +137,9 @@ Generic conventions:
 - `mbedtls_mpi_uint *` input operands should be named by capital letters starting at the beginning of the alphabet (`A`, `B`, `C`, ...).
 - `mbedtls_mpi_uint` operands in turn should be named by lower case letters starting at the beginning of the alphabet (`a`, `b`, `c`)
 - For the result `X` or `x` should be used depending on the type.
-- One of the exceptions from this convention is where the naming of function parameters and local variables follows the literature (e.g. Handbook of Applied Cryptography)
+- `N` is generally used for the modulus.
+- `T` is generally used for a temporary work area given to a function.
+- An exception from this convention is where the naming of function parameters and local variables follows the literature (e.g. Handbook of Applied Cryptography)
 
 Length parameters:
 
