@@ -11,9 +11,3 @@ We offer all the code under the Apache 2.0 license so that projects can see and 
 The PolarSSL brand name is trademarked in the US. You can see <a href="http://tmog.uspto.gov/#issueDate=2014-05-20&serial=86157838" target="_blank">the trademark at USPTO</a> for yourself.
 
 You can also find more information about using the <a href="https://www.arm.com/company/policies/trademarks/arm-trademark-list/mbed-trademark" target="_blank">Mbed trademark</a>.
-
-## Won't people use Mbed TLS or PolarSSL illegally?
-
-Yes, they might. We'd rather have a flexible software product for our users, and run the risk that companies use Mbed TLS and PolarSSL without contributing back to the community.
-
-If we ever find out, we will of course prosecute them to the fullest extent of the law.
