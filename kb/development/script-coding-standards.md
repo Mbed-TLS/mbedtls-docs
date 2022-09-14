@@ -57,6 +57,12 @@ import scripts_path # pylint: disable=unused-import
 from mbedtls_dev import …
 ```
 
+### Third-party Python libraries
+
+Avoid bringing in new dependencies, because each dependency adds risk to the project. Only use dependencies if they have a clear advantage.
+
+The minimum supported version of third-party Python libraries is recorded in `*.requirements.txt` files in the [`scripts` directory](https://github.com/Mbed-TLS/mbedtls/tree/development/scripts). As with the [Python version](#language-versions), keep in mind that long-time support branches may need to support older versions.
+
 ### Python typing
 
 Using type annotations is encouraged. We run [mypy](http://mypy-lang.org/) to verify static typing.
