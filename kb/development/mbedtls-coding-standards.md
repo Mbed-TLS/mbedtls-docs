@@ -2,7 +2,7 @@
 
 ## Intro
 
-This document describes Mbed TLS preferences for code formatting, naming conventions, API conventions, coding style, file structure, and default content.
+This document describes Mbed TLS preferences for code formatting, naming conventions, API conventions, coding style, file structure, and default content in C code. For build and test scripts, see the [script coding standards](script-coding-standards.html).
 
 <span class="notes">**Note:** There are situations where we deviate from this document for 'local' reasons.</span>
 
