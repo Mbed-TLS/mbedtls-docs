@@ -122,9 +122,9 @@ Exception: code implementing the PSA crypto API uses the `PSA_` and `psa_` prefi
 
 ### Local names
 
-Static functions can use the same naming scheme as non-static functions (`mbedtls_MODULE_frobnicate()` or `psa_frobnicate()`). This is convenient if they are made non-static later, for example for testing. They can also have shorter names if it's convenient. Keeping the module name (`MODULE_frobnicate()`) as a prefix makes it makes it slightly easier to follow call stacks across modules, but it is not compulsory.
+Static functions can use the same naming scheme as non-static functions (`mbedtls_MODULE_frobnicate()` or `psa_frobnicate()`). This is convenient if they are made non-static later, for example for testing. They can also have shorter names if it's convenient. Keeping the module name (`MODULE_frobnicate()`) as a prefix makes it slightly easier to follow call stacks across modules, but it is not compulsory.
 
-Macros defined only in the `library` directory should follow the same naming scheme as non-static functions (`MBEDTLS_MODULE_FOO` or `PSA_FOO`).The can use shorter names (omitting `MBEDTLS_`, the module name, or both) if it's convenient. However, avoid names without underscores as some embedded platforms define short macro names in their system headers. Exception: macros defined in headers used by alternative implementations or PSA drivers (including headers that they include) must start with with `MBEDTLS_` or `PSA_`.
+Macros defined only in the `library` directory should follow the same naming scheme as non-static functions (`MBEDTLS_MODULE_FOO` or `PSA_FOO`). They can use shorter names (omitting `MBEDTLS_`, the module name, or both) if it's convenient. However, avoid names without underscores as some embedded platforms define short macro names in their system headers. Exception: macros defined in headers used by alternative implementations or PSA drivers (including headers that they include) must start with `MBEDTLS_` or `PSA_`.
 
 All macros must have uppercase names unless they are function-like (expanding to an expression that evaluates each argument exactly once). Using all-uppercase names for preprocessor constants is recommended. Function-like macros, and macros without arguments that expand to function name, usually follow the lowercase naming convention for functions.
 
