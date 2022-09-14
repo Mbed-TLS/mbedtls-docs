@@ -77,6 +77,16 @@ Avoid bringing in new dependencies, because each dependency adds risk to the pro
 
 The minimum supported version of third-party Python libraries is recorded in `*.requirements.txt` files in the [`scripts` directory](https://github.com/Mbed-TLS/mbedtls/tree/development/scripts). As with the [Python version](#language-versions), keep in mind that long-time support branches may need to support older versions.
 
+### Python language features
+
+The maintainers of Mbed TLS are primarily C programmers, not Python programmers. It's ok to use fancy language features if they're useful, but don't necessarily assume that the reader is familiar with them. Make sure that if a reader is unfamiliar with an advanced feature, they'll be able to easily look it up.
+
+* Classes, methods and simple inheritance can be used freely.
+* Avoid metaclasses and nontrivial dynamic class creation. If you use these features, write documentation that's accessible to non-experts.
+* Do define [special methods](https://docs.python.org/3/reference/datamodel.html#special-method-names) if convenient for comparison, context managers, etc. But avoid customizing attribute access.
+* Use [decorators](https://docs.python.org/3/glossary.html#term-decorator) if they have a clear benefit.
+* Do use [generators](https://docs.python.org/3/glossary.html#term-generator) and [list comprehension](https://docs.python.org/3/glossary.html#term-list-comprehension) where warranted.
+
 ### Python typing
 
 Using type annotations is encouraged. We run [mypy](http://mypy-lang.org/) to verify static typing.
