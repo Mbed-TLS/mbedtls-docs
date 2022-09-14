@@ -57,6 +57,20 @@ import scripts_path # pylint: disable=unused-import
 from mbedtls_dev import …
 ```
 
+### Python imports
+
+We follow the usual convention that imports go at the top of a file (after the docstring and the license comment). Imports are typically ordered as follows:
+
+1. Standard library, in lexicographic order.
+2. Third-party libraries, if any, in lexicographic order.
+3. Modules from `mbedtls_dev`, in lexicographic order.
+
+Avoid importing individual names from modules, as it can be difficult to figure out which module an unqualified name comes from. It's ok to import names if they're sufficiently recognizable, for example:
+
+* Importing individual modules from `mbedtls_dev` is fine.
+* Importing capitalized type names from `typing` is fine.
+* Importing individual submodules from Cryptodome is fine.
+
 ### Third-party Python libraries
 
 Avoid bringing in new dependencies, because each dependency adds risk to the project. Only use dependencies if they have a clear advantage.
