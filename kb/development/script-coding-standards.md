@@ -45,6 +45,18 @@ All executable scripts committed into the repository should have the following s
 
 ## Python coding standards
 
+### Directory structure
+
+Non-executable Python modules are in `scripts/mbedtls_dev`.
+Executable Python scripts in `scripts` can use auxiliary modules with `from mbedtls_dev import …`.
+
+Executable Python scripts in `tests/scripts` cannot refer to modules in `scripts/mbedtls_dev` directly, because we do not assume that `PYTHONPATH` contains the Mbed TLS source tree. To use other Python modules from a script in `tests/scripts`, use the following idiom:
+
+```python
+import scripts_path # pylint: disable=unused-import
+from mbedtls_dev import …
+```
+
 ### Python typing
 
 Using type annotations is encouraged. We run [mypy](http://mypy-lang.org/) to verify static typing.
