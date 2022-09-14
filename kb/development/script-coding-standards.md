@@ -42,3 +42,19 @@ All executable scripts committed into the repository should have the following s
 * Initialization code.
 * Auxiliary functions (unless the script is so simple it doesn't need any).
 * Code that performs the script's purpose (this can be as simple as calling a `main` function, or more complex).
+
+## Python coding standards
+
+### Python typing
+
+Using type annotations is encouraged. We run [mypy](http://mypy-lang.org/) to verify static typing.
+
+Avoid complex overloading. It's generally easier to understand code if it only expects a specific type of data.
+
+### Python style conventions
+
+We generally follow [PEP 8](https://peps.python.org/pep-0008/), and [PEP 257](https://peps.python.org/pep-0257/) for docstrings.
+
+### Python style enforcement
+
+We run [Pylint](https://pylint.pycqa.org/) for style enforcement. Pylint is quite opinionated sometimes, so if a rule doesn't make sense in a specific context, use a [Pylint pragma comment](https://pylint.pycqa.org/en/latest/user_guide/messages/message_control.html) to disable it.
