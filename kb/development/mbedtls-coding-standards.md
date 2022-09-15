@@ -120,7 +120,7 @@ Note that all externally linked functions must have a name starting with `mbedtl
 
 Exception: code implementing the PSA crypto API uses the `PSA_` and `psa_` prefixes. This includes official APIs as well as draft APIs that are on the PSA standards track. API extensions which are meant to remain specific to Mbed TLS, and internal functions, should use the `MBEDTLS_/mbedtls_` prefix, however there are many existing cases of using the `PSA_/psa_` prefix.
 
-Exception: macros may have lowercase names if they behave exactly like normal variables and functions. In particular, function-like macros may have lowercase names only if they expand to an expression that evaluates each argument exactly once.
+Exception: macros may have lowercase names if they behave exactly like normal variables and functions. In particular, function-like macros may have lowercase names only if they expand to an expression that evaluates each argument exactly once. Even in those cases, uppercase names are strongly preferred and new code should not use lowercase macro names for anything other than function replacement (like `#define mbedtls_printf printf`).
 
 ### Local names
 
