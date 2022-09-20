@@ -2,18 +2,12 @@
 
 ## Copyright
 
-The copyright in the source code primarily protects Mbed TLS (formerly known as PolarSSL). We own all the copyright in the source code. For code that is contributed to us, we request the original author to share the copyright with us.
+Mbed TLS (formerly known as PolarSSL) is, like most software, protected by copyright. It is licensed for use under an open-source Apache 2.0 license. The *project* is owned by TrustedFirmware.org, and the code is owned by all the people and companies who have contributed to it, collectively known as *The Mbed TLS Contributors* (except for some files in the 3rdparty directory which have copyright as noted in the file headers).
 
-We offer all the code under the GPL license so that projects can see and use Mbed TLS and PolarSSL as Open Source.
+When contributing code to us, the author is required to sign off all commits with a [Developer Certificate of Origin](../../dco.txt) line, confirming that the code submitted can (legally) become part of the project, and be subject to the same Apache 2.0 license.
 
 ## Trademark
 
 The PolarSSL brand name is trademarked in the US. You can see <a href="http://tmog.uspto.gov/#issueDate=2014-05-20&serial=86157838" target="_blank">the trademark at USPTO</a> for yourself.
 
 You can also find more information about using the <a href="https://www.arm.com/company/policies/trademarks/arm-trademark-list/mbed-trademark" target="_blank">Mbed trademark</a>.
-
-## Won't people use Mbed TLS or PolarSSL illegally?
-
-Yes, they might. We'd rather have a flexible software product for our users, and run the risk that companies use Mbed TLS and PolarSSL without contributing back to the community.
-
-If we ever find out, we will of course prosecute them to the fullest extent of the law.
