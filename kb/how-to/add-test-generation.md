@@ -1,4 +1,4 @@
-# Systematic test case generation
+# How to systematically generate test data
 
 When adding new test functions or improving coverage of existing tests in Mbed TLS, a large number of test cases may need to be added. This can be time-consuming and error-prone when adding manually. Mbed TLS includes a Python framework which can be used to systematically generate test case data from input values. The framework is flexible, to support a variety of test functions, and uses inheritance to reduce code repetition in similar test functions.
 
@@ -17,43 +17,43 @@ Each class derived from `BaseTarget` can be categorized as one of the following:
 
 `BaseTarget` defines the common attributes and methods required to generate test cases, and implements the recursive test generation method, `generate_tests()`. When called on a class `X`, `generate_tests()` will be called on all classes derived from `X`, which will generate test cases in classes where `test_function` is set. This method yields all test cases from `X` and its descendants.
 
-`BaseTarget` is defined in `scripts/mbedtls_dev/test_case_generation.py`.
+`BaseTarget` is defined in [scripts/mbedtls_dev/test_case_generation.py](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/mbedtls_dev/test_case_generation.py).
 
 ### File target classes
 
 These are child classes of `BaseTarget`, each representing a generated `.data` file. `target_basename` must be uniquely set in each of these classes, typically to `"test_suite_xyz.generated"` for a corresponding `test_suite_xyz.function` file. These classes are abstract, and may also implement other attributes or methods commonly used by test functions in the associated file. The script will call `generate_tests()` on each of these classes to generate the test cases for each "`target_basename`.data" file.
 
-`BignumTarget` is an example of a file target class, defined in `tests/scripts/generate_bignum_tests.py`.
+`BignumTarget` is an example of a file target class, defined in [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py).
 
 ### Test function classes
 
 These are classes which represent a test function, and require implementation of all abstract methods of `BaseTarget`. The implementation of `generate_function_tests()` in the class will define how test cases are generated for the associated function. Each instance of the class represents a test case, and must be initialized with required input data.
 
-`BignumCmp` is an example of a test function class, defined in `tests/scripts/generate_bignum_tests.py`.
+`BignumCmp` is an example of a test function class, defined in [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py).
 
 ### Abstract classes
 
 Abstract classes do not represent a test function, and are used to define common attributes and methods for its subclasses. These can be used to create a uniform structure for similar tests to conform to, which reduces repetition of code and variation in implementations.
 
-`BignumOperation` is an example of an abstract class, defined in `tests/scripts/generate_bignum_tests.py`. This class defines common methods used for binary bignum operations, and provides a structure for the derived classes to use.
+`BignumOperation` is an example of an abstract class, defined in [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py). This class defines common methods used for binary bignum operations, and provides a structure for the derived classes to use.
 
 ### Command line interface
 
-The CLI is defined in `scripts/mbedtls_dev/test_case_generation.py`, including the entry point, `main()` and the `TestGenerator` class. This class constructs a `TARGET` dictionary, containing an entry for each defined file target class, and defines methods for generating and writing test case data. `main()` uses this class to list which files can be generated, and to generate files. Target files can be passed as arguments to the script to generate only specified files; by default all will be generated. The `--help` argument can be used for more details.
+The CLI is defined in [scripts/mbedtls_dev/test_case_generation.py](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/mbedtls_dev/test_case_generation.py), including the entry point, `main()` and the `TestGenerator` class. This class constructs a `TARGET` dictionary, containing an entry for each defined file target class, and defines methods for generating and writing test case data. `main()` uses this class to list which files can be generated, and to generate files. Target files can be passed as arguments to the script to generate only specified files; by default all will be generated. The `--help` argument can be used for more details.
 
-The same entry point is also used in `tests/scripts/generate_psa_tests.py`, which does not use this test framework, and instead hard-codes the `TARGET` dictionary.
+The same entry point is also used in [tests/scripts/generate_psa_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_psa_tests.py), which does not use this test framework, and instead hard-codes the `TARGET` dictionary.
 
 ## Adding new tests
 
 There are two options for adding new tests:
- - Adding classes to an existing script, such as `tests/scripts/generate_bignum_tests.py`.
+ - Adding classes to an existing script, such as [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py).
  - Creating a new script.
 
 When creating a new script, files will not automatically be generated when building tests unless the build system is updated.
 
 ## Creating a test script
 
-This is only required if an existing script is not being extended. An example is included for each step, showing how to create a test generation script for `test_suite_mpi.function`, a basic equivalent of `generate_bignum_tests.py`.
+This is only required if an existing script is not being extended. An example is included for each step, showing how to create a test generation script for `test_suite_mpi.function`, a basic equivalent of [generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py).
 
 ### Initial Python script
 
@@ -96,15 +96,15 @@ Running the script will now create `test_suite_mpi.ex.generated.data`, and runni
 ### Adding the script to the build system
 
 This is not required for the example, but is included here for completeness. When adding a new script to the build system, the changes required include:
- - Adding the script to `/tests/scripts/check-generated-files.sh`.
- - Adding the script to `/scripts/make_generated_files.bat`.
+ - Adding the script to [/tests/scripts/check-generated-files.sh](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/check-generated-files.sh).
+ - Adding the script to [/scripts/make_generated_files.bat](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/make_generated_files.bat).
  - Adding calls and targets in CMake and Make for the script and its generated files. The script will need to be called in the same places where `generate_bignum_tests.py` is currently called.
 
 ## Generating test cases for a function
 
 To add test cases for a function, a concrete class derived from `BaseTarget` must be added to the script. This class must implement all attributes and methods of `BaseTarget` and will generate test cases. This is a [test function class](#test-function-classes).
 
-As an example, test case generation is added for the test function `mpi_add_mpi()`. The added class will be derived from `BignumTarget`, and can be added either to `tests/scripts/bignum_test_generation.py` or the example script described in the previous section.
+As an example, test case generation is added for the test function `mpi_add_mpi()`. The added class will be derived from `BignumTarget`, and can be added either to [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py) or the example script described in the previous section.
 
 ### Creating the class
 
@@ -323,8 +323,7 @@ These tests will then be generated with the same input values as `mpi_add_mpi`, 
 
 ### Using abstract classes
   
-Abstract classes are used to define common methods and attributes for multiple test functions. This can reduce repetition of code, and provide a uniform structure when adding test generation for similar test functions.
+Abstract classes are used to define common methods and attributes for multiple test functions. This can reduce repetition of code, and provide a uniform structure when adding test generation for similar test functions. Defined in
+[tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py), `BignumOperation` implements common attributes and methods for testing of binary bignum operations. This includes defining the class constructor, `arguments()`, `description()` and test case generation methods. By deriving from this class, tests can be added for binary bignum operations with smaller and simpler classes. These may only require the class attributes to be set, and the `result()` method to be defined.
 
-For example in `tests/scripts/generate_bignum_test.py`, `BignumOperation` implements common attributes and methods for testing of binary bignum operations. This includes defining the class constructor, `arguments()`, `description()` and test case generation methods. By deriving from this class, tests can be added for binary bignum operations with smaller and simpler classes. These may only require the class attributes to be set, and the `result()` method to be defined.
-
-`BignumAdd` and `BignumCmp` are two examples in `generate_bignum_test.py` which derive from `BignumOperation`.
+`BignumAdd` and `BignumCmp` are two examples in [generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py) which derive from `BignumOperation`.
