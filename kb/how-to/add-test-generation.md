@@ -175,8 +175,8 @@ For the example, add the following method to `BignumAddExample`:
     def generate_function_tests(cls) -> Iterator[test_case.TestCase]:
         # Create a list of input values
         input_values = ["", "0", "1", "123"]
-        # combinations_with_replacement generates a list of all unique combinations,
-        # including where inputs are the same i.e. ("0", "0")
+        # combinations_with_replacement generates a list of all unique
+        # combinations, including where inputs are the same i.e. ("0", "0")
         for a_value, b_value in itertools.combinations_with_replacement(
             input_values, 2
         )
@@ -264,8 +264,8 @@ class BignumAddExample(BignumTarget):
     def generate_function_tests(cls) -> Iterator[test_case.TestCase]:
         # Create a list of input values
         input_values = ["", "0", "1", "123"]
-        # combinations_with_replacement will create all combinations,
-        # including where inputs are the same i.e. ("0", "0") 
+        # combinations_with_replacement generates a list of all unique
+        # combinations, including where inputs are the same i.e. ("0", "0")
         for a_value, b_value in itertools.combinations_with_replacement(
             input_values, 2
         ):
