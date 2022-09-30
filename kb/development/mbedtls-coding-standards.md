@@ -38,9 +38,9 @@ There are a few exceptions to this rule. This includes the preprocessor directiv
 
 Braces (curly brackets) should be located on a line by themselves at the indentation level of the original block:
 ```c
-    if( do >= 1 )
+    if( val >= 1 )
     {
-        if( do == 1 )
+        if( val == 1 )
         {
             /* code block here */
         }
@@ -52,12 +52,12 @@ Braces (curly brackets) should be located on a line by themselves at the indenta
 ```
 In case a block is only single source code line, the braces can be omitted if the block initiator is only a single line:
 ```c
-    if( do >= 1 )
+    if( val >= 1 )
         a = 2;
 ```
 But not if it is a multi-line initiator:
 ```c
-    if( do >= 1 &&
+    if( val >= 1 &&
         this_big_statement_deserved_its_own_line == another_big_part )
     {
         a = 2;
