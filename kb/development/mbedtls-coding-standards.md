@@ -42,11 +42,11 @@ Braces (curly brackets) should be located on a line by themselves at the indenta
     {
         if( do == 1 )
         {
-            [code block here]
+            /* code block here */
         }
         else
         {
-            [alternate code block]
+            /* alternate code block */
         }
     }
 ```
@@ -102,7 +102,7 @@ Similarly, sizeof expressions always use parentheses even when it is not necessa
 When using precompiler directives to enable or disable parts of the code, use `#if defined` instead of `#ifdef`. Add a comment to the `#endif` directive if the distance to the opening directive is bigger than a few lines or contains other directives:
 ```c
     #if define(MBEDTLS_HAVE_FEATURE)
-    [ten lines of code or other directives]
+    /* ten lines of code or other directives */
     #endif /* MBEDTLS_HAVE_FEATURE */
 ```
 
