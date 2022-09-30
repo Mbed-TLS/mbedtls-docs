@@ -13,7 +13,7 @@ Mbed TLS source code files use 4 spaces for indentation, **not tabs**, with a pr
 Every code statement should be on its own line.
 
 **Avoid statements like this:**
-```
+```c
     if( a == 1 ) { b = 1; do_function( b ); }
     if( a == 1 ) do_function( a );
 ```
@@ -21,15 +21,15 @@ Every code statement should be on its own line.
 ### Space placement
 
 Mbed TLS uses a non-standard space placement throughout the code, where there is no space between a function name and all parentheses are separated by one space from their content:
-```
+```c
     if( ( ret = demo_function( a, b, c ) ) != 0 )
 ```
 The same applies to function definitions:
-```
+```c
     int demo_function( int a, const unsigned char *value, size_t len )
 ```
 There are a few exceptions to this rule. This includes the preprocessor directive `defined` and casts, as well as arguments for function-like macros:
-```
+```c
     #if defined(MBEDTLS_HAVE_TIME)
     timestamp = (uint32_t) time( NULL );
 ```
@@ -37,27 +37,27 @@ There are a few exceptions to this rule. This includes the preprocessor directiv
 ### Braces placement and block declaration
 
 Braces (curly brackets) should be located on a line by themselves at the indentation level of the original block:
-```
-    if( do >= 1 )
+```c
+    if( val >= 1 )
     {
-        if( do == 1 )
+        if( val == 1 )
         {
-            [code block here]
+            /* code block here */
         }
         else
         {
-            [alternate code block]
+            /* alternate code block */
         }
     }
 ```
 In case a block is only single source code line, the braces can be omitted if the block initiator is only a single line:
-```
-    if( do >= 1 )
+```c
+    if( val >= 1 )
         a = 2;
 ```
 But not if it is a multi-line initiator:
-```
-    if( do >= 1 &&
+```c
+    if( val >= 1 &&
         this_big_statement_deserved_its_own_line == another_big_part )
     {
         a = 2;
@@ -67,7 +67,7 @@ But not if it is a multi-line initiator:
 ### Related lines: Multi-line formatting and indentation
 
 Multiple related source code lines should be formatted to be easily readable:
-```
+```c
 #define GET_UINT32_LE( n, b, i )                        \
 {                                                       \
     (n) = ( (uint32_t) (b)[(i)    ]       )             \
@@ -89,20 +89,20 @@ void this_is_a_function( context_struct *ctx, size_t length,
 ### Extra parentheses for `return` and `sizeof`
 
 Within Mbed TLS return statements use parentheses to contain their value:
-```
+```c
     return( 0 );
 ```
 Similarly, sizeof expressions always use parentheses even when it is not necessary (when taking the size of an object):
-```
+```c
     memset( buf, 0, sizeof( buf ) );
 ```
 
 ### Precompiler directives
 
 When using precompiler directives to enable or disable parts of the code, use `#if defined` instead of `#ifdef`. Add a comment to the `#endif` directive if the distance to the opening directive is bigger than a few lines or contains other directives:
-```
+```c
     #if define(MBEDTLS_HAVE_FEATURE)
-    [ten lines of code or other directives]
+    /* ten lines of code or other directives */
     #endif /* MBEDTLS_HAVE_FEATURE */
 ```
 
@@ -111,7 +111,7 @@ When using precompiler directives to enable or disable parts of the code, use `#
 ### Name spacing
 
 All public names (functions, variables, types, `enum` constants, macros) must start with either `MBEDTLS_` or `mbedtls_`, usually followed by the name of the module they belong to (and submodule if applicable), followed by a descriptive part. Macros and `enum` constants are uppercase with underscores; other names are lowercase with underscores:
-```
+```c
     mbedtls_x509_crt_parse_file()
     mbedtls_aes_setkey_decrypt()
 ```
@@ -159,7 +159,7 @@ This section applies fully to classic `mbedtls_xxx()` APIs and mostly to the new
 ### Module contexts
 
 If a module uses a context structure for passing around its state, the module should contain an `init()` and `free()` function, with the module or context name prepended to it. The `init()` function must always return `void`. If some initialization must be done that may fail (such as allocating memory), it should be done in a separate function, usually called `setup()`. The `free()` function must free any allocated memory within the context, but not the context itself. It must set to zero any data in the context or substructures:
-```
+```c
     mbedtls_cipher_context_t ctx;
     mbedtls_cipher_init( &ctx );
     ret = mbedtls_cipher_setup( &ctx, ... );
@@ -185,7 +185,7 @@ Most functions should return `int`, more specifically `0` on success (the operat
 ### Limited use of in-out parameters
 
 Function should avoid in-out parameters for length (multiplexing buffer size on entry with length used/written on exit) since they tend to impair readability. For example:
-```
+```c
     mbedtls_write_thing( void *thing, unsigned char *buf, size_t *len ); // no
     mbedtls_write_thing( void *thing, unsigned char *buf, size_t buflen,
                          size_t *outlen ); // yes
@@ -194,7 +194,7 @@ Function should avoid in-out parameters for length (multiplexing buffer size on 
 For PSA functions, [input buffers](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#input-buffer-sizes) have a `size_t xxx_size` parameter after the buffer pointer, and [output buffers](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#output-buffer-sizes) have a `size_t xxx_size` parameter for the buffer size followed by a `size_t *xxx_length` parameter for the output length. This convention is also preferred in new `mbedtls_xxx` code, but older modules often use different conventions.
 
 You can use in-out parameters for functions that receive a pointer to some buffer, and update it after parsing from or writing to that buffer:
-```
+```c
     mbedtls_asn1_get_int( unsigned char **p,
                           const unsigned char *end,
                           int *value );
@@ -206,7 +206,7 @@ Also, contexts are usually in-out parameters, which is acceptable.
 ### `Const` correctness
 
 Function declarations should keep `const` correctness in mind when declaring function arguments. Arguments that are pointers and are *not* changed by the functions should be marked as such:
-```
+```c
     int do_calc_length( const unsigned char *str )
 ```
 
@@ -249,7 +249,7 @@ Avoid using macros unless:
 * Code size is drastically impacted.
 
 The following define actually makes the code using it easier to read.
-```
+```c
 #define GET_UINT32_LE( n, b, i )                        \
 {                                                       \
     (n) = ( (uint32_t) (b)[(i)    ]       )             \
@@ -296,25 +296,25 @@ Structure header files as follows:
 * Brief description of the file.
 * Copyright notice and license indication.
 * Header file define for `MBEDTLS_ {MODULE_NAME} _H`:
-```
+```c
 #ifndef MBEDTLS_AES_H
 #define MBEDTLS_AES_H
 ```
 * Includes. Always include `<mbedtls/build_info.h>` before anything that might depend on the compile-time configuration.
 * Public defines (Generic and error codes) and portability code.
 * C++ wrapper for C code:
-```
+```c
 #ifdef __cplusplus
 extern "C" {
 #endif
 ```
 * For modules with optional alternative implementations, check for module specific structures:
-```
+```c
 #if !defined(MBEDTLS_AES_ALT)
 ```
 * Public structures that can have alternative implementations.
 * For modules with optional alternative implementations, include the alternative header file:
-```
+```c
 #else  /* MBEDTLS_AES_ALT */
 #include "aes_alt.h"
 #endif /* MBEDTLS_AES_ALT */
@@ -322,13 +322,13 @@ extern "C" {
 * Public structures that should not have alternative implementations.
 * Function declarations.
 * C++ end wrapper:
-```
+```c
 #ifdef __cplusplus
 }
 #endif
 ```
 * Header file end define:
-```
+```c
 #endif /* MBEDTLS_AES_H */
 ```
 
@@ -340,32 +340,32 @@ Source files are structured as follows:
 * Copyright notice and license indication.
 * Comments on possible standard documents used.
 * Precompiler directive for module:
-```
+```c
 #if defined(MBEDTLS_AES_C)
 ```
 * Includes. All library source files start by including `"common.h"`.
 * If applicable, precompiler directive for alternative implementation:
-```
+```c
 #if !defined(MBEDTLS_AES_ALT)
 ```
 * Private local defines and portability code.
 * Function definitions.
 * If applicable, precompiler directive for marking the end of an alternative implementation:
-```
+```c
 #endif /* !MBEDTLS_AES_ALT */
 ```
 * Precompiler directive for selftest (where applicable):
-```
+```c
 #if defined(MBEDTLS_SELF_TEST)
 ```
 * Self-test test vectors.
 * Self test implementation.
 * Precompiler directive for marking the end of self tests (where applicable):
-```
+```c
 #endif /* MBEDTLS_SELF_TEST */
 ```
 * Precompiler directive for marking the end of a module:
-```
+```c
 #endif /* MBEDTLS_AES_C */
 ```
 
