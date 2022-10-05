@@ -111,11 +111,10 @@ An example is included for each step, showing how to create a test generation sc
 
 ### Initial Python script
 
-To create the script, `test_data_generation` must be imported from `mbedtls_dev` and
-`test_data_generation.main()` called when the script is ran.
-The `scripts/` directory must be added to the system path before importing from
-`mbedtls_dev`; if the new script is in `tests/scripts/` this can be done by importing
-`scripts_path`.
+To create the script, import `test_data_generation` from `mbedtls_dev` and call
+`test_data_generation.main()` when the script runs.
+The `scripts` directory must be in the system path; for a script in `tests/scripts`, add
+it by importing `scripts_path` (see the example below).
 
 For the example, create `generate_bignum_ex_tests.py` in `tests/scripts/`, containing:
 
@@ -140,10 +139,10 @@ $ tests/scripts/generate_bignum_ex_tests.py
 
 ### Generating a data file
 
-To generate a data file from the script, a subclass of `BaseTarget` must be defined,
+To generate a data file from the script, you must define a subclass of `BaseTarget`,
 setting `target_basename` to the output file basename.
 This is a [file target class](#file-target-classes).
-Generally `target_basename` will be set to `"test_suite_xyz.generated"` for tests defined
+Generally `target_basename` is `"test_suite_xyz.generated"` for tests defined
 in `test_suite_xyz.function`.
 In the example, `metaclass=ABCMeta` is added to the class to explicitly indicate this is
 an abstract class.
