@@ -27,6 +27,24 @@ the script.
  - Abstract class: a class which defines common attributes and methods, and does not
 generate test cases directly.
 
+### Test data generation module
+
+The base classes required to generate test data using the framework are defined in
+[scripts/mbedtls_dev/test_data_generation.py](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/mbedtls_dev/test_data_generation.py).
+This module defines the `BaseTarget` class, the CLI entry point `main()`, and
+the `TestGenerator` class.
+
+The `TestGenerator` class constructs a `TARGET` dictionary, containing an entry for each defined
+file target class, and defines methods for generating and writing test case data.
+`main()` uses this class to list which files can be generated, and to generate files.
+Target files can be passed as arguments to the script to generate only specified files;
+by default all will be generated.
+The `--help` argument can be used for more details.
+
+The same entry point is also used in
+[tests/scripts/generate_psa_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_psa_tests.py),
+which does not use this test framework, and instead hard-codes the `TARGET` dictionary.
+
 ### BaseTarget
 
 `BaseTarget` defines the common attributes and methods required to generate test cases,
@@ -74,22 +92,6 @@ reduces repetition of code and variation in implementations.
 [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py).
 This class defines common methods used for binary bignum operations, and provides a
 structure for the derived classes to use.
-
-### Command line interface
-
-The CLI is defined in
-[scripts/mbedtls_dev/test_case_generation.py](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/mbedtls_dev/test_case_generation.py),
-including the entry point, `main()` and the `TestGenerator` class.
-This class constructs a `TARGET` dictionary, containing an entry for each defined file
-target class, and defines methods for generating and writing test case data.
-`main()` uses this class to list which files can be generated, and to generate files.
-Target files can be passed as arguments to the script to generate only specified files;
-by default all will be generated.
-The `--help` argument can be used for more details.
-
-The same entry point is also used in
-[tests/scripts/generate_psa_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_psa_tests.py),
-which does not use this test framework, and instead hard-codes the `TARGET` dictionary.
 
 ## Adding new tests
 
