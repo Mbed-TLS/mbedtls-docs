@@ -54,7 +54,7 @@ When called on a class `X`, `generate_tests()` will be called on all classes der
 This method yields all test cases from `X` and its descendants.
 
 `BaseTarget` is defined in
-[scripts/mbedtls_dev/test_case_generation.py](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/mbedtls_dev/test_case_generation.py).
+[scripts/mbedtls_dev/test_data_generation.py](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/mbedtls_dev/test_data_generation.py).
 
 ### File target classes
 
@@ -111,8 +111,8 @@ An example is included for each step, showing how to create a test generation sc
 
 ### Initial Python script
 
-To create the script, `test_generation` must be imported from `mbedtls_dev` and
-`test_generation.main()` called when the script is ran.
+To create the script, `test_data_generation` must be imported from `mbedtls_dev` and
+`test_data_generation.main()` called when the script is ran.
 The `scripts/` directory must be added to the system path before importing from
 `mbedtls_dev`; if the new script is in `tests/scripts/` this can be done by importing
 `scripts_path`.
@@ -123,19 +123,19 @@ For the example, create `generate_bignum_ex_tests.py` in `tests/scripts/`, conta
 #!/usr/bin/env python3
 import sys
 
-import scripts_path
-from mbedtls_dev import test_generation
+import scripts_path # pylint: disable=unused-import
+from mbedtls_dev import test_data_generation
 
 if __name__ == '__main__':
     # Pass command line arguments and a description for the script
-    test_generation.main(sys.argv[1:], "Generate bignum tests.")
+    test_data_generation.main(sys.argv[1:], "Generate bignum tests.")
 ```
 
 This script can now be run, although it will do nothing at this stage.
 Use the `--help` argument for usage details.
 
 ```bash
-$ python tests/scripts/generate_bignum_ex_tests.py
+$ tests/scripts/generate_bignum_ex_tests.py
 ```
 
 ### Generating a data file
@@ -155,7 +155,7 @@ For the example, add the following class:
 ```python
 from abc import ABCMeta
 ...
-class BignumTarget(test_generation.BaseTarget, metaclass=ABCMeta):
+class BignumTarget(test_data_generation.BaseTarget, metaclass=ABCMeta):
     #pylint: disable=abstract-method
     """Target for bignum test case generation."""
     # Using .ex in this example to avoid clash with `generate_bignum_tests.py`
@@ -341,11 +341,11 @@ import sys
 
 from typing import Iterator, List
 
-import scripts_path
-from mbedtls_dev import test_case, test_generation
+import scripts_path # pylint: disable=unused-import
+from mbedtls_dev import test_case, test_data_generation
 
 
-class BignumTarget(test_generation.BaseTarget, metaclass=ABCMeta):
+class BignumTarget(test_data_generation.BaseTarget, metaclass=ABCMeta):
     #pylint: disable=abstract-method):
     """Target for bignum test case generation."""
     # Using .ex in this example to avoid clash with `generate_bignum_tests.py`
@@ -404,7 +404,7 @@ class BignumAddExample(BignumTarget):
 
 if __name__ == '__main__':
     # Pass command line arguments and a description for the script
-    test_generation.main(sys.argv[1:], "Generate bignum tests.")
+    test_data_generation.main(sys.argv[1:], "Generate bignum tests.")
 ```
 
 Running this script will create 10 test cases in `test_suite_mpi.ex.generated.data`.
@@ -412,7 +412,7 @@ The tests can then be generated and ran together with other suites by running `m
 To run only these tests:
 
 ```sh
-$ python tests/scripts/generate_bignum_ex_tests.py
+$ tests/scripts/generate_bignum_ex_tests.py
 $ make tests/test_suite_mpi.ex.generated
 $ cd tests
 $ ./test_suite_mpi.ex.generated
