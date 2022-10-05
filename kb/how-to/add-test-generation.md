@@ -99,9 +99,8 @@ There are two options for adding new tests:
  - Adding classes to an existing script, such as
 [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py).
  - Creating a new script.
-
-When creating a new script, files will not automatically be generated when building tests
-unless the build system is updated.
+ You'll need to update the build system as explained in
+ ["Adding the script to the build system"](#adding-the-script-to-the-build-system).
 
 ## Creating a test script
 
@@ -177,6 +176,12 @@ When adding a new script to the build system, the changes required include:
  - Adding calls and targets in CMake and Make for the script and its generated files.
 The script will need to be called in the same places where `generate_bignum_tests.py` is
 currently called.
+ - Ensuring the generated files are covered by the Git ignore list.
+
+Note: for Mbed TLS 2.28 the requirements differ, the changes required are:
+ - Adding the script to
+[/tests/scripts/check-generated-files.sh](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/check-generated-files.sh).
+ - Committing the generated files.
 
 ## Generating test cases for a function
 
