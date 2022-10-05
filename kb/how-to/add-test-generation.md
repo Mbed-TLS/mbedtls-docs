@@ -464,8 +464,9 @@ from the `BignumAdd` class.
 The necessary changes for implementing `BignumAddAbs` are then reduced:
  - `count` should be reset to 0 for the class.
  - `test_function` should be set to `mpi_add_mpi_abs`.
- - `test_name` should be set.
- - `int` forms of the inputs (`int_a` and `int_b`) should be made absolute.
+ - `test_name` should be set to a different name.
+ -  We take the same list of inputs as the parent class, but calculate the expected result
+differently.
 
 For example, possible implementation of this class:
 
@@ -476,13 +477,6 @@ class BignumAddAbsExample(BignumAddExample):
     test_function = "mpi_add_abs"
     test_name = "MPI add (abs)"
 
-# Either override __init__()
-    def __init__(self, val_a, val_b) -> None:
-        super().__init__(val_a, val_b)
-        self.int_a = abs(self.int_a)
-        self.int_b = abs(self.int_b)
-
-# Or override result()
     def result(self) -> str:
         return "\"{:x}\"".format(abs(self.int_a) + abs(self.int_b))
 ```
