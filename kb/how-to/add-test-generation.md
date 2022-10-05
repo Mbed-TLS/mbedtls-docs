@@ -200,7 +200,7 @@ To add test cases for a function, a concrete class derived from `BaseTarget` mus
 added to the script.
 This class must implement all abstract methods and some attributes of `BaseTarget`.
 The minimum set of required attributes is listed in
-["Creating the class"](#creating-the-class),
+["Creating the function class"](#creating-the-function-class),
 and the abstract methods which must be implemented are described in
 ["Implementing abstract BaseTarget methods](#implementing-abstract-basetarget-methods).
 This class will generate test cases.
@@ -211,7 +211,7 @@ The added class will be derived from `BignumTarget`, and can be added either to
 [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py)
 or the example script described in the previous section.
 
-### Creating the class
+### Creating the function class
 
 The class must derive from a file target class, and the following class attributes should
 be set:
