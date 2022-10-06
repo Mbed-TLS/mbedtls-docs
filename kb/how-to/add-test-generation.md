@@ -210,6 +210,9 @@ As an example, test case generation is added for the test function `mpi_add_mpi(
 The added class will be derived from `BignumTarget`, and can be added either to
 [tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py)
 or the example script described in the previous section.
+This example is simplified, and will only handle valid integer inputs.
+For a more complete implementation, see the `BignumAdd` class defined in
+[tests/scripts/generate_bignum_tests.py](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/generate_bignum_tests.py).
 
 ### Creating the function class
 
@@ -240,24 +243,16 @@ To initialize an instance of the class, these inputs must be passed to the `__in
 constructor method.
 
 For `mpi_add_mpi()`, two input values are required, `val_a` and `val_b`.
-As the test function uses string inputs, the constructor will use the same format and
-store the values as-is.
-This ensures the values are correct in the generated data, preserving leading zeros and
-null strings.
-For calculating the expected result, these inputs are also converted to, and stored in,
-`int` form; this is a multi-precision type in Python and so can be used for bignum
+In this example, integers will be used as inputs and stored in the class instance.
+As `int` is a multi-precision type in Python, these can be used for bignum
 calculations.
 
 For the example, add the following constructor to `BignumAddExample`:
 
 ```python
-    def __init__(self, val_a: str, val_b: str) -> None:
-        self.arg_a = val_a
-        self.arg_b = val_b
-        # int(val, 16) converts from a hex string to int
-        # empty strings should be treated as zero in calculations
-        self.int_a = int(val_a, 16) if val_a else 0
-        self.int_b = int(val_b, 16) if val_b else 0
+    def __init__(self, val_a: int, val_b: int) -> None:
+        self.val_a = val_a
+        self.val_b = val_b
 ```
 
 ### Implementing abstract BaseTarget methods
@@ -283,15 +278,16 @@ For the example, add the following methods to `BignumAddExample`:
 
 ```python
     def arguments(self) -> List[str]:
+        # Format input values as quoted hexadecimal strings, without leading 0x
         return [
-            "\"{}\"".format(self.arg_a),
-            "\"{}\"".format(self.arg_b),
+            "\"{:x}\"".format(self.val_a),
+            "\"{:x}\"".format(self.val_b),
             self.result()
         ]
 
     def result(self) -> str:
         # Return as a quoted hexadecimal string, without leading 0x
-        return "\"{:x}\"".format(self.int_a + self.int_b)
+        return "\"{:x}\"".format(self.val_a + self.val_b)
 ```
 
 The method `generate_function_tests()` handles the construction of class instances for each
@@ -307,9 +303,9 @@ For the example, add the following method to `BignumAddExample`:
     @classmethod
     def generate_function_tests(cls) -> Iterator[test_case.TestCase]:
         # Create a list of input values
-        input_values = ["", "0", "1", "123"]
+        input_values = [0, 1, 2, 123]
         # combinations_with_replacement generates a list of all unique
-        # combinations, including where inputs are the same i.e. ("0", "0")
+        # combinations, including where inputs are the same i.e. (0, 0)
         for a_value, b_value in itertools.combinations_with_replacement(
             input_values, 2
         )
@@ -335,8 +331,8 @@ For the example, add the following method to `BignumAddExample`:
         if not self.case_description:
             self.case_description = "{} + {}".format(
                 # hex() converts to a hex string with leading 0x
-                "0 (null)" if self.arg_a == "" else hex(self.int_a),
-                "0 (null)" if self.arg_b == "" else hex(self.int_b)
+                hex(self.val_a),
+                hex(self.val_b)
             )
         # Call description() in the parent class
         return super().description()
@@ -369,7 +365,8 @@ import sys
 from typing import Iterator, List
 
 import scripts_path # pylint: disable=unused-import
-from mbedtls_dev import test_case, test_data_generation
+from mbedtls_dev import test_case
+from mbedtls_dev import test_data_generation
 
 
 class BignumTarget(test_data_generation.BaseTarget, metaclass=ABCMeta):
@@ -385,18 +382,15 @@ class BignumAddExample(BignumTarget):
     test_function = "mpi_add_mpi"
     test_name = "MPI add"
 
-    def __init__(self, val_a: str, val_b: str) -> None:
-        self.arg_a = val_a
-        self.arg_b = val_b
-        # int(val, 16) converts from a hex string to int
-        # null strings should be treated as zero in calculations
-        self.int_a = int(val_a, 16) if val_a else 0
-        self.int_b = int(val_b, 16) if val_b else 0
+    def __init__(self, val_a: int, val_b: int) -> None:
+        self.val_a = val_a
+        self.val_b = val_b
 
     def arguments(self) -> List[str]:
+        # Format values as quoted hexadecimal strings, without leading 0x
         return [
-            "\"{}\"".format(self.arg_a),
-            "\"{}\"".format(self.arg_b),
+            "\"{:x}\"".format(self.val_a),
+            "\"{:x}\"".format(self.val_b),
             self.result()
         ]
 
@@ -404,20 +398,20 @@ class BignumAddExample(BignumTarget):
         if not self.case_description:
             self.case_description = "{} + {}".format(
                 # hex() converts to a hex string with leading 0x
-                "0 (null)" if self.arg_a == "" else hex(self.int_a),
-                "0 (null)" if self.arg_b == "" else hex(self.int_b)
+                hex(self.val_a),
+                hex(self.val_b)
             )
         # Call description() in the parent class
         return super().description()
 
     def result(self) -> str:
         # Return as a quoted hexadecimal string, without leading 0x
-        return "\"{:x}\"".format(self.int_a + self.int_b)
+        return "\"{:x}\"".format(self.val_a + self.val_b)
 
     @classmethod
     def generate_function_tests(cls) -> Iterator[test_case.TestCase]:
         # Create a list of input values
-        input_values = ["", "0", "1", "123"]
+        input_values = [0, 1, 2, 123]
         # combinations_with_replacement generates a list of all unique
         # combinations, including where inputs are the same i.e. ("0", "0")
         for a_value, b_value in itertools.combinations_with_replacement(
