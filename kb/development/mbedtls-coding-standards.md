@@ -97,9 +97,9 @@ Similarly, sizeof expressions always use parentheses even when it is not necessa
     memset( buf, 0, sizeof( buf ) );
 ```
 
-### Precompiler directives
+### Preprocessor directives
 
-When using precompiler directives to enable or disable parts of the code, use `#if defined` instead of `#ifdef`. Add a comment to the `#endif` directive if the distance to the opening directive is bigger than a few lines or contains other directives:
+When using preprocessor directives to enable or disable parts of the code, use `#if defined` instead of `#ifdef`. Add a comment to the `#endif` directive if the distance to the opening directive is bigger than a few lines or contains other directives:
 ```c
     #if define(MBEDTLS_HAVE_FEATURE)
     /* ten lines of code or other directives */
@@ -236,9 +236,9 @@ Most functions that need cleanup have a single cleanup block at the end. The lab
 
 Mbed TLS code should minimize use of external functions. Standard `libc` functions are allowed, but should be documented in the [KB article on external dependencies](what-external-dependencies-does-mbedtls-rely-on.md).
 
-### Minimize code based on precompiler directives
+### Minimize code based on preprocessor directives
 
-To minimize the code size and external dependencies, the availability of modules and module functionality is controlled by precompiler directives located in `mbedtls/mbedtls_config.h`. Each module should have at least its own module define for enabling or disabling the module altogether. Other files using the module header should only include the header file if the module is actually available.
+To minimize the code size and external dependencies, the availability of modules and module functionality is controlled by preprocessor directives located in `mbedtls/mbedtls_config.h`. Each module should have at least its own module define for enabling or disabling the module altogether. Other files using the module header should only include the header file if the module is actually available.
 
 Since often systems that use Mbed TLS do not have a file system, functions specifically using the file system should be contained in `MBEDTLS_FS_IO` directives.
 
@@ -339,32 +339,32 @@ Source files are structured as follows:
 * Brief description of the file.
 * Copyright notice and license indication.
 * Comments on possible standard documents used.
-* Precompiler directive for module:
+* Preprocessor directive for module:
 ```c
 #if defined(MBEDTLS_AES_C)
 ```
 * Includes. All library source files start by including `"common.h"`.
-* If applicable, precompiler directive for alternative implementation:
+* If applicable, preprocessor directive for alternative implementation:
 ```c
 #if !defined(MBEDTLS_AES_ALT)
 ```
 * Private local defines and portability code.
 * Function definitions.
-* If applicable, precompiler directive for marking the end of an alternative implementation:
+* If applicable, preprocessor directive for marking the end of an alternative implementation:
 ```c
 #endif /* !MBEDTLS_AES_ALT */
 ```
-* Precompiler directive for selftest (where applicable):
+* Preprocessor directive for selftest (where applicable):
 ```c
 #if defined(MBEDTLS_SELF_TEST)
 ```
 * Self-test test vectors.
 * Self test implementation.
-* Precompiler directive for marking the end of self tests (where applicable):
+* Preprocessor directive for marking the end of self tests (where applicable):
 ```c
 #endif /* MBEDTLS_SELF_TEST */
 ```
-* Precompiler directive for marking the end of a module:
+* Preprocessor directive for marking the end of a module:
 ```c
 #endif /* MBEDTLS_AES_C */
 ```
