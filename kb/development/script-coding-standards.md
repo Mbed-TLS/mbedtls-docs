@@ -35,6 +35,8 @@ Scripts should run out of the box on a typical Unix-like system if possible. If 
 All scripts should start with a comment that explains the purpose of the script and details of how to use it.
 All scripts should print at least a summary explanation of how to invoke the script, including a list of supported options, when invoked with `--help` as an argument.
 
+Scripts should follow Unix conventions for options: `-x` for single-letter option, `--long-option` for options with longer names.
+
 ### File structure
 
 All executable scripts committed into the repository should have the following structure:
