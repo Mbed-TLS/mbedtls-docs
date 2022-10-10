@@ -1,6 +1,8 @@
 # Mbed TLS script coding standards
 
-## Choice of scripting language
+## General conventions for scripts
+
+### Choice of scripting language
 
 The preferred language for scripts in the Mbed TLS project is Python. Use Python for new scripts that are committed to the project unless there's a good reason.
 
