@@ -9,7 +9,7 @@ The preferred language for scripts in the Mbed TLS project is Python. Use Python
 Some reasons not to use Python:
 
 * A script that only applies to Windows and should ideally work out of the box can be written in cmd.
-* Some CI code in the `mbedtls-test` repository is written in Groovy, for its Jenkins integration.
+* Some CI code in the [`mbedtls-test` repository](https://github.com/Mbed-TLS/mbedtls-test) is written in Groovy, for its Jenkins integration.
 * A script only intended for the Mbed TLS developers, and whose job is mostly to run other programs, can be written in sh.
 * If you're extending existing scripts, then obviously keep using the same language.
 * Throwaway scripts that do ad hoc automated refactoring (e.g. renaming identifiers) are often in Perl, thanks to its convenient text manipulation primitives.
@@ -67,7 +67,7 @@ We follow the usual convention that imports go at the top of a file (after the d
 2. Third-party libraries, if any, in lexicographic order.
 3. Modules from `mbedtls_dev`, in lexicographic order.
 
-Avoid importing individual names from modules, as it can be difficult to figure out which module an unqualified name comes from. It's ok to import names if they're sufficiently recognizable, for example:
+Avoid importing individual names from modules, as it can be difficult to figure out which module an unqualified name comes from. However, it's ok to import names if they're sufficiently recognizable, for example:
 
 * Importing individual modules from `mbedtls_dev` is fine.
 * Importing capitalized type names from `typing` is fine.
@@ -81,7 +81,7 @@ The minimum supported version of third-party Python libraries is recorded in `*.
 
 ### Python language features
 
-The maintainers of Mbed TLS are primarily C programmers, not Python programmers. It's ok to use fancy language features if they're useful, but don't necessarily assume that the reader is familiar with them. Make sure that if a reader is unfamiliar with an advanced feature, they'll be able to easily look it up.
+The maintainers of Mbed TLS are primarily C programmers, not Python programmers. It's ok to use fancy language features if they make the code significantly simpler, but don't necessarily assume that the reader is familiar with them. Make sure that unfamiliar readers can easily look up such fancy features.
 
 * Classes, methods and simple inheritance can be used freely.
 * Avoid metaclasses and nontrivial dynamic class creation. If you use these features, write documentation that's accessible to non-experts.
