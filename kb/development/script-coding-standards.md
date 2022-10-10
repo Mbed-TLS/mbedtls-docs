@@ -16,9 +16,9 @@ Some reasons not to use Python:
 
 ### Language versions
 
-Check [`README.md`](https://github.com/Mbed-TLS/mbedtls/blob/development/README.md#tool-versions) for the current minimum supported version of Python and other tools. Note that in addition to the public commitments, at any given time, there may be additional constraints due to the platforms on which we run automated tests. As of September 2022, Python scripts must be compatible with Python 3.5.
+Check [`README.md`](https://github.com/Mbed-TLS/mbedtls/blob/development/README.md#tool-versions) for the current minimum supported version of Python and other tools. Note that in addition to the public commitments, at any given time, there may be additional constraints due to the platforms on which we run automated tests.
 
-For scripts that need to be backported, note that [long-time support branches](https://github.com/Mbed-TLS/mbedtls/blob/development/BRANCHES.md#long-time-support-branches) may support older versions of Python and other tools than the `development` branch.
+For scripts that need to be backported, note that [long-time support branches](https://github.com/Mbed-TLS/mbedtls/blob/development/BRANCHES.md#long-time-support-branches) may need to support older versions than the `development` branch.
 
 ### Script naming conventions
 
@@ -49,6 +49,13 @@ All executable scripts committed into the repository should have the following s
 * Code that performs the script's purpose (this can be as simple as calling a `main` function, or more complex).
 
 ## Python coding standards
+
+### Python version
+
+As of September 2022, Python scripts must be compatible with Python 3.5,
+because that's what's on parts of the CI, even though we only promise Python 3.6 in [`README.md`](https://github.com/Mbed-TLS/mbedtls/blob/development/README.md#tool-versions).
+
+Exception: `scripts/config.py` must remain compatible with Python 3.4, which is the earliest version that was officially supported at the time of the 2.28.0 release. (This is only a requirement in 2.28, but it's easiest to keep the development version mostly aligned.) Other scripts in 2.28 are not user-facing and so can require a more recent version.
 
 ### Directory structure
 
