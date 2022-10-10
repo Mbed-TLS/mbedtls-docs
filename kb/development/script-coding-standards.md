@@ -32,7 +32,8 @@ Scripts should be able to run from the root of the Mbed TLS source tree. Support
 
 Scripts should run out of the box on a typical Unix-like system if possible. If the script requires some environment variables, try to set sensible defaults.
 
-All scripts should start with a comment that explains how to run the script. Printing those explanations when the script is invoked with no argument or with `--help` is a plus.
+All scripts should start with a comment that explains the purpose of the script and details of how to use it.
+All scripts should print at least a summary explanation of how to invoke the script, including a list of supported options, when invoked with `--help` as an argument.
 
 ### File structure
 
