@@ -6,8 +6,7 @@ For more information, see the following:
 
 * [GitHub repository](https://github.com/ARMmbed/mbedtls)
 * [Documentation GitHub Repository](https://github.com/ARMmbed/mbedtls-docs)
-* [Mbed TLS page on trustedfirmware.org](https://www.trustedfirmware.org/projects/mbed-tls/)
-* [Legacy website](https://tls.mbed.org)
+* [Mbed TLS website](https://www.trustedfirmware.org/projects/mbed-tls/)
 
 ```{toctree}
 ---
