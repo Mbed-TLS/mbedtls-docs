@@ -221,4 +221,4 @@ Test data for cryptographic algorithms should be, in order of preference:
 * Obtained through manual means, possibly by patching together bits of other tests. For example, test output multipart operation function can be obtained by splitting the output of a one-shot operation function. Edge cases for parsing can be constructed by manually tweaking nominal cases.
 * As a last resort, obtained by running the library once. This is a last resort since it cannot validate that the implementation is correct, it can only protect against future behavior changes. This should only be done when there is no other way, for example to construct a non-regression test in an edge case if we're very confident from code review that our bug fix is correct.
 
-Always [document how the test data was constructed](#document-the-test-data).
+Whatever the source of the data is, remember to [document it](#document-the-test-data).
