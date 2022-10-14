@@ -9,7 +9,7 @@ Note that the test files are independent, and their order should not be dependen
 ## `.data` files
 
 A test data file consists of a sequence of paragraphs separated by a single empty line. Each paragraph is referred as test case data. Line breaks may be in Unix (LF) or Windows (CRLF) format. Lines starting with the character '#' are ignored (the parser behaves as if they were not present). The first line must not be an empty line.
- 
+
 Each paragraph describes one test case and must consist of:
 
 1. One line, which is the test case name.
@@ -38,7 +38,7 @@ An optional addition `depends_on:` has same usage as in the `.data` files. The s
 * `BEGIN_DEPENDENCIES` - When added in this delimiter section, the whole test suite will be generated only if all the configuration options are defined in `mbedtls_config.h`.
 
     For example:
-    ```
+    ```c
     /* BEGIN_DEPENDENCIES
      * depends_on:MBEDTLS_CIPHER_C
      * END_DEPENDENCIES
@@ -48,7 +48,7 @@ An optional addition `depends_on:` has same usage as in the `.data` files. The s
 * `BEGIN_CASE` - When added to this delimiter, this specific test case will be generated at compile time only if the configuration option is defined in `mbedtls_config.h`.
 
     For example:
-    ```
+    ```c
     /* BEGIN_CASE depends_on:MBEDTLS_AES_C */
     ```
 
@@ -81,7 +81,7 @@ Note that SSL is tested differently, with sample programs under the `programs/ss
 
 ## `.function` example
 
-```
+```c
 /* BEGIN_HEADER */
 #include "mbedtls/some_module.h"
 
@@ -137,7 +137,7 @@ When a function expects an input or an output to have a certain size, you should
 For output buffers, it's usually desirable to also check that the function works if it's given a buffer that's larger than necessary, and that it returns the expected error if given a buffer that's too small.
 
 Here is an example of a test function that checks that a library function has the desired output for a given input.
-```
+```c
 /* BEGIN_CASE */
 void test_function( data_t *input, data_t *expected_output )
 {
