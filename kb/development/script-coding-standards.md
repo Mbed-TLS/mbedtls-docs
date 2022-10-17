@@ -107,7 +107,7 @@ Avoid complex overloading. It's generally easier to understand code if it only e
 
 ### Python style conventions
 
-We generally follow [PEP 8](https://peps.python.org/pep-0008/), and [PEP 257](https://peps.python.org/pep-0257/) for docstrings.
+We generally follow [PEP 8](https://peps.python.org/pep-0008/). For docstrings, we also follow [PEP 257](https://peps.python.org/pep-0257/).
 
 ### Python style enforcement
 
