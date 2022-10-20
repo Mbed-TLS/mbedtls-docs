@@ -236,11 +236,81 @@ Most functions that need cleanup have a single cleanup block at the end. The lab
 
 Mbed TLS code should minimize use of external functions. Standard `libc` functions are allowed, but should be documented in the [KB article on external dependencies](what-external-dependencies-does-mbedtls-rely-on.md).
 
+## Preprocessor
+
 ### Minimize code based on preprocessor directives
 
 To minimize the code size and external dependencies, the availability of modules and module functionality is controlled by preprocessor directives located in `mbedtls/mbedtls_config.h`. Each module should have at least its own module define for enabling or disabling the module altogether. Other files using the module header should only include the header file if the module is actually available.
 
 Since often systems that use Mbed TLS do not have a file system, functions specifically using the file system should be contained in `MBEDTLS_FS_IO` directives.
+
+### Conditional compilation hygiene
+
+The span of a conditional compilation directive should generally be a sequence of C instructions or declarations.
+
+If necessary, the span can be an expression or a sequence of expressions. For example, this is acceptable:
+```c
+static char self_test_key = {
+    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+    0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+#if !defined(SUPPORT_128_BIT_KEYS)
+    0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+    0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+#endif
+};
+```
+
+This is acceptable, but deprecated:
+```c
+    if(
+#if defined(MBEDTLS_USE_PSA_CRYPTO)
+        psa_condition( )
+#else
+        legacy_condition( )
+#endif
+      )
+        do_stuff( );
+```
+Such code is generally more readable with an intermediate variable, thus the following style is preferred:
+```c
+#if defined(MBEDTLS_USE_PSA_CRYPTO)
+    const int want_stuff = psa_condition( );
+#else
+    const int want_stuff = legacy_condition( );
+#endif
+    if( want_stuff )
+        do_stuff( );
+```
+
+Do not put partial instructions in a conditionally compiled span. For example, do not write the code above like this:
+```c
+#if defined(MBEDTLS_USE_PSA_CRYPTO)     // NO!
+    if( psa_condition( ) )              // NO!
+#else                                   // NO!
+    if( legacy_condition( ) )           // NO!
+#endif                                  // NO!
+        do_stuff( );                    // NO!
+```
+Having two instances of `if` in the source code, but only one actually compiled, is confusing both for humans and for tools such as indenters and linters.
+
+Exception: the following idiom, with a chain of if-else-if statements, is accepted.
+```c
+#if defined(MBEDTLS_FOO)
+    if( is_a_foo( type ) )
+        process_foo( type, data );
+    else
+#endif /* MBEDTLS_FOO */
+#if defined(MBEDTLS_BAR)
+    if( is_a_bar( type ) )
+        process_bar( type, data );
+    else
+#endif /* MBEDTLS_BAR */
+    {
+        return ERROR_NOT_SUPPORTED;
+    }
+```
+
+Never have unbalanced braces in a conditionally compiled span. Exception: public headers can, and must, have `extern "C" {` and `}` guarded by `#ifdef __cplusplus`.
 
 ### Minimize use of macros
 
