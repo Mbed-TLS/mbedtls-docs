@@ -318,6 +318,35 @@ Only use macros if they improve readability or maintainability, preferably both.
 
 If possible, use the C core language rather than macros. For example, if an expression is used often, a `static inline` function is better because it provides type checks, allows the compiler to keep the function call when optimizing for size, and avoids problems with arguments evaluated more than once. However, if the expression needs to be a compile-time constant when its parameters are, this is a good reason to use a macro.
 
+### Macro definition hygiene
+
+When the code contains a macro call `MBEDTLS_FOO( x, y )`, it should behave as much as possible as if `MBEDTLS_FOO` was a function. Deviate from this only to the extent necessary to make the macro practical.
+
+If the arguments of a macro are C expressions (they usually are), put parentheses around the argument in the expansion. For example:
+```c
+#define FOO_SIZE( bits ) ( ( (bits) + 7 ) / 8 + 4)
+```
+The expansion contains `( (bits) + 7 )`, not `bits + 7`, so that a call like `FOO_SIZE( x << 3 )` is parsed correctly. As an exception, it's ok to omit parentheses if the argument is directly passed to a function argument (or comma operator): `#define A( x ) f( x, 0 )` is acceptable.
+
+If the expansion of a macro is a C expression, put parentheses around the expansion. Continuing the example above, this is so that a call like `FOO_SIZE( x ) * 2` is parsed correctly. As an exception, it's ok to omit parentheses if the expansion is a function call or other lowest-precedence operator: `#define A( x ) f( x, 0 )` is acceptable.
+
+If a macro expands to an instruction, wrap it in `do { ... } while( 0 )` so that it can be used in contexts that expect a single instruction. For example:
+```c
+#define MBEDTLS_MPI_CHK(f)       \
+    do                           \
+    {                            \
+        if( ( ret = (f) ) != 0 ) \
+            goto cleanup;        \
+    } while( 0 )`
+```
+The expansion is not just `if( ( ret = (f) ) != 0 ) goto cleanup` because that would not work in a context like `if( condition ) MBEDTLS_MPI_CHK( f( ) ); else ++x;` (the `else` would get attached to the wrong `if`).
+
+Follow the expression paradigm or the instruction paradigm if possible. Other paradigms are permitted if necessary, for example a macro that expands to an initializer such as
+```c
+#define MBEDTLS_FOO_INIT {0, {0, 0}}
+```
+The expansion of a macro must not contain unbalanced parentheses, brackets or braces.
+
 ## Clear security-relevant memory after use
 
 Memory that contains security-relevant information should be set to zero after use, and before being released to be reused. Use the function `mbedtls_platform_zeroize()` to prevent unwanted compiler optimization.
