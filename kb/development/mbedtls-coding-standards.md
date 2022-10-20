@@ -244,20 +244,9 @@ Since often systems that use Mbed TLS do not have a file system, functions speci
 
 ### Minimize use of macros
 
-Avoid using macros unless:
-* Readability actually improves with use of the macro.
-* Code size is drastically impacted.
+Only use macros if they improve readability or maintainability, preferably both. If macros seem necessary for maintainability but hinder readability, consider generating code from a Python script instead.
 
-The following define actually makes the code using it easier to read.
-```c
-#define GET_UINT32_LE( n, b, i )                        \
-{                                                       \
-    (n) = ( (uint32_t) (b)[(i)    ]       )             \
-        | ( (uint32_t) (b)[(i) + 1] <<  8 )             \
-        | ( (uint32_t) (b)[(i) + 2] << 16 )             \
-        | ( (uint32_t) (b)[(i) + 3] << 24 );            \
-}
-```
+If possible, use the C core language rather than macros. For example, if an expression is used often, a `static inline` function is better because it provides type checks, allows the compiler to keep the function call when optimizing for size, and avoids problems with arguments evaluated more than once. However, if the expression needs to be a compile-time constant when its parameters are, this is a good reason to use a macro.
 
 ## Clear security-relevant memory after use
 
