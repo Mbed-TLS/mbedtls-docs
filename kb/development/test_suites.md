@@ -9,7 +9,7 @@ Note that the test files are independent, and their order should not be dependen
 ## `.data` files
 
 A test data file consists of a sequence of paragraphs separated by a single empty line. Each paragraph is referred as test case data. Line breaks may be in Unix (LF) or Windows (CRLF) format. Lines starting with the character '#' are ignored (the parser behaves as if they were not present). The first line must not be an empty line.
- 
+
 Each paragraph describes one test case and must consist of:
 
 1. One line, which is the test case name.
@@ -38,7 +38,7 @@ An optional addition `depends_on:` has same usage as in the `.data` files. The s
 * `BEGIN_DEPENDENCIES` - When added in this delimiter section, the whole test suite will be generated only if all the configuration options are defined in `mbedtls_config.h`.
 
     For example:
-    ```
+    ```c
     /* BEGIN_DEPENDENCIES
      * depends_on:MBEDTLS_CIPHER_C
      * END_DEPENDENCIES
@@ -48,7 +48,7 @@ An optional addition `depends_on:` has same usage as in the `.data` files. The s
 * `BEGIN_CASE` - When added to this delimiter, this specific test case will be generated at compile time only if the configuration option is defined in `mbedtls_config.h`.
 
     For example:
-    ```
+    ```c
     /* BEGIN_CASE depends_on:MBEDTLS_AES_C */
     ```
 
@@ -81,7 +81,7 @@ Note that SSL is tested differently, with sample programs under the `programs/ss
 
 ## `.function` example
 
-```
+```c
 /* BEGIN_HEADER */
 #include "mbedtls/some_module.h"
 
@@ -114,3 +114,111 @@ void test_function_example( char *input, char *expected_output, int expected_ret
 }
 /* END_CASE */
 ```
+
+## Guidance on writing unit test code
+
+### Testing expected results
+
+Calls to library functions in test code should always check the function's return status. Fail the test if anything is unexpected.
+
+The header file [`tests/include/test/macros.h`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/include/test/macros.h) declares several useful macros, including:
+
+* `TEST_EQUAL(x, y)` when two integer values are expected to be equal, for example `TEST_EQUAL(mbedtls_library_function(), 0)` when expecting a success or `TEST_EQUAL(mbedtls_library_function(), MBEDTLS_ERR_xxx)` when expecting an error.
+* `TEST_LE_U(x, y)` to test that the unsigned integers `x` and `y` satisfy `x <= y`, and `TEST_LE_S(x, y)` when `x` and `y` are signed integers.
+* `ASSERT_COMPARE(buffer1, size1, buffer2, size2)` to compare the actual output from a function with the expected output.
+* `PSA_ASSERT(psa_function_call())` when calling a function that returns a `psa_status_t` and is expected to return `PSA_SUCCESS`.
+* `TEST_ASSERT(condition)` for a condition that doesn't fit any of the special cases.
+    * In rare cases where a part of the test code shouldn't be reached, the convention is to use `TEST_ASSERT(!"explanation of why this shouldn't be reached")`.
+
+### Buffer allocation
+
+When a function expects an input or an output to have a certain size, you should pass it an allocated buffer with exactly the expected size. The continuous integration system runs tests in many configurations with Asan or Valgrind, and these will cause test failures if there is a buffer overflow or underflow.
+
+For output buffers, it's usually desirable to also check that the function works if it's given a buffer that's larger than necessary, and that it returns the expected error if given a buffer that's too small.
+
+Here is an example of a test function that checks that a library function has the desired output for a given input.
+```c
+/* BEGIN_CASE */
+void test_function( data_t *input, data_t *expected_output )
+{
+// must be set to NULL both for ASSERT_ALLOC and so that mbedtls_free(actual_output) is safe
+    unsigned char *actual_output = NULL;
+    size_t output_size;
+    size_t output_length;
+
+    /* Good case: exact-size output buffer */
+    output_size = expected_output->len;
+    ASSERT_ALLOC( actual_output, output_size );
+// set output_length to a bad value to ensure mbedtls_library_function updates it
+    output_length = 0xdeadbeef;
+    TEST_EQUAL( mbedtls_library_function( input->x, input->len,
+                                          actual_output, output_size,
+                                          &output_length ), 0 );
+// Check both the output length and the buffer contents
+    ASSERT_COMPARE( expected_output->x, expected_output->len,
+                    actual_output, output_length );
+// Free the output buffer to prepare it for the next subtest
+    mbedtls_free( actual_output );
+    actual_output = NULL;
+
+    /* Good case: larger output buffer */
+    output_size = expected_output->len + 1;
+    ASSERT_ALLOC( actual_output, output_size );
+    output_length = 0xdeadbeef;
+    TEST_EQUAL( mbedtls_library_function( input->x, input->len,
+                                          actual_output, output_size,
+                                          &output_length ), 0 );
+    ASSERT_COMPARE( expected_output->x, expected_output->len,
+                    actual_output, output_length );
+    mbedtls_free( actual_output );
+    actual_output = NULL;
+
+    /* Bad case: output buffer too small */
+    output_size = expected_output->len - 1;
+    ASSERT_ALLOC( actual_output, output_size );
+    TEST_EQUAL( mbedtls_library_function( input->x, input->len,
+                                          actual_output, output_size,
+                                          &output_length ),
+                MBEDTLS_ERR_XXX_BUFFER_TOO_SMALL );
+    mbedtls_free( actual_output );
+    actual_output = NULL;
+
+exit:
+    mbedtls_free( actual_output );
+}
+/* END_CASE */
+```
+
+### PSA initialization and deinitialization
+
+In a test case that always uses PSA crypto, call `PSA_INIT()` at the beginning and `PSA_DONE()` at the end (in the cleanup section). Destroy all keys used by the test before calling `PSA_DONE()`: if any key is still live at that point, it is considered a resource leak in the test.
+
+In a test case that uses PSA crypto only when building with `MBEDTLS_USE_PSA_CRYPTO`, call `USE_PSA_INIT()` at the beginning and `USE_PSA_DONE()` at the end.
+
+See [`tests/include/test/psa_crypto_helpers.h`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/include/test/macros.h) for more complex cases.
+
+## Guidance on writing unit test data
+
+### Document the test data
+
+Document how the test data was generated. This helps future maintainers if they need to generate more similar test data, for example to construct a non-regression test for a bug in a particular case.
+
+The documentation can be:
+
+* In Python (or other) code committed to the repository. This is preferred when the code can handle a large class of tests. For example, we have frameworks to generate key data for PSA, and to generate bignum tests. Some `.data` files are fully generated at build time by `tests/scripts/generate_*_tests.py`.
+* In a comment in the `.data` file. This is more convenient when the instructions are specific to a single test case.
+* In the commit that introduces the test data. This is more convenient when the instructions cover a series of similar test cases.
+
+When adding a new file in `tests/data_files`, if possible, do it by editing `tests/data_files/Makefile` to add executable instructions for creating those files, and then run `make` and commit the result. Ideally removing the files and re-running `make` should produce identical files, however in many cases this is not practical because the generation is randomized or depends on the current time (for certificates and related data), and we accept that.
+
+### Interoperability testing
+
+Test data for cryptographic algorithms should be, in order of preference:
+
+* Official test vectors taken from a standards document.
+* Generated by a reference implementation from the authors of the algorithm, or by a widespread implementation such as OpenSSL or Cryptodome.
+* Generated by another independent implementation.
+* Obtained through manual means, possibly by patching together bits of other tests. For example, test output multipart operation function can be obtained by splitting the output of a one-shot operation function. Edge cases for parsing can be constructed by manually tweaking nominal cases.
+* As a last resort, obtained by running the library once. This is a last resort since it cannot validate that the implementation is correct, it can only protect against future behavior changes. This should only be done when there is no other way, for example to construct a non-regression test in an edge case if we're very confident from code review that our bug fix is correct.
+
+Whatever the source of the data is, remember to [document it](#document-the-test-data).
