@@ -99,6 +99,13 @@ Similarly, sizeof expressions always use parentheses even when it is not necessa
 
 ### Formatting of lists
 
+When a function or macro call doesn't fit on a single line, put one argument per line or a sensible grouping per line. For example, in the snippet below, `input_buffer` and `input_size` are on a line of their own even though the call could fit on two lines instead of three if they were separated:
+```c
+    function_with_a_very_long_name( parameter1, parameter2,
+                                    input_buffer, input_size,
+                                    output_buffer, output_size );
+```
+
 Lists of items other than function arguments should generally have one item per line. Exceptions:
 
 * It's ok to write simple structure initializers on a single line.
