@@ -119,7 +119,7 @@ typedef enum foo
     FOO_2,      // <- do put a comma here
 }
 ```
-This doesn't apply to structure initializers that fit on one line.
+Exceptions: you can and omit the trailing comma in structure initializers that fit on one line, or if the last element must always remain last (e.g. a null terminator).
 
 ### Preprocessor directives
 
