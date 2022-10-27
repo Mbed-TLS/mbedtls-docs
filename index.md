@@ -5,8 +5,9 @@ This documentation is currently incomplete and will be expanded over time.
 For more information, see the following:
 
 * [GitHub repository](https://github.com/ARMmbed/mbedtls)
-* [Documentation GitHub Repository](https://github.com/ARMmbed/mbedtls-docs)
+* [Documentation GitHub repository](https://github.com/ARMmbed/mbedtls-docs)
 * [Mbed TLS website](https://www.trustedfirmware.org/projects/mbed-tls/)
+* [PSA Crypto API specification](https://arm-software.github.io/psa-api/crypto/)
 
 ```{toctree}
 ---
