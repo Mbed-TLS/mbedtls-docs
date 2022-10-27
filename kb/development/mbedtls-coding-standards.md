@@ -97,6 +97,30 @@ Similarly, sizeof expressions always use parentheses even when it is not necessa
     memset( buf, 0, sizeof( buf ) );
 ```
 
+### Formatting of lists
+
+When a function or macro call doesn't fit on a single line, put one argument per line or a sensible grouping per line. For example, in the snippet below, `input_buffer` and `input_size` are on a line of their own even though the call could fit on two lines instead of three if they were separated:
+```c
+    function_with_a_very_long_name( parameter1, parameter2,
+                                    input_buffer, input_size,
+                                    output_buffer, output_size );
+```
+
+Lists of items other than function arguments should generally have one item per line. Exceptions:
+
+* It's ok to write simple structure initializers on a single line.
+* In an array initialized with numerical data, pack a sensible and consistent number of items per line. The number of items per line should be a power of 2 to faciliate counting.
+
+In lists of items such array initializers and enum definitions, do include the optional comma after the last element. This simplifies merging, reordering, etc.
+```c
+typedef enum foo
+{
+    FOO_1,
+    FOO_2,      // <- do put a comma here
+}
+```
+Exceptions: you can and omit the trailing comma in structure initializers that fit on one line, or if the last element must always remain last (e.g. a null terminator).
+
 ### Preprocessor directives
 
 When using preprocessor directives to enable or disable parts of the code, use `#if defined` instead of `#ifdef`. Add a comment to the `#endif` directive if the distance to the opening directive is bigger than a few lines or contains other directives:
