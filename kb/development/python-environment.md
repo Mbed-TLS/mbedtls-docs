@@ -48,3 +48,17 @@ For example, in bash, start a new `bash` instance and run the following command:
 The same `activate` script works in zsh and ksh as well. There are also `activate.*` scripts for fish, csh and powershell.
 
 Now you can run e.g. `tests/scripts/check-python-files.sh` with the same tool versions as the CI.
+
+### Installing different Python versions
+
+Each virtual environment can have a different Python version, and running in a virtual environment makes that version of Python the one on the command search path. But all the Python versions need to be installed at the system level.
+
+You can have multiple Python versions installed at the system level, and they won't interfere. Here are a few ways you can install additional Python versions:
+
+* On Ubuntu or other Debian-based distributions: the [deadsnakes PPA](https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa).
+* On Linux: install another Debian or Ubuntu release in a chroot, made painless with [schroot](https://wiki.debian.org/Schroot) and debootstrap.
+* On macOS with [Homebrew](https://brew.sh/): e.g. `brew install python3.6`
+* On macOS with [MacPorts](https://www.macports.org/): e.g. `sudo port install py36`
+* On macOS with [Fink](https://www.finkproject.org/): e.g. `fink install python36`
+* On most systems except Windows, with [pyenv](https://github.com/pyenv/pyenv).
+* On most systems, with [Conda](https://docs.conda.io/en/latest/).
