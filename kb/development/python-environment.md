@@ -10,44 +10,72 @@ We run [mypy](http://mypy-lang.org/) and [pylint](https://pylint.pycqa.org/en/la
 
 ## Set up a Python package environment
 
-### Quick setup
+### What is a virtual environment?
 
-Initial setup:
+A **[virtual environment](https://realpython.com/python-virtual-environments-a-primer/)** (**venv** for short) is a directory tree containing an autonomous set of Python packages. The venv is completely independent from the system installation, except for the Python executable itself and the standard library. System packages are not visible in the venv, so the venv can have its own version, and you can even test what happens when a package is missing by creating a venv without it.
+
+### Creating a virtual environment for Mbed TLS
+
+Summary:
 
 ```sh
 python3 -m venv ~/venv-mbedtls-development
 ~/venv-mbedtls-development/bin/python scripts/min_requirements.py
 ```
 
-Day-to-day work: start a shell and issue this command:
+To create a virtual environment, invoke the [`venv` module](https://docs.python.org/3/library/venv.html) (which ships with Python) with one argument, which is the path to the directory to create.
+
+To set up a virtual environment with the reference setup used on the Mbed TLS CI, check out [mbedtls](https://github.com/Mbed-TLS/mbedtls) and run Mbed TLS's `scripts/min_requirements.py` explicitly with the desired venv's Python:
 ```sh
-. ~/venv-mbedtls-development/bin/activate
-```
-
-### Detailed explanations
-
-From any installation of Python, you can set up a [virtual environemnt](https://realpython.com/python-virtual-environments-a-primer/) (“venv” for short) with a specific set of packages. When working in this environment, none of the third-party packages installed globally are visible, so you can have specific versions in this environment without contaminating, or getting contaminated by, your normal system.
-
-Run the following commands from an Mbed TLS checkout to create a virtual environment for that version in the directory `~/venv-mbedtls-development` (which will be created):
-```sh
-python3 -m venv ~/venv-mbedtls-development
 ~/venv-mbedtls-development/bin/python scripts/min_requirements.py
 ```
-Use `python -m venv` instead of `python3 -m venv` if that's what your system has. You can also invoke a specific minor version of Python that's installed.
+Using the virtual environment's Python ensures that the packages are installed inside the virtual environment, and not system-wide or in your home directory.
+
+You can also run `scripts/min_requirements.py` after [activating the venv](#working-in-a-virtual-environment).
+
+The virtual environment will use the Python executable that was used to set it up with `-m venv`. Thus, if you create a venv with a certain version of Python, this version is the one that will be used inside the venv. For example, to set up the same environment as on most of the CI at the time of writing, [install Python 3.5](#installing-different-python-versions) and run
+```sh
+python3.5 -m venv ~/mbedtls-venv-3.5
+~/mbedtls-venv-3.5/bin/python scripts/min_requirements.py
+```
 
 Note that the venv directory contains references to its own path, so if you want to move it, you have to do [more than just move the directory](https://stackoverflow.com/questions/32407365/can-i-move-a-virtualenv).
 
-Now you can run `~/venv-mbedtls-development/bin/python`, `~/venv-mbedtls-development/bin/pylint` and `~/venv-mbedtls-development/bin/mypy` explicitly, and they'll pick up the versions in the virtual environment.
+### Working in a virtual environment
 
-To run scripts that call `python` or other tool in the command search path, use the virtual environment's `activate` script in a shell. This sets up the environment variables needed to use the virtual environment's Python installation instead of the system installation.
-
-For example, in bash, start a new `bash` instance and run the following command:
+In a nutshell: start a new shell (bash, zsh or ksh) and issue this command (where `~/venv-mbedtls-development` is the path to the venv directory, the same path passed to `python -m venv`):
 ```sh
 . ~/venv-mbedtls-development/bin/activate
 ```
-The same `activate` script works in zsh and ksh as well. There are also `activate.*` scripts for fish, csh and powershell.
 
-Now you can run e.g. `tests/scripts/check-python-files.sh` with the same tool versions as the CI.
+Note the `.` at the beginning: the commands must run inside the running shell, not as a subprogram. There are also `activate` scripts for fish, csh, PowerShell and cmd. The `activate` changes the shell prompt to indicate the active virtual environment.
+
+The `activate` script sets environment variables so that all calls to `python` or `python3` will use the Python installation from the virtual environment, with the packages from the virtual environment.
+
+```console
+mbedtls$ . ~/venv-mbedtls-development/bin/activate
+(venv-mbedtls-development) mbedtls$ make generated_files
+  Gen   error.c
+  Gen   version_features.c
+  Gen   ssl_debug_helpers_generated.c
+  Gen   psa_crypto_driver_wrappers.c
+  Gen   psa/psa_constant_names_generated.c
+  Gen   test/query_config.c
+  Gen   suites/test_suite_psa_crypto_generate_key.generated.data suites/test_suite_psa_crypto_not_supported.generated.data suites/test_suite_psa_crypto_op_fail.generated.data suites/test_suite_psa_crypto_storage_format.current.data suites/test_suite_psa_crypto_storage_format.v0.data ...
+  Gen   suites/test_suite_bignum.generated.data suites/test_suite_bignum_core.generated.data
+  Gen   visualc/VS2010/mbedTLS.sln ...
+(venv-mbedtls-development) mbedtls$ tests/scripts/check-python-files.sh
+Running pylint ...
+
+--------------------------------------------------------------------
+Your code has been rated at 10.00/10 (previous run: 10.00/10, +0.00)
+
+
+Running mypy ...
+Success: no issues found in 27 source files
+```
+
+To run a single Python script in the virtual environment, you don't need to use `activate`: you can invoke Python via the symbolic link from the `bin` directory of the virtual environment. This also works with Python programs that are part of the virtual environment. You need `activate` when invoking programs that themselves call Python.
 
 ### Installing different Python versions
 
