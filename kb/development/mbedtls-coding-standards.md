@@ -330,7 +330,7 @@ The expansion contains `( (bits) + 7 )`, not `bits + 7`, so that a call like `FO
 
 If the expansion of a macro is a C expression, put parentheses around the expansion. Continuing the example above, this is so that a call like `FOO_SIZE( x ) * 2` is parsed correctly. As an exception, it's ok to omit parentheses if the expansion is a function call or other lowest-precedence operator: `#define A( x ) f( x, 0 )` is acceptable.
 
-If a macro expands to an instruction, wrap it in `do { ... } while( 0 )` so that it can be used in contexts that expect a single instruction. For example:
+If a macro expands to a statement, wrap it in `do { ... } while( 0 )` so that it can be used in contexts that expect a single statement. For example:
 ```c
 #define MBEDTLS_MPI_CHK(f)       \
     do                           \
@@ -341,7 +341,7 @@ If a macro expands to an instruction, wrap it in `do { ... } while( 0 )` so that
 ```
 The expansion is not just `if( ( ret = (f) ) != 0 ) goto cleanup` because that would not work in a context like `if( condition ) MBEDTLS_MPI_CHK( f( ) ); else ++x;` (the `else` would get attached to the wrong `if`).
 
-Follow the expression paradigm or the instruction paradigm if possible. Other paradigms are permitted if necessary, for example a macro that expands to an initializer such as
+Follow the expression paradigm or the statement paradigm if possible. Other paradigms are permitted if necessary, for example a macro that expands to an initializer such as
 ```c
 #define MBEDTLS_FOO_INIT {0, {0, 0}}
 ```
