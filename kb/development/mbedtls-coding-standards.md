@@ -324,7 +324,7 @@ When the code contains a macro call `MBEDTLS_FOO( x, y )`, it should behave as m
 
 If the arguments of a macro are C expressions (they usually are), put parentheses around the argument in the expansion. For example:
 ```c
-#define FOO_SIZE( bits ) ( ( (bits) + 7 ) / 8 + 4)
+#define FOO_SIZE( bits ) ( ( (bits) + 7 ) / 8 + 4 )
 ```
 The expansion contains `( (bits) + 7 )`, not `bits + 7`, so that a call like `FOO_SIZE( x << 3 )` is parsed correctly. As an exception, it's ok to omit parentheses if the argument is directly passed to a function argument (or comma operator): `#define A( x ) f( x, 0 )` is acceptable.
 
