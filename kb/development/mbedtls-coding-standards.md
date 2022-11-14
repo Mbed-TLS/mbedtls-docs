@@ -347,7 +347,7 @@ Follow the expression paradigm or the statement paradigm if possible. Other para
 ```
 The expansion of a macro must not contain unbalanced parentheses, brackets or braces.
 
-In macro expansions, do make assumptions about the calling context, for example do not assume that a particular variable is defined. Exception: variable names with a very strong convention in the code base, like the `ret` example above which is systematically used for status codes in the classic mbedtls API. If the macro needs an intermediate variable, give it a long name that won't clash with anything else, but strongly consider using a function instead.
+In macro expansions, do not make assumptions about the calling context, for example do not assume that a particular variable is defined. Exception: variable names with a very strong convention in the code base, like the `ret` example above which is systematically used for status codes in the classic mbedtls API. If the macro needs an intermediate variable, give it a long name that won't clash with anything else, but strongly consider using a function instead.
 
 ## Clear security-relevant memory after use
 
