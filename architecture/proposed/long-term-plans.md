@@ -39,6 +39,20 @@ Many new Mbed TLS developers may also find our coding standards to be a barrier 
 
 ## API design
 
+### Making PSA Crypto the only crypto API
+
+Currently there are two APIs for most crypto operations:
+
+- one in the `mbedtls_` namespace, which historically was the only one - referred to as "the legacy crypto API" below;
+- one in the `psa_` namespace, which was added more recently (first experimental and now stable both in the development branch and the current LTS branch), which implements the Crypto part of the [PSA Certified API Specification](https://arm-software.github.io/psa-api/) - referred to as "the PSA Crypto API" below.
+
+As it is undesirable to maintain two APIs in the long run, we are going to retire the legacy API in the future, leaving the PSA Crypto API as the only API for crypto operations. The timeline and details have not been decided yet, however it is likely that in the next major version (Mbed TLS 4.0), most (if not all) of the legacy API will be removed from our public API, with possible exceptions for the abstraction layers PK, Cipher and MD.
+
+Note that the bignum/MPI API, though it's not a crypto API, will also likely be removed from our public API at this point. This follows the general trend of making more things opaque/private (for example, most struct members became private in Mbed TLS 3.0).
+
+The X.509 and TLS APIs (`mbedtls_x509_` and `mbedtls_ssl_` namespaces) will of course remain, only the legacy crypto API is being retired. Some functions in those modules may change signature / argument types, but other than that those APIs are unaffected.
+
+
 ### Secure by default, hard to misuse
 
 When designing new APIs, consideration should be given not only about the intended use case, but about how the API could be misused. A good API should mitigate the risks of vulnerabilities caused by its misuse.
