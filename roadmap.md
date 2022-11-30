@@ -1,6 +1,6 @@
 # Roadmap
 
-**Note that the quarter when a feature is expected to be completed is based on very rough estimates of the effort involved and therefore can change. Future items will be planned in detail and confirmed at the start of the quarter, depending on progress made in the previous quarter and available bandwidth.**
+**Note that the quarter when a feature is expected to be completed is based on very rough estimates of the effort involved and therefore can change. Items to be delivered beyond the current quarter may be pushed back, or change in scope.**
 
 If you are interested in collaborating on any of the roadmap features or other features in the project, please mail [Mbed TLS](https://lists.trustedfirmware.org/mailman/listinfo/mbed-tls) or [PSA Crypto](https://lists.trustedfirmware.org/mailman/listinfo/psa-crypto) mailing lists.
 
