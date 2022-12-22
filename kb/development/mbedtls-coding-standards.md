@@ -8,102 +8,101 @@ This document describes Mbed TLS preferences for code formatting, naming convent
 
 ## Code Formatting
 
+### K&R
+
+Mbed TLS generally follows the style of *The C Programming Language*, Second Edition, 1988, by Brian Kernighan and Dennis Ritchie (“K&R2”). The main deviations are:
+
+* Indentation is 4 spaces (like K&R2, not 5 spaces like K&R1). Do not use tabs.
+* `case` is indented one level further than `switch`.
+* The body of `if`, `for` or `while` must be on a separate line and surrounded with braces, even if it's a single statement.
+
+### Indentation
+
 Mbed TLS source code files use 4 spaces for indentation, **not tabs**, with a preferred maximum line length of 80 characters.
 
-Every code statement should be on its own line.
+`case` is indented one level further than `switch`.
 
-**Avoid statements like this:**
 ```c
-    if( a == 1 ) { b = 1; do_function( b ); }
-    if( a == 1 ) do_function( a );
+switch (x) {
+    case 0:
+        zero();
+        break;
+    ...
+}
 ```
+
+Labels are indented at the same level as the enclosing block.
+```c
+int f()
+{
+    ...code...
+    if (ret != 0) {
+        goto exit;
+    }
+    ...code...
+exit:
+    ...cleanup...
+    return ret;
+}
+```
+
+Every code statement should be on its own line, except in `for` loop headers.
 
 ### Space placement
 
-Mbed TLS uses a non-standard space placement throughout the code, where there is no space between a function name and all parentheses are separated by one space from their content:
+Put a space in the following places:
+
+* Around binary operators: `(x + y) * z`
+* After a comma: `f(x, y)`
+* Before the asterisk in a pointer type: `int *p`
+* Between `if`, `switch`, `while`, `for` and the opening parenthesis: `if (f(x))`
+* Outside curly braces: `do { ... } while (!done)`, `struct mystruct s = { 0 }`
+* Inside the curly braces around initializers: `int a[] = { 1, 2, 3 };`
+
+Do not put a space in the following places:
+
+* After the function or macro name in a function or macro call: `f(x, y)`
+* Inside parentheses: `if (f(sizeof(int), (int) y))`
+* Inside square brackets: `a[i + 1]`
+* Before a comma: `f(x, y)`
+* After a unary operator: `if (!condition)`, `++x`
+* Before a unary operator: `x++`
+* Between an array and the following opening bracket: `int a[2]; a[i]`
+* Around field access symbols: `s.a`, `p->a`
+* After the asterisk in a pointer type: `int *p`
+* Between the asterisks double pointers types or derefences: `char **p`, `x + **p`
+
+### Use of parentheses
+
+`sizeof` expressions always use parentheses even when it is not necessary (when taking the size of an object):
 ```c
-    if( ( ret = demo_function( a, b, c ) ) != 0 )
-```
-The same applies to function definitions:
-```c
-    int demo_function( int a, const unsigned char *value, size_t len )
-```
-There are a few exceptions to this rule. This includes the preprocessor directive `defined` and casts, as well as arguments for function-like macros:
-```c
-    #if defined(MBEDTLS_HAVE_TIME)
-    timestamp = (uint32_t) time( NULL );
+    memset(buf, 0, sizeof(buf));
 ```
 
 ### Braces placement and block declaration
 
-Braces (curly brackets) should be located on a line by themselves at the indentation level of the original block:
+Braces are mandatory in control statements such as `if`, `while`, `for`, even when the content is a simple statement.
+Opening braces (curly brackets) are on the same line as the control statement.
+
+Closing braces are aligned with the control statement or opening brace. They are generally alone on their line, except when followed by `else` or by the `while` of a `do ... while` statement.
+
 ```c
-    if( val >= 1 )
-    {
-        if( val == 1 )
-        {
-            /* code block here */
+    do {
+        x += f();
+        if (x == 0) {
+            continue;
         }
-        else
-        {
-            /* alternate code block */
-        }
-    }
-```
-In case a block is only single source code line, the braces can be omitted if the block initiator is only a single line:
-```c
-    if( val >= 1 )
-        a = 2;
-```
-But not if it is a multi-line initiator:
-```c
-    if( val >= 1 &&
-        this_big_statement_deserved_its_own_line == another_big_part )
-    {
-        a = 2;
-    }
-```
-
-### Related lines: Multi-line formatting and indentation
-
-Multiple related source code lines should be formatted to be easily readable:
-```c
-#define GET_UINT32_LE( n, b, i )                        \
-{                                                       \
-    (n) = ( (uint32_t) (b)[(i)    ]       )             \
-        | ( (uint32_t) (b)[(i) + 1] <<  8 )             \
-        | ( (uint32_t) (b)[(i) + 2] << 16 )             \
-        | ( (uint32_t) (b)[(i) + 3] << 24 );            \
-}
-
-if( my_super_var == second_super_var &&
-    this_check_will_do != the_other_value )
-
-do_function( ctx, this_is_a_value, value_b,
-                  the_special_var );
-
-void this_is_a_function( context_struct *ctx, size_t length,
-                         unsigned char *result );
-```
-
-### Extra parentheses for `return` and `sizeof`
-
-Within Mbed TLS return statements use parentheses to contain their value:
-```c
-    return( 0 );
-```
-Similarly, sizeof expressions always use parentheses even when it is not necessary (when taking the size of an object):
-```c
-    memset( buf, 0, sizeof( buf ) );
+        x += g();
+    } while (condition);
 ```
 
 ### Formatting of lists
 
 When a function or macro call doesn't fit on a single line, put one argument per line or a sensible grouping per line. For example, in the snippet below, `input_buffer` and `input_size` are on a line of their own even though the call could fit on two lines instead of three if they were separated:
 ```c
-    function_with_a_very_long_name( parameter1, parameter2,
-                                    input_buffer, input_size,
-                                    output_buffer, output_size );
+    function_with_a_very_long_name(parameter1, parameter2,
+                                   input_buffer, input_size,
+                                   output_buffer, output_size);
 ```
 
 Lists of items other than function arguments should generally have one item per line. Exceptions:
@@ -113,8 +112,7 @@ Lists of items other than function arguments should generally have one item per 
 
 In lists of items such array initializers and enum definitions, do include the optional comma after the last element. This simplifies merging, reordering, etc.
 ```c
-typedef enum foo
-{
+typedef enum foo {
     FOO_1,
     FOO_2,      // <- do put a comma here
 }
