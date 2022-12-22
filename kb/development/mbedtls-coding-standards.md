@@ -268,7 +268,7 @@ Function declarations should keep `const` correctness in mind when declaring fun
 int do_calc_length(const unsigned char *str);
 ```
 
-## Coding style
+## Code structure
 
 ### ISO C99
 
