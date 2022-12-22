@@ -8,6 +8,43 @@ This document describes Mbed TLS preferences for code formatting, naming convent
 
 ## Code Formatting
 
+### Enforcement with uncrustify
+
+In order to maintain a consistent coding style, the C code in Mbed TLS is formatted with [Uncrustify](https://github.com/uncrustify/uncrustify). The reference version of Uncrustify is 0.75.1; older or newer versions may give different results.
+
+#### Code style check script
+
+A test on the continuous integration systems verifies that the C code has the expected style. The script [`scripts/code_style.py`](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/code_style.py) can check or fix the coding style.
+
+To check that the coding style is correct (for example before submitting a pull request):
+```sh
+scripts/code_style.py
+```
+
+To enforce the coding style on specific files:
+```sh
+scripts/code_style.py --fix library/file_i_edited.c tests/suites/test_suite_i_also_edited.function
+```
+
+To enforce the coding style on all files checked into Git:
+```sh
+scripts/code_style.py --fix library/file_i_edited.c tests/suites/test_suite_i_also_edited.function
+```
+
+#### Exceptions to enforcement
+
+The automatic tool usually does a good job of making the code presentable, but it can sometimes make mistakes. It is possible to disable enforcement for a fragment of code by placing it between comments containing `*INDENT-OFF*` and `*INDENT-ON*` (despite the name, this controls all style enforcement, not just indentation). Do this only in egregious cases.
+
+```c
+    // normal code here
+/* *INDENT-OFF* */
+    // weird code here
+/* *INDENT-ON* */
+    // normal code here
+```
+
+Code in the `3rdparty` directory generally retains its original style, and is not subject to enforcement.
+
 ### K&R
 
 Mbed TLS generally follows the style of *The C Programming Language*, Second Edition, 1988, by Brian Kernighan and Dennis Ritchie (“K&R2”). The main deviations are:
