@@ -183,12 +183,12 @@ This section applies fully to classic `mbedtls_xxx()` APIs and mostly to the new
 If a module uses a context structure for passing around its state, the module should contain an `init()` and `free()` function, with the module or context name prepended to it. The `init()` function must always return `void`. If some initialization must be done that may fail (such as allocating memory), it should be done in a separate function, usually called `setup()`. The `free()` function must free any allocated memory within the context, but not the context itself. It must set to zero any data in the context or substructures:
 ```c
     mbedtls_cipher_context_t ctx;
-    mbedtls_cipher_init( &ctx );
-    ret = mbedtls_cipher_setup( &ctx, ... );
+    mbedtls_cipher_init(&ctx);
+    ret = mbedtls_cipher_setup(&ctx, ...);
     /* Check ret, goto cleanup on error */
     /* Do things, goto cleanup on error */
     cleanup:
-    mbedtls_cipher_free( &ctx );
+    mbedtls_cipher_free(&ctx);
 ```
 The goal of separating the `init()` and `setup()` part is that if you have multiple contexts, you can call all the `init()` functions first and then all contexts are ready to be passed to the `free()` function in case an error happens in one of the `setup()` functions or elsewhere.
 
@@ -208,18 +208,17 @@ Most functions should return `int`, more specifically `0` on success (the operat
 
 Function should avoid in-out parameters for length (multiplexing buffer size on entry with length used/written on exit) since they tend to impair readability. For example:
 ```c
-    mbedtls_write_thing( void *thing, unsigned char *buf, size_t *len ); // no
-    mbedtls_write_thing( void *thing, unsigned char *buf, size_t buflen,
-                         size_t *outlen ); // yes
+mbedtls_write_thing(..., unsigned char *buf, size_t *len); // no
+mbedtls_write_thing(..., unsigned char *buf, size_t buflen, size_t *outlen); // yes
 ```
 
 For PSA functions, [input buffers](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#input-buffer-sizes) have a `size_t xxx_size` parameter after the buffer pointer, and [output buffers](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#output-buffer-sizes) have a `size_t xxx_size` parameter for the buffer size followed by a `size_t *xxx_length` parameter for the output length. This convention is also preferred in new `mbedtls_xxx` code, but older modules often use different conventions.
 
 You can use in-out parameters for functions that receive a pointer to some buffer, and update it after parsing from or writing to that buffer:
 ```c
-    mbedtls_asn1_get_int( unsigned char **p,
-                          const unsigned char *end,
-                          int *value );
+mbedtls_asn1_get_int(unsigned char **p,
+                     const unsigned char *end,
+                     int *value);
 ```
 In that case, the `end` argument should always point to one past the one of the buffer on entry.
 
@@ -229,7 +228,7 @@ Also, contexts are usually in-out parameters, which is acceptable.
 
 Function declarations should keep `const` correctness in mind when declaring function arguments. Arguments that are pointers and are *not* changed by the functions should be marked as such:
 ```c
-    int do_calc_length( const unsigned char *str )
+int do_calc_length(const unsigned char *str);
 ```
 
 ## Coding style
@@ -284,47 +283,47 @@ static char self_test_key = {
 
 This is acceptable, but deprecated:
 ```c
-    if(
+    if (
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
-        psa_condition( )
+        psa_condition()
 #else
-        legacy_condition( )
+        legacy_condition()
 #endif
       )
-        do_stuff( );
+        do_stuff();
 ```
 Such code is generally more readable with an intermediate variable, thus the following style is preferred:
 ```c
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
-    const int want_stuff = psa_condition( );
+    const int want_stuff = psa_condition();
 #else
-    const int want_stuff = legacy_condition( );
+    const int want_stuff = legacy_condition();
 #endif
-    if( want_stuff )
-        do_stuff( );
+    if (want_stuff)
+        do_stuff();
 ```
 
 Do not put partial instructions in a conditionally compiled span. For example, do not write the code above like this:
 ```c
 #if defined(MBEDTLS_USE_PSA_CRYPTO)     // NO!
-    if( psa_condition( ) )              // NO!
+    if (psa_condition())                // NO!
 #else                                   // NO!
-    if( legacy_condition( ) )           // NO!
+    if (legacy_condition())             // NO!
 #endif                                  // NO!
-        do_stuff( );                    // NO!
+        do_stuff();                     // NO!
 ```
 Having two instances of `if` in the source code, but only one actually compiled, is confusing both for humans and for tools such as indenters and linters.
 
 Exception: the following idiom, with a chain of if-else-if statements, is accepted.
 ```c
 #if defined(MBEDTLS_FOO)
-    if( is_a_foo( type ) )
-        process_foo( type, data );
+    if (is_a_foo(type))
+        process_foo(type, data);
     else
 #endif /* MBEDTLS_FOO */
 #if defined(MBEDTLS_BAR)
-    if( is_a_bar( type ) )
-        process_bar( type, data );
+    if (is_a_bar(type))
+        process_bar(type, data);
     else
 #endif /* MBEDTLS_BAR */
     {
@@ -342,26 +341,25 @@ If possible, use the C core language rather than macros. For example, if an expr
 
 ### Macro definition hygiene
 
-When the code contains a macro call `MBEDTLS_FOO( x, y )`, it should behave as much as possible as if `MBEDTLS_FOO` was a function. Deviate from this only to the extent necessary to make the macro practical.
+When the code contains a macro call `MBEDTLS_FOO(x, y)`, it should behave as much as possible as if `MBEDTLS_FOO` was a function. Deviate from this only to the extent necessary to make the macro practical.
 
 If the arguments of a macro are C expressions (they usually are), put parentheses around the argument in the expansion. For example:
 ```c
-#define FOO_SIZE( bits ) ( ( (bits) + 7 ) / 8 + 4 )
+#define FOO_SIZE(bits) (((bits) + 7) / 8 + 4)
 ```
-The expansion contains `( (bits) + 7 )`, not `bits + 7`, so that a call like `FOO_SIZE( x << 3 )` is parsed correctly. As an exception, it's ok to omit parentheses if the argument is directly passed to a function argument (or comma operator): `#define A( x ) f( x, 0 )` is acceptable.
+The expansion contains `((bits) + 7)`, not `bits + 7`, so that a call like `FOO_SIZE(x << 3)` is parsed correctly. As an exception, it's ok to omit parentheses if the argument is directly passed to a function argument (or comma operator): `#define A(x) f(x, 0)` is acceptable.
 
-If the expansion of a macro is a C expression, put parentheses around the expansion. Continuing the example above, this is so that a call like `FOO_SIZE( x ) * 2` is parsed correctly. As an exception, it's ok to omit parentheses if the expansion is a function call or other highest-precedence operator: `#define A( x ) f( x, 0 )` is acceptable.
+If the expansion of a macro is a C expression, put parentheses around the expansion. Continuing the example above, this is so that a call like `FOO_SIZE(x) * 2` is parsed correctly. As an exception, it's ok to omit parentheses if the expansion is a function call or other highest-precedence operator: `#define A(x) f(x, 0)` is acceptable.
 
-If a macro expands to a statement, wrap it in `do { ... } while( 0 )` so that it can be used in contexts that expect a single statement. For example:
+If a macro expands to a statement, wrap it in `do { ... } while (0)` so that it can be used in contexts that expect a single statement. For example:
 ```c
 #define MBEDTLS_MPI_CHK(f)       \
-    do                           \
-    {                            \
-        if( ( ret = (f) ) != 0 ) \
+    do {                          \
+        if ((ret = (f)) != 0)    \
             goto cleanup;        \
-    } while( 0 )`
+    } while (0)`
 ```
-The expansion is not just `if( ( ret = (f) ) != 0 ) goto cleanup` because that would not work in a context like `if( condition ) MBEDTLS_MPI_CHK( f( ) ); else ++x;` (the `else` would get attached to the wrong `if`).
+The expansion is not just `if ((ret = (f)) != 0) goto cleanup` because that would not work in a context like `if (condition) MBEDTLS_MPI_CHK(f()); else ++x;` (the `else` would get attached to the wrong `if`).
 
 Follow the expression paradigm or the statement paradigm if possible. Other paradigms are permitted if necessary, for example a macro that expands to an initializer such as
 ```c
