@@ -125,9 +125,9 @@ Exceptions: you can and omit the trailing comma in structure initializers that f
 
 When using preprocessor directives to enable or disable parts of the code, use `#if defined` instead of `#ifdef`. Add a comment to the `#endif` directive if the distance to the opening directive is bigger than a few lines or contains other directives:
 ```c
-    #if define(MBEDTLS_HAVE_FEATURE)
-    /* ten lines of code or other directives */
-    #endif /* MBEDTLS_HAVE_FEATURE */
+#if defined(MBEDTLS_HAVE_FEATURE)
+/* ten lines of code or other directives */
+#endif /* MBEDTLS_HAVE_FEATURE */
 ```
 
 ## Naming conventions
