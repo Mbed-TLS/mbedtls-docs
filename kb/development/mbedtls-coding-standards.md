@@ -28,7 +28,7 @@ scripts/code_style.py --fix library/file_i_edited.c tests/suites/test_suite_i_al
 
 To enforce the coding style on all files checked into Git:
 ```sh
-scripts/code_style.py --fix library/file_i_edited.c tests/suites/test_suite_i_also_edited.function
+scripts/code_style.py --fix
 ```
 
 #### Exceptions to enforcement
