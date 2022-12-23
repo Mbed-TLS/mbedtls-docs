@@ -102,8 +102,8 @@ Do not put a space in the following places:
 * Inside parentheses: `if (f(sizeof(int), (int) y))`
 * Inside square brackets: `a[i + 1]`
 * Before a comma: `f(x, y)`
-* After a unary operator: `if (!condition)`, `++x`
-* Before a unary operator: `x++`
+* After a prefix unary operator: `if (!condition)`, `++x`
+* Before a postfix unary operator: `x++`
 * Between an array and the following opening bracket: `int a[2];`, `a[i]`
 * Around field access symbols: `s.a`, `p->a`
 * After the asterisk in a pointer type: `int *p`
