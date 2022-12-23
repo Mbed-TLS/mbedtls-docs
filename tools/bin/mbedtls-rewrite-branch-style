@@ -1,0 +1,314 @@
+#!/usr/bin/env python3
+"""Rewrite an Mbed TLS branch on top of the new coding style.
+"""
+
+# Copyright The Mbed TLS Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import argparse
+import os
+import pathlib
+import subprocess
+import sys
+from typing import List, Optional
+
+
+class BranchRewriter:
+    """Rebase and rewrite a branch of Mbed TLS."""
+
+    GIT_EXE = 'git'
+
+    def __init__(self, verbose=False) -> None:
+        self.verbose = verbose
+        self.original_worktree_path = None # type: Optional[str]
+        self.worktree_path = None # type: Optional[str]
+        self.ok = True
+
+    def info(self, fmt, *args, **kwargs) -> None:
+        """In verbose mode, print a formatted message."""
+        if self.verbose:
+            sys.stderr.write(fmt.format(*args, **kwargs) + '\n')
+
+    def log_error(self, fmt, *args, **kwargs) -> None:
+        """Print a formatted message and remember that an error occurred."""
+        self.ok = False
+        sys.stderr.write(fmt.format(*args, **kwargs) + '\n')
+
+    def run_git(self, git_cmd: List[str], **kwargs) -> str:
+        """Run a git command and return its output."""
+        if 'universal_newlines' not in kwargs:
+            kwargs['universal_newlines'] = True
+        cmd = [self.GIT_EXE] + git_cmd
+        return subprocess.check_output(cmd, **kwargs)
+
+    def run_git_checkout(self, revision: str) -> None:
+        """Check out the given revision in detached mode."""
+        self.run_git(['checkout', '--detach', '--quiet', revision])
+
+    def head_sha(self) -> str:
+        """The sha of the git HEAD."""
+        return self.run_git(['rev-parse', 'HEAD']).strip()
+
+    def system_is_ok(self) -> bool:
+        """Check that the required tools are present and the working directory is suitable."""
+        ok = True
+        # 'git worktree remove' was added in Git 2.17.0. It's the most
+        # recent Git feature that we need.
+        output = self.run_git(['worktree', '--help'])
+        if 'git worktree remove' not in output:
+            self.log_error('Your version of Git is too old. This script needs Git >=2.17.0.')
+            ok = False
+        # Check that we're in a Git working directory. Remember its path.
+        output = self.run_git(['rev-parse', '--show-toplevel'])
+        self.original_worktree_path = output.rstrip('\n')
+        self.info('Git root: {}', self.original_worktree_path)
+        return ok
+
+    def generate_worktree_path(self, arg: str) -> str:
+        """Generate the path to a temporary worktree.
+
+        This function only constructs a path, it does not create the worktree.
+        """
+        assert self.original_worktree_path is not None
+        worktree_dir = 'tmp-{arg}-{pid}'.format(arg=arg, pid=os.getpid())
+        return os.path.join(os.path.dirname(self.original_worktree_path),
+                            worktree_dir)
+
+    def cleanup_worktree(self) -> None:
+        """Remove the temporary worktree.
+
+        Do nothing if the temporary worktree does not exist.
+        """
+        worktree_path = self.worktree_path
+        self.worktree_path = None
+        if worktree_path is None: # not named yet
+            return
+        if not os.path.exists(worktree_path): # not created yet
+            self.info('No worktree to clean up: {}', worktree_path)
+            return
+        self.info('Removing worktree: {}', worktree_path)
+        self.run_git(['worktree', 'remove', worktree_path])
+
+    def do_rewrite(self, branch: str) -> None:
+        """Rewrite the given branch.
+
+        Do not call this method directly: call rewrite().
+
+        Override this method in child classes to do the desired rewriting.
+
+        This method is called with the current directory in a temporary
+        Git worktree with branch checked out in detached mode.
+        """
+        raise NotImplementedError
+
+    def rewrite(self, branch: str) -> None:
+        """Rewrite the given branch.
+
+        This method creates a temporary Git worktree and changes to it.
+        """
+        assert self.original_worktree_path is not None
+        assert self.worktree_path is None
+        self.worktree_path = self.generate_worktree_path(branch)
+        self.info('Creating worktree: {}', self.worktree_path)
+        self.run_git(['worktree', 'add', self.worktree_path])
+        os.chdir(self.worktree_path)
+        self.run_git_checkout(branch)
+        self.do_rewrite(branch)
+        os.chdir(self.original_worktree_path)
+        self.cleanup_worktree()
+
+    def cleanup(self) -> None:
+        """Clean up after a successful run."""
+        if self.ok:
+            self.cleanup_worktree()
+
+
+class CodeStyleBranchRewriter(BranchRewriter):
+    """Rebase and rewrite a branch of Mbed TLS to the new coding style."""
+
+    UNCRUSTIFY_SUPPORTED_VERSION = "0.75.1"
+    CONFIG_FILE = ".uncrustify.cfg"
+    UNCRUSTIFY_EXE = "uncrustify"
+
+    GENERATED_FILES_2_28 = frozenset([
+        pathlib.PurePath('library/error.c'),
+        pathlib.PurePath('library/version_features.c'),
+        pathlib.PurePath('programs/psa/psa_constant_names_generated.c'),
+        pathlib.PurePath('programs/test/query_config.c'),
+    ])
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.target_branch = None #type: Optional[str]
+
+    def set_target_branch(self, target_branch: str) -> None:
+        """Record the given branch as the branch to rewrite onto."""
+        self.target_branch = target_branch
+
+    def system_is_ok(self) -> bool:
+        ok = super().system_is_ok()
+        output = subprocess.check_output([self.UNCRUSTIFY_EXE, '--version'],
+                                         universal_newlines=True)
+        self.info('Found uncrustify: {}', output.strip())
+        if self.UNCRUSTIFY_SUPPORTED_VERSION not in output:
+            self.log_error('Unsupported version of uncrustify. This script needs {}.',
+                           self.UNCRUSTIFY_SUPPORTED_VERSION)
+            ok = False
+        return ok
+
+    def list_commit_range(self, start: str, last: str) -> List[str]:
+        """List the commits from start to last, excluding last."""
+        output = self.run_git(['rev-list', start + '..' + last])
+        return list(reversed(output.split()))
+
+    def find_switch_commit(self) -> str:
+        """Return the sha of the commit with the code style switch."""
+        assert self.target_branch is not None
+        revision = self.target_branch + '^{/Switch to the new code style}'
+        sha = self.run_git(['rev-parse', revision]).strip()
+        self.info('Switch commit: {}', sha)
+        return sha
+
+    def changed_files_in_commit(self, revision: str) -> List[str]:
+        """The list of files changed or added in the given revision."""
+        # The git command prints a list of the form:
+        #   * 'A\t{filename}' for an added file
+        #   * 'M\t{filename}' for a modified file
+        #   * 'D\t{filename}' for a deleted file
+        #   * 'R{confidence}\t{old_name}\t{new_name}' for a renamed file
+        output = self.run_git(['show', '--format=', '--name-status', revision])
+        filenames = []
+        for line in output.rstrip('\n').split('\n'):
+            if line[0] == 'D': # deleted file
+                continue
+            pos = line.rfind('\t') + 1
+            filenames.append(line[pos:])
+        return filenames
+
+    @staticmethod
+    def is_c_file(path: pathlib.PurePath) -> bool:
+        """Whether path is a C source file, based on its name and location."""
+        dir_chain = path.parts[:-1]
+        if path.suffix in {'.c', '.h'}:
+            return True
+        if dir_chain == ('tests', 'suites') and path.suffix == '.function':
+            return True
+        if dir_chain == ('scripts', 'data_files') and path.suffix == '.fmt':
+            return True
+        return False
+
+    def is_file_exempt(self, path: pathlib.PurePath) -> Optional[str]:
+        """Whether path is exempt from restyling.
+
+        Return the reason why path is exempt (a non-empty string),
+        or None if path is not exempt.
+        """
+        if path.parts[0] == '3rdparty':
+            return '3rdparty'
+        # Hard-coded list of files that are generated in 2.28.
+        # In development, generated files are not checked into Git.
+        if path.parts in self.GENERATED_FILES_2_28:
+            return 'generated'
+        return None
+
+    def filter_styled_files(self, filenames: List[str]) -> List[str]:
+        """Return filenames with non-restylable files removed."""
+        keep = []
+        for filename in filenames:
+            path = pathlib.PurePath(filename)
+            if not self.is_c_file(path):
+                continue
+            why_exempt = self.is_file_exempt(path)
+            if why_exempt:
+                self.info('Exempt from restyling ({}): {}', why_exempt, filename)
+                continue
+            self.info('Will restyle: {}', filename)
+            keep.append(filename)
+        return keep
+
+    def restyle_files(self, filenames: List[str]) -> None:
+        """Restyle the given files in place."""
+        if not filenames:
+            return
+        for num in range(2):
+            self.info('Pass #{} of uncrustify', num)
+            subprocess.check_call([self.UNCRUSTIFY_EXE,
+                                   '-c', self.CONFIG_FILE,
+                                   '--no-backup'] +
+                                  filenames)
+
+    def restyle_commit_onto_current(self, new_commit: str) -> None:
+        """Apply a restyled content of new_commit onto HEAD."""
+        self.info('Applying {} onto {}', new_commit, self.head_sha())
+        # Cherry-pick the commit to apply. Resolve all conflicts in
+        # favor of the new commit: we want the new commit's content,
+        # with the current commit's history.
+        self.run_git(['cherry-pick', '-Xtheirs', new_commit])
+        # Restyle the code to the new style. Only restyle changed files.
+        changed_files = self.changed_files_in_commit('HEAD')
+        files_to_restyle = self.filter_styled_files(changed_files)
+        if files_to_restyle:
+            self.restyle_files(files_to_restyle)
+            # Amend the commit to contain the result of restyling.
+            self.run_git(['commit', '--amend', '--no-edit',
+                          '--allow-empty', '--'] +
+                         files_to_restyle)
+        self.info('{} has been applied as {}', new_commit, self.head_sha())
+
+    def do_rewrite(self, branch: str) -> None:
+        """Rewrite branch on top of the code style switch commit.
+
+        1. Rebase the head of branch onto the last commit with the old style.
+        2. Rewrite all new commits on top of the code style switch commit.
+
+        This method assumes it has ownership of the current worktree.
+        It does not create or modify any branch name.
+        """
+        switch_commit = self.find_switch_commit()
+        last_old_commit = switch_commit + '~1'
+        # Phase 1: rebase onto last_old_commit
+        self.info('Rebasing {} onto {}', self.head_sha(), last_old_commit)
+        self.run_git(['rebase', last_old_commit])
+        self.info('Head after rebase: {}', self.head_sha())
+        # Phase 2: Iterate over the new commits
+        new_commits = self.list_commit_range(last_old_commit, 'HEAD')
+        self.info('Will restyle {} new commits ({})',
+                  len(new_commits), ' '.join(new_commits))
+        self.info('Starting from code style switch commit {}', switch_commit)
+        self.run_git_checkout(switch_commit)
+        for new_commit in new_commits:
+            self.restyle_commit_onto_current(new_commit)
+
+def main() -> int:
+    """Command line entry point."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--verbose', '-v',
+                        action='store_true',
+                        help='be more verbose')
+    parser.add_argument('existing_branch',
+                        help='Branch to rewrite with code style changes')
+    parser.add_argument('target_branch',
+                        help='Branch to rewrite onto')
+    args = parser.parse_args()
+    branch_rewriter = CodeStyleBranchRewriter(verbose=args.verbose)
+    if not branch_rewriter.system_is_ok():
+        return 2
+    branch_rewriter.set_target_branch(args.target_branch)
+    branch_rewriter.rewrite(args.existing_branch)
+    branch_rewriter.cleanup()
+    return 0 if branch_rewriter.ok else 1
+
+if __name__ == '__main__':
+    sys.exit(main())
