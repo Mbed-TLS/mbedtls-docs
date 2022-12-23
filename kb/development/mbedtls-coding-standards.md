@@ -116,12 +116,11 @@ Do not put a space in the following places:
     memset(buf, 0, sizeof(buf));
 ```
 
-### Braces placement and block declaration
+### Usage and placement of braces
 
-Braces are mandatory in control statements such as `if`, `while`, `for`, even when the content is a simple statement.
-Opening braces (curly brackets) are on the same line as the control statement.
+Braces (curly brackets) are **mandatory in control statements** such as `if`, `while`, `for`, even when the content is a simple statement.
 
-Closing braces are aligned with the control statement or opening brace. They are generally alone on their line, except when followed by `else` or by the `while` of a `do ... while` statement.
+Opening braces around compound statements are on the same line as the control statement if there is one. The closing brace has the same indentation as the line with the opening brace. It is generally alone on their line, except when followed by `else` or by the `while` of a `do ... while` statement.
 
 ```c
     do {
@@ -131,6 +130,30 @@ Closing braces are aligned with the control statement or opening brace. They are
         }
         x += g();
     } while (condition);
+```
+
+As an exception, **the opening brace of a function definition is on its own line**, in the leftmost column. This helps editors and other tools that treat non-indented braces as delimiting toplevel blocks.
+
+```c
+int f(void)
+{
+    return 42;
+}
+```
+
+In compound type declarations, the opening brace is on the same line as the `struct`, `union` or `enum` keyword. The closing brace is on a separate line with the final semicolon.
+
+```c
+typedef struct {
+    int x;
+    int y;
+} pair_t;
+```
+
+Compound initializers can be on a single line if they fit.
+
+```c
+pair_t z = { 1, 2 };
 ```
 
 ### Formatting of lists
@@ -149,10 +172,10 @@ Lists of items other than function arguments should generally have one item per 
 
 In lists of items such array initializers and enum definitions, do include the optional comma after the last element. This simplifies merging, reordering, etc.
 ```c
-typedef enum foo {
+typedef enum {
     FOO_1,
     FOO_2,      // <- do put a comma here
-}
+} foo_t;
 ```
 Exceptions: you can and omit the trailing comma in structure initializers that fit on one line, or if the last element must always remain last (e.g. a null terminator).
 
