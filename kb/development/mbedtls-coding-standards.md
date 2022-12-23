@@ -104,7 +104,7 @@ Do not put a space in the following places:
 * Before a comma: `f(x, y)`
 * After a unary operator: `if (!condition)`, `++x`
 * Before a unary operator: `x++`
-* Between an array and the following opening bracket: `int a[2]; a[i]`
+* Between an array and the following opening bracket: `int a[2];`, `a[i]`
 * Around field access symbols: `s.a`, `p->a`
 * After the asterisk in a pointer type: `int *p`
 * Between the asterisks double pointers types or derefences: `char **p`, `x + **p`
