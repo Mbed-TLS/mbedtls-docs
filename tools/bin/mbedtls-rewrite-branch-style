@@ -57,6 +57,14 @@ class BranchRewriter:
         """Check out the given revision in detached mode."""
         self.run_git(['checkout', '--detach', '--quiet', revision])
 
+    def get_git_lines(self, git_cmd: List[str], **kwargs) -> List[str]:
+        """Run a git command and return its output, split into lines.
+
+        Ignore trailing empty lines, but preserve leading and inner empty lines.
+        """
+        output = self.run_git(git_cmd, **kwargs)
+        return output.rstrip('\n').split('\n')
+
     def head_sha(self) -> str:
         """The sha of the git HEAD."""
         return self.run_git(['rev-parse', 'HEAD']).strip()
@@ -170,8 +178,8 @@ class CodeStyleBranchRewriter(BranchRewriter):
 
     def list_commit_range(self, start: str, last: str) -> List[str]:
         """List the commits from start to last, excluding last."""
-        output = self.run_git(['rev-list', start + '..' + last])
-        return list(reversed(output.split()))
+        commits = self.get_git_lines(['rev-list', start + '..' + last])
+        return list(reversed(commits))
 
     def find_switch_commit(self) -> str:
         """Return the sha of the commit with the code style switch."""
@@ -188,13 +196,11 @@ class CodeStyleBranchRewriter(BranchRewriter):
         #   * 'M\t{filename}' for a modified file
         #   * 'D\t{filename}' for a deleted file
         #   * 'R{confidence}\t{old_name}\t{new_name}' for a renamed file
-        output = self.run_git(['show', '--format=', '--name-status', revision])
-        filenames = []
-        for line in output.rstrip('\n').split('\n'):
-            if line[0] == 'D': # deleted file
-                continue
-            pos = line.rfind('\t') + 1
-            filenames.append(line[pos:])
+        lines = self.get_git_lines(['show', '--format=', '--name-status',
+                                    revision])
+        filenames = [line.rsplit('\t', 1)[-1]
+                     for line in lines
+                     if line[0] != 'D'] # skip deleted files
         return filenames
 
     @staticmethod
