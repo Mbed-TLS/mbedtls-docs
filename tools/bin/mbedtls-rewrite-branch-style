@@ -226,7 +226,7 @@ class BranchRewriter:
         assert self.worktree_path is None
         self.worktree_path = self.generate_worktree_path(branch)
         self.info('Creating worktree: {}', self.worktree_path)
-        self.run_git(['worktree', 'add', self.worktree_path])
+        self.run_git(['worktree', 'add', '--detach', self.worktree_path])
         os.chdir(self.worktree_path)
         self.run_git_checkout(branch)
         self.do_rewrite(branch)
