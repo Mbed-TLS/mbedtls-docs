@@ -69,6 +69,11 @@ class BranchRewriter:
         """The sha of the git HEAD."""
         return self.run_git(['rev-parse', 'HEAD']).strip()
 
+    def list_commit_range(self, start: str, last: str) -> List[str]:
+        """List the commits from start to last, excluding last."""
+        commits = self.get_git_lines(['rev-list', start + '..' + last])
+        return list(reversed(commits))
+
     def system_is_ok(self) -> bool:
         """Check that the required tools are present and the working directory is suitable."""
         ok = True
@@ -175,11 +180,6 @@ class CodeStyleBranchRewriter(BranchRewriter):
                            self.UNCRUSTIFY_SUPPORTED_VERSION)
             ok = False
         return ok
-
-    def list_commit_range(self, start: str, last: str) -> List[str]:
-        """List the commits from start to last, excluding last."""
-        commits = self.get_git_lines(['rev-list', start + '..' + last])
-        return list(reversed(commits))
 
     def find_switch_commit(self) -> str:
         """Return the sha of the commit with the code style switch."""
