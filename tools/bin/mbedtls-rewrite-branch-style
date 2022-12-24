@@ -30,10 +30,14 @@ class BranchRewriter:
 
     GIT_EXE = 'git'
 
-    def __init__(self, verbose=False) -> None:
+    def __init__(self,
+                 working_branch_name: Optional[str] = None,
+                 verbose=False) -> None:
         self.verbose = verbose
         self.original_worktree_path = None # type: Optional[str]
         self.worktree_path = None # type: Optional[str]
+        self.working_branch_name = \
+            working_branch_name if working_branch_name else None
         self.ok = True
 
     def info(self, fmt, *args, **kwargs) -> None:
@@ -229,6 +233,9 @@ class BranchRewriter:
         self.run_git(['worktree', 'add', '--detach', self.worktree_path])
         os.chdir(self.worktree_path)
         self.run_git_checkout(branch)
+        if self.working_branch_name:
+            self.info('Working on new branch {}', self.working_branch_name)
+            self.run_git(['checkout', '--quiet', '-b', self.working_branch_name])
         self.do_rewrite(branch)
         os.chdir(self.original_worktree_path)
         self.cleanup_worktree()
@@ -444,6 +451,9 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
                   len(new_commits), ' '.join(new_commits))
         self.info('Starting from code style switch commit {}', switch_commit)
         self.run_git_checkout(switch_commit)
+        if self.working_branch_name:
+            self.run_git(['branch', '--force', self.working_branch_name, 'HEAD'])
+            self.run_git(['checkout', '--quiet', self.working_branch_name])
         for new_commit in new_commits:
             self.restyle_commit_onto_current(new_commit)
 
@@ -458,13 +468,19 @@ def main() -> int:
     parser.add_argument('--onto', '-t', metavar='BRANCH',
                         help='Branch to rewrite onto'
                              ' (default/empty: guess development or mbedtls-2.28)')
+    parser.add_argument('--new-branch-name', '-c', metavar='BRANCH_NAME',
+                        default='',
+                        help='Use this branch for the new work (retained on failure),'
+                             ' do not change the original branch')
     parser.add_argument('--verbose', '-v',
                         action='store_true',
                         help='be more verbose')
     parser.add_argument('branch',
                         help='Branch to rewrite with code style changes')
     args = parser.parse_args()
-    branch_rewriter = CodeStyleBranchRewriter(verbose=args.verbose)
+    branch_rewriter = CodeStyleBranchRewriter(
+        working_branch_name=args.new_branch_name,
+        verbose=args.verbose)
     if args.onto:
         branch_rewriter.set_target_branch(args.onto)
     if not branch_rewriter.system_is_ok():
