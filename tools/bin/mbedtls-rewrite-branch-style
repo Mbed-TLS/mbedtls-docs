@@ -53,6 +53,21 @@ class BranchRewriter:
         cmd = [self.GIT_EXE] + git_cmd
         return subprocess.check_output(cmd, **kwargs)
 
+    def check_git(self, git_cmd: List[str], **kwargs) -> bool:
+        """Run a git command for its boolean result.
+
+        Return True if the command returns 0 and False if it returns 1.
+        Raise subprocess.CalledProcessError for any other status.
+        """
+        cmd = [self.GIT_EXE] + git_cmd
+        cp = subprocess.run(cmd, check=False, **kwargs)
+        if cp.returncode == 0:
+            return True
+        elif cp.returncode == 1:
+            return False
+        else:
+            raise subprocess.CalledProcessError(cp.returncode, cmd)
+
     def run_git_checkout(self, revision: str) -> None:
         """Check out the given revision in detached mode."""
         self.run_git(['checkout', '--detach', '--quiet', revision])
@@ -193,6 +208,10 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         pathlib.PurePath('programs/test/query_config.c'),
     ])
 
+    # To be updated once the new code style becomes official,
+    # or possibly change to tags instead of branches.
+    TARGET_BRANCH_PREFIX = 'features/new-code-style/'
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.target_branch = None #type: Optional[str]
@@ -212,8 +231,32 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
             ok = False
         return ok
 
+    def guess_target_branch(self) -> None:
+        """Guess the branch that the current branch is to be merged into.
+
+        This method sets self.target_branch. It does nothing if that is
+        already set.
+
+        This method assumes development unless the branch forked from
+        an LTS branch.
+        """
+        if self.target_branch is not None:
+            return
+        self.guess_upstream_remote()
+        self.info('Guessing target branch...')
+        if self.check_git(['merge-base', '--is-ancestor',
+                           'mbedtls-2.28.0', 'HEAD']):
+            branch = 'mbedtls-2.28'
+        else:
+            branch = 'development'
+        self.target_branch = '{}/{}{}'.format(self.upstream_remote,
+                                              self.TARGET_BRANCH_PREFIX,
+                                              branch)
+        self.info('Guessed target branch: {}', self.target_branch)
+
     def find_switch_commit(self) -> str:
         """Return the sha of the commit with the code style switch."""
+        self.guess_target_branch()
         assert self.target_branch is not None
         revision = self.target_branch + '^{/Switch to the new code style}'
         sha = self.run_git(['rev-parse', revision]).strip()
@@ -331,19 +374,21 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
 def main() -> int:
     """Command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--onto', '-t', metavar='BRANCH',
+                        help='Branch to rewrite onto'
+                             ' (default/empty: guess development or mbedtls-2.28)')
     parser.add_argument('--verbose', '-v',
                         action='store_true',
                         help='be more verbose')
-    parser.add_argument('existing_branch',
+    parser.add_argument('branch',
                         help='Branch to rewrite with code style changes')
-    parser.add_argument('target_branch',
-                        help='Branch to rewrite onto')
     args = parser.parse_args()
     branch_rewriter = CodeStyleBranchRewriter(verbose=args.verbose)
+    if args.onto:
+        branch_rewriter.set_target_branch(args.onto)
     if not branch_rewriter.system_is_ok():
         return 2
-    branch_rewriter.set_target_branch(args.target_branch)
-    branch_rewriter.rewrite(args.existing_branch)
+    branch_rewriter.rewrite(args.branch)
     branch_rewriter.cleanup()
     return 0 if branch_rewriter.ok else 1
 
