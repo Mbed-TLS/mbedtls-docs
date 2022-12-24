@@ -26,7 +26,7 @@ from typing import List, Optional
 
 
 class BranchRewriter:
-    """Rebase and rewrite a branch of Mbed TLS."""
+    """Tools to rebase and rewrite a Git branch."""
 
     GIT_EXE = 'git'
 
@@ -148,7 +148,38 @@ class BranchRewriter:
             self.cleanup_worktree()
 
 
-class CodeStyleBranchRewriter(BranchRewriter):
+class MbedTLSBranchRewriter(BranchRewriter):
+    #pylint: disable=abstract-method # This class is still abstract
+    """Tools to rebase and rewrite a branch of Mbed TLS."""
+
+    UPSTREAM_URLS = frozenset(map(lambda s: s.lower(), [
+        'git@github.com:ARMmbed/mbedtls.git',
+        'git@github.com:Mbed-TLS/mbedtls.git',
+        'https://github.com/ARMmbed/mbedtls.git',
+        'https://github.com/Mbed-TLS/mbedtls.git',
+    ]))
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.upstream_remote = None #type: Optional[str]
+
+    def guess_upstream_remote(self) -> None:
+        """Find a Git remote for the upstream repository."""
+        if self.upstream_remote is not None:
+            return
+        self.info('Enumerating Git remotes...')
+        remotes = self.get_git_lines(['remote', '-v', 'show'])
+        for remote in remotes:
+            (name, rest) = remote.split('\t', 2)
+            (url, rest) = rest.split(' ', 1)
+            if url.lower() in self.UPSTREAM_URLS:
+                self.info('Found upstream remote: {}', name)
+                self.upstream_remote = name
+                return
+        raise ValueError('No Git remote found for upstream')
+
+
+class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
     """Rebase and rewrite a branch of Mbed TLS to the new coding style."""
 
     UNCRUSTIFY_SUPPORTED_VERSION = "0.75.1"
