@@ -84,6 +84,61 @@ class BranchRewriter:
         """The sha of the git HEAD."""
         return self.run_git(['rev-parse', 'HEAD']).strip()
 
+    def is_git_ref(self, category: str, ref: str) -> bool:
+        """Whether ref is a Git ref of the given category.
+
+        Categories:
+        * 'heads' = local branch
+        * 'remotes' = remote name slash remote branch
+        * 'tags' = tag
+        """
+        if category == 'sha':
+            try:
+                # Don't accidentally pass an option to 'git rev-parse'
+                # (it doesn't support --).
+                if not ref.startswith('-'):
+                    if self.run_git(['rev-parse', ref]).strip() == ref:
+                        return True
+                return False
+            except subprocess.CalledProcessError:
+                # Not a valid ref. It's not our job to raise an exception.
+                return False
+        path = 'refs/{}/{}'.format(category, ref)
+        return self.check_git(['show-ref', '--quiet', '--verify', path])
+
+    def ref_looks_ok_for_template(self, ref: str) -> bool:
+        """Whether ref looks ok to build another branch name on.
+
+        It must be a branch, tag or sha.
+        In particular, reject HEAD.
+        """
+        if self.is_git_ref('heads', ref):
+            return True
+        if self.is_git_ref('remotes', ref):
+            return True
+        if self.is_git_ref('tags', ref):
+            return True
+        if self.is_git_ref('sha', ref):
+            return True
+        return False
+
+    def fill_branch_name_template(self, template: str, ref: str,
+                                  kind: str) -> str:
+        """Build a branch name based on a template.
+
+        Replace '{}' by ref if present (otherwise return template unchanged).
+        ref must be a branch, tag or sha.
+        kind is a short, human-readable description of the template's purpose.
+        """
+        if '{}' not in template:
+            return template
+        if not self.ref_looks_ok_for_template(ref):
+            self.log_error('Cannot create branch name for {} from {}',
+                           kind, ref)
+            raise ValueError('Bad ref {} for {} branch name template {}'
+                             .format(ref, kind, template))
+        return template.replace('{}', ref)
+
     def list_commit_range(self, start: str, last: str) -> List[str]:
         """List the commits from start to last, excluding last."""
         commits = self.get_git_lines(['rev-list', start + '..' + last])
@@ -128,6 +183,27 @@ class BranchRewriter:
             return
         self.info('Removing worktree: {}', worktree_path)
         self.run_git(['worktree', 'remove', worktree_path])
+
+    def create_backup_branch(self, template: str, ref: str) -> None:
+        """Create a branch new_name pointing to ref.
+
+        Do nothing if new_name already points to ref.
+        """
+        new_name = self.fill_branch_name_template(template, ref, 'backup')
+        try:
+            old_name_target = self.run_git(['rev-parse', ref],
+                                           stderr=subprocess.DEVNULL)
+            new_name_target = self.run_git(['rev-parse', new_name],
+                                           stderr=subprocess.DEVNULL)
+            if old_name_target == new_name_target:
+                self.info('Backup branch {} already points to {}', new_name, ref)
+                return
+        except subprocess.CalledProcessError:
+            # Commonly, new_name does not exist, and that's a good case for us.
+            # If some other error occurred (e.g. ref is invalid), ignore it:
+            # let 'git branch' fail with a more informative error.
+            self.info('Creating backup branch {} for {}', new_name, ref)
+            self.run_git(['branch', '--no-track', new_name, ref])
 
     def do_rewrite(self, branch: str) -> None:
         """Rewrite the given branch.
@@ -374,6 +450,11 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
 def main() -> int:
     """Command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--backup-branch', metavar='BRANCH_NAME',
+                        default='old-code-style/{}',
+                        help='Back up the current history'
+                             ' (default: old-code-style/OLD_NAME)'
+                             ' (empty: do not back up)')
     parser.add_argument('--onto', '-t', metavar='BRANCH',
                         help='Branch to rewrite onto'
                              ' (default/empty: guess development or mbedtls-2.28)')
@@ -388,6 +469,8 @@ def main() -> int:
         branch_rewriter.set_target_branch(args.onto)
     if not branch_rewriter.system_is_ok():
         return 2
+    if args.backup_branch:
+        branch_rewriter.create_backup_branch(args.backup_branch, args.branch)
     branch_rewriter.rewrite(args.branch)
     branch_rewriter.cleanup()
     return 0 if branch_rewriter.ok else 1
