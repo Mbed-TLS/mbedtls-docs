@@ -38,6 +38,7 @@ class BranchRewriter:
         self.worktree_path = None # type: Optional[str]
         self.working_branch_name = \
             working_branch_name if working_branch_name else None
+        self.rewritten_sha = None #type: Optional[str]
         self.ok = True
 
     def info(self, fmt, *args, **kwargs) -> None:
@@ -87,6 +88,16 @@ class BranchRewriter:
     def head_sha(self) -> str:
         """The sha of the git HEAD."""
         return self.run_git(['rev-parse', 'HEAD']).strip()
+
+    def checked_out_branch(self) -> Optional[str]:
+        """The name of the branch checked out in the Git working directory.
+
+        None if no branch is checked out (detached HEAD).
+        """
+        branch_name = self.run_git(['rev-parse', '--abbrev-ref', 'HEAD']).strip()
+        if branch_name == 'HEAD':
+            return None
+        return branch_name
 
     def is_git_ref(self, category: str, ref: str) -> bool:
         """Whether ref is a Git ref of the given category.
@@ -221,13 +232,22 @@ class BranchRewriter:
         """
         raise NotImplementedError
 
-    def rewrite(self, branch: str) -> None:
+    def rewrite(self, branch: str, update_branch: bool = False) -> None:
         """Rewrite the given branch.
 
         This method creates a temporary Git worktree and changes to it.
+
+        If update_branch is true and the rewrite succeeds, update branch
+        to the rewritten commit and check it out in the current directory
+        if it was already checked out before.
         """
         assert self.original_worktree_path is not None
         assert self.worktree_path is None
+        update_original_worktree = False
+        original_branch_sha = self.run_git(['rev-parse', branch]).strip()
+        if update_branch and self.checked_out_branch() == branch:
+            self.info('Will update original worktree on success')
+            update_original_worktree = True
         self.worktree_path = self.generate_worktree_path(branch)
         self.info('Creating worktree: {}', self.worktree_path)
         self.run_git(['worktree', 'add', '--detach', self.worktree_path])
@@ -237,7 +257,15 @@ class BranchRewriter:
             self.info('Working on new branch {}', self.working_branch_name)
             self.run_git(['checkout', '--quiet', '-b', self.working_branch_name])
         self.do_rewrite(branch)
+        self.rewritten_sha = self.head_sha()
+        if update_branch:
+            self.info('Moving branch {} from {} to {}',
+                      branch, original_branch_sha, self.rewritten_sha)
+            self.run_git(['branch', '--force', branch, self.rewritten_sha])
         os.chdir(self.original_worktree_path)
+        if update_original_worktree:
+            # Always be verbose about updating the original working directory
+            self.run_git(['checkout', branch])
         self.cleanup_worktree()
 
     def cleanup(self) -> None:
@@ -471,7 +499,8 @@ def main() -> int:
     parser.add_argument('--new-branch-name', '-c', metavar='BRANCH_NAME',
                         default='',
                         help='Use this branch for the new work (retained on failure),'
-                             ' do not change the original branch')
+                             ' do not change the original branch'
+                             ' (default/empty: update original branch on success)')
     parser.add_argument('--verbose', '-v',
                         action='store_true',
                         help='be more verbose')
@@ -487,8 +516,23 @@ def main() -> int:
         return 2
     if args.backup_branch:
         branch_rewriter.create_backup_branch(args.backup_branch, args.branch)
-    branch_rewriter.rewrite(args.branch)
+    update_existing_branch = False
+    if not args.new_branch_name:
+        if branch_rewriter.is_git_ref('heads', args.branch):
+            update_existing_branch = True
+    branch_rewriter.rewrite(args.branch, update_existing_branch)
     branch_rewriter.cleanup()
+    if branch_rewriter.ok and \
+       not args.new_branch_name and not update_existing_branch:
+        # The new work isn't available except via a sha, so it seems pretty
+        # important to let the user know even in non-verbose mode.
+        # Use wording similar to "leaving N commits behind" from 'git checkout'.
+        sys.stderr.write("""Warning: the rewritten commits are not connected to any branch.
+
+You should give them a name with:
+
+ git branch <new-branch-name> {sha}
+""".format(sha=branch_rewriter.rewritten_sha))
     return 0 if branch_rewriter.ok else 1
 
 if __name__ == '__main__':
