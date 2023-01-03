@@ -285,8 +285,15 @@ class BranchRewriter:
             self.run_git(['branch', '--force', branch, self.rewritten_sha])
         os.chdir(self.original_worktree_path)
         if update_original_worktree:
-            # Always be verbose about updating the original working directory
-            self.run_git(['checkout', branch])
+#            # Always be verbose about updating the original working directory
+#            self.run_git(['checkout', branch])
+            # We've renamed the branch, so `git checkout $branch` wouldn't
+            # update the working directory content. We only update the worktree
+            # if it had the branch checked out (assumption on our caller!), so
+            # we don't actually need a checkout here, just a reset.
+            # A hard reset is safe because we stopped earlier if the working
+            # directory was dirty.
+            self.run_git(['reset', '--hard', branch])
         self.cleanup_worktree()
 
     def cleanup(self) -> None:
