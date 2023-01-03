@@ -287,8 +287,8 @@ class MbedTLSBranchRewriter(BranchRewriter):
     UPSTREAM_URLS = frozenset(map(lambda s: s.lower(), [
         'git@github.com:ARMmbed/mbedtls.git',
         'git@github.com:Mbed-TLS/mbedtls.git',
-        'https://github.com/ARMmbed/mbedtls.git',
-        'https://github.com/Mbed-TLS/mbedtls.git',
+        'https://github.com/ARMmbed/mbedtls',
+        'https://github.com/Mbed-TLS/mbedtls',
     ]))
 
     def __init__(self, *args, **kwargs) -> None:
