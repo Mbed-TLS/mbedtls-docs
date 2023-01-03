@@ -188,6 +188,12 @@ class BranchRewriter:
         This function only constructs a path, it does not create the worktree.
         """
         assert self.original_worktree_path is not None
+        # If arg is a branch name, it can contain a slash. This is fine for git,
+        # but it causes the worktree's directory path to be weird, which is
+        # potentially when cleaning up, both in this script and for the user.
+        # So use a different character that is valid in directory names
+        # but not in git branch names.
+        arg = arg.replace('/', '%')
         worktree_dir = 'tmp-{arg}-{pid}'.format(arg=arg, pid=os.getpid())
         return os.path.join(os.path.dirname(self.original_worktree_path),
                             worktree_dir)
