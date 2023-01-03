@@ -107,6 +107,7 @@ class BranchRewriter:
         Categories:
         * 'heads' = local branch
         * 'remotes' = remote name slash remote branch
+        * 'sha' = sha of a commit
         * 'tags' = tag
         """
         if category == 'sha':
@@ -202,9 +203,12 @@ class BranchRewriter:
         self.run_git(['worktree', 'remove', worktree_path])
 
     def create_backup_branch(self, template: str, ref: str) -> None:
-        """Create a branch new_name pointing to ref.
+        """Create a branch pointing to ref.
 
-        Do nothing if new_name already points to ref.
+        The name of the new branch is template with `{}` replaced by ref.
+
+        Do nothing if there is already a branch with that name that points to
+        ref. If a branch exists with a different head, raise an error.
         """
         new_name = self.fill_branch_name_template(template, ref, 'backup')
         try:
