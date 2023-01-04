@@ -471,20 +471,34 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
     def restyle_commit_onto_current(self, new_commit: str) -> None:
         """Apply a restyled content of new_commit onto HEAD."""
         self.info('Applying {} onto {}', new_commit, self.head_sha())
-        # Cherry-pick the commit to apply. Resolve all conflicts in
-        # favor of the new commit: we want the new commit's content,
-        # with the current commit's history.
+        # We want the new commit's metadata (author, commit message),
+        # the new commit's content (but restyled), and the old commit's
+        # history. This is a cherry-pick operation, with some custom
+        # way to merge the contents. We could perhaps define a custom merge
+        # strategy, but that seems hard (especially since we do want to
+        # tweak the content even if there are no merge conflicts). So we
+        # pick some method of resolving the conflict automatically
+        # that ensures that added and removed files are according to the
+        # cherry-picked commit, but might mess up modified files. Then
+        # we override the content of modified files, and finally we restyle
+        # files that need restyling.
         self.run_git(['cherry-pick', '-Xtheirs', '--allow-empty', new_commit])
+        self.info('{} has been cherry-picked as {}', new_commit, self.head_sha())
         # Restyle the code to the new style. Only restyle changed files.
         changed_files = self.changed_files_in_commit('HEAD')
-        files_to_restyle = self.filter_styled_files(changed_files)
-        if files_to_restyle:
-            self.restyle_files(files_to_restyle)
-            # Amend the commit to contain the result of restyling.
-            self.run_git(['commit', '--amend', '--no-edit',
-                          '--allow-empty', '--'] +
-                         files_to_restyle)
-        self.info('{} has been applied as {}', new_commit, self.head_sha())
+        if changed_files:
+            self.run_git(['reset', '--quiet', new_commit, '--'] + changed_files)
+            self.run_git(['commit', '--amend', '--no-edit', '--allow-empty'])
+            self.run_git(['reset', '--quiet', '--hard'])
+            self.info('{} has been amended to {}', new_commit, self.head_sha())
+            files_to_restyle = self.filter_styled_files(changed_files)
+            if files_to_restyle:
+                self.restyle_files(files_to_restyle)
+                # Amend the commit to contain the result of restyling.
+                self.run_git(['commit', '--amend', '--no-edit',
+                              '--allow-empty', '--'] +
+                             files_to_restyle)
+        self.info('{} has been restyled as {}', new_commit, self.head_sha())
 
     def do_rewrite(self, branch: str) -> None:
         """Rewrite branch on top of the code style switch commit.
