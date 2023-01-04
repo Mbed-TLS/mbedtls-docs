@@ -15,6 +15,7 @@ maxdepth: 2
 caption: Contents
 ---
 reviews/index.md
+roadmap.md
 architecture/proposed/long-term-plans.md
 tech-updates/security-advisories/index.md
 maintainers.md
