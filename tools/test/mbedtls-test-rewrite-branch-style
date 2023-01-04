@@ -241,7 +241,7 @@ class Tests(unittest.TestCase):
 
     def delete_temporary_branches(self, case_id: str) -> None:
         branches = self.git_lines(['for-each-ref', '--format=%(refname:short)',
-                                   'tmp/{}/*'.format(case_id)])
+                                   'refs/heads/tmp/{}/**'.format(case_id)])
         if branches:
             self.call_git(['branch', '--quiet', '--delete', '--force'] +
                           branches)
