@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 """Tests for mbedtls-rewrite-branch-style.
+
+Needs git >=2.19.
 """
 
 # Copyright The Mbed TLS Contributors
