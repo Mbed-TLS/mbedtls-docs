@@ -169,9 +169,9 @@ class Tests(unittest.TestCase):
         # TODO: when guessing the target branch, we need the
         # features/new-code-style/* branches. But they'll get out of synch
         # of the snapshot commit IDs hard-coded in these tests.
-        cls.call_git(['fetch', '--quiet', 'origin',
+        cls.call_git(['fetch', '--quiet', '--force', 'origin',
                       'refs/heads/features/new-code-style/*:refs/remotes/origin/features/new-code-style/*'])
-        cls.call_git(['fetch', '--quiet', 'origin',
+        cls.call_git(['fetch', '--quiet', '--force', 'origin',
                       'refs/tags/features/new-code-style/*:refs/remotes/origin/features/new-code-style/*'])
         # Make sure the main worktree doesn't have a branch checked out that
         # might interfere with some of the tests.
