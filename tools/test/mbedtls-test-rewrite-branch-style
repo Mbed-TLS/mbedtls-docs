@@ -210,7 +210,7 @@ class Tests(unittest.TestCase):
         range_diff = self.git_lines(['range-diff', '--no-color',
                                      common_ancestor, branch1, branch2])
         for line in range_diff:
-            self.assertRegex(line, r'\A[0-9]+: *[0-9a-f]+ = ')
+            self.assertRegex(line, r'\A *[0-9]+: *[0-9a-f]+ *= ')
 
     @classmethod
     def setUpClass(cls) -> None:
