@@ -73,7 +73,6 @@ class TestCommits(enum.Enum):
     # Snapshots of branches and pull requests used by the tests.
     pr_6784 = ('pull/6784', 'ea8c88fcbb85917b7e323c016f9ba47bbd55f930')
     pr_6863 = ('pull/6863', 'e79fb03b7cd19dcf5a31b4eb478416694e965222')
-    pr_6866 = ('pull/6866', 'ff7d7c3a9a4c5afa9dda0c3e7a8c0f3211b0a366')
 
     def tag(self) -> str:
         return self.value[0]
@@ -289,17 +288,6 @@ class Tests(unittest.TestCase):
             self.assertEqual(cp.returncode, 0)
             self.assert_same_history('origin/features/new-code-style/development~1',
                                      'origin/features/new-code-style/test/new/6863',
-                                     new_branch)
-
-    def test_detached_6866(self) -> None:
-        new_branch = self.temp_branch('new')
-        with self.temp_worktree(head='pull/6866') as worktree:
-            cp = self.run_script(['-v', '--backup-branch=',
-                                  '--new-branch', new_branch],
-                                 cwd=worktree.path)
-            self.assertEqual(cp.returncode, 0)
-            self.assert_same_history('origin/features/new-code-style/development~1',
-                                     'origin/features/new-code-style/test/new/6866',
                                      new_branch)
 
     def test_updating_6863(self) -> None:
