@@ -289,7 +289,7 @@ class Tests(unittest.TestCase):
                                  cwd=worktree.path)
             self.assertEqual(cp.returncode, 0)
             self.assert_same_history('origin/features/new-code-style/development~1',
-                                     'origin/features/new-code-style/test/new/6863',
+                                     'origin/features/new-code-style/test/good/new/6863',
                                      new_branch)
 
     def test_updating_6863(self) -> None:
@@ -299,7 +299,7 @@ class Tests(unittest.TestCase):
                                  cwd=worktree.path)
             self.assertEqual(cp.returncode, 0)
             self.assert_same_history('origin/features/new-code-style/development~1',
-                                     'origin/features/new-code-style/test/new/6863',
+                                     'origin/features/new-code-style/test/good/new/6863',
                                      temp_branch)
 
 
