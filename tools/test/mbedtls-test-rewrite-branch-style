@@ -177,7 +177,7 @@ class Tests(unittest.TestCase):
                       'refs/tags/features/new-code-style/*:refs/remotes/origin/features/new-code-style/*'])
         # Make sure the main worktree doesn't have a branch checked out that
         # might interfere with some of the tests.
-        cls.call_git(['checkout', '--detach'])
+        cls.call_git(['checkout', '--quiet', '--detach'])
 
     @contextlib.contextmanager
     def temp_worktree(self, **kwargs) -> Iterator[temp_git_worktree]:
