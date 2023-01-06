@@ -309,6 +309,36 @@ class Result(Utilities):
     def test_6863(self) -> None:
         self.run_on_branch('6863')
 
+    def test_6888(self) -> None:
+        self.run_on_branch('6888')
+
+    def test_6889(self) -> None:
+        self.run_on_branch('6889')
+
+
+class Detection(Utilities):
+    """Test target branch detection."""
+
+    OLD_BRANCH = 'origin/features/new-code-style/test/{}/old'
+
+    def run_on_branch(self, name, expected_target) -> None:
+        old_branch = self.OLD_BRANCH.format(name)
+        new_branch = self.temp_branch('new')
+        with self.temp_worktree(head=old_branch) as worktree:
+            cp = self.run_script(['-v', '--backup-branch=',
+                                  '--new-branch', new_branch],
+                                 cwd=worktree.path)
+            self.assertEqual(cp.returncode, 0)
+            self.assertRegex(cp.stderr,
+                             r'Guessed target branch: (\S+/)?' + expected_target)
+
+    def test_6888(self) -> None:
+        self.run_on_branch('6888', 'development')
+
+    def test_6889(self) -> None:
+        self.run_on_branch('6889', 'mbedtls-2.28')
+
+
 class Options(Utilities):
     old_branch = 'origin/features/new-code-style/test/6863/old'
     target_branch = 'origin/features/new-code-style/test/6863/target'
