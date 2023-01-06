@@ -21,7 +21,6 @@ Needs git >=2.19.
 # limitations under the License.
 
 import contextlib
-import enum
 import os
 import subprocess
 from typing import Iterator, List, Optional
@@ -66,27 +65,18 @@ class temp_git_worktree:
                                self.temp_path])
 
 
-class TestCommits(enum.Enum):
-    # Snapshots used by the tests of branches and tags used by the script.
-    development = ('development', 'b4b0bb737d51ac34a91de269aad4432524be5794')
-    mbedtls_2_28 = ('mbedtls-2.28', 'a6ad7f47023b235fc8d02c3f2bbb5d5277c2f20f')
-    mbedtls_2_28_0 = ('mbedtls-2.28.0', '8b3f26a5ac38d4fdccbc5c5366229f3e01dafcc0')
-
-    # Snapshots of branches and pull requests used by the tests.
-    pr_6784 = ('pull/6784', 'ea8c88fcbb85917b7e323c016f9ba47bbd55f930')
-    pr_6863 = ('pull/6863', 'e79fb03b7cd19dcf5a31b4eb478416694e965222')
-
-    def tag(self) -> str:
-        return self.value[0]
-
-    def sha(self) -> str:
-        return self.value[1]
-
-
 class Utilities(unittest.TestCase):
 
     GIT_DIR = 'clone-for-test'
     ORIGIN_URL = 'https://github.com/Mbed-TLS/mbedtls'
+    FETCH_BRANCHES = [
+        'features/new-code-style/development',
+        'features/new-code-style/mbedtls-2.28',
+        'features/new-code-style/test/*',
+    ]
+    FETCH_TAGS = [
+        'mbedtls-2.28.0', # for target branch detection
+    ]
     SCRIPT_NAME = 'mbedtls-rewrite-branch-style'
 
     script = None #type: Optional[str]
@@ -164,17 +154,11 @@ class Utilities(unittest.TestCase):
         This method is destructive. It may create, update or remove branches,
         tags, worktrees, worktree contents, etc.
         """
-        cls.call_git(['fetch', '--quiet', 'origin'] +
-                     [commit.sha() for commit in TestCommits])
-        for commit in TestCommits:
-            cls.call_git(['tag', '--force', commit.tag(), commit.sha()])
-        # TODO: when guessing the target branch, we need the
-        # features/new-code-style/* branches. But they'll get out of synch
-        # of the snapshot commit IDs hard-coded in these tests.
-        cls.call_git(['fetch', '--quiet', '--force', 'origin',
-                      'refs/heads/features/new-code-style/*:refs/remotes/origin/features/new-code-style/*'])
-        cls.call_git(['fetch', '--quiet', '--force', 'origin',
-                      'refs/tags/features/new-code-style/*:refs/remotes/origin/features/new-code-style/*'])
+        cls.call_git(['fetch', '--quiet', '--force', 'origin'] +
+                     ['refs/tags/{name}:refs/tags/{name}'.format(name=name)
+                      for name in cls.FETCH_TAGS] +
+                     ['refs/heads/{name}:refs/remotes/origin/{name}'.format(name=name)
+                      for name in cls.FETCH_BRANCHES])
         # Make sure the main worktree doesn't have a branch checked out that
         # might interfere with some of the tests.
         cls.call_git(['checkout', '--quiet', '--detach'])
@@ -284,28 +268,63 @@ class Smoke(Utilities):
         self.assertNotEqual(cp.stderr, '')
 
 class Result(Utilities):
+    """Test that running the script on a given branch gives the expected result.
 
-    def test_detached_6863(self) -> None:
+    To add a new test case:
+    * Pick a branch to test and a name $foo.
+    * Run the rewrite script and carefully review the output.
+    * Push the original branch, the target branch and the rewritten branch
+      to the main mbedtls repository in the features/new-code-style/test
+      namespace.
+
+    For example:
+    ```
+    mbedtls-rewrite-branch-style --onto=origin/features/new-code-style/development --backup-branch=1234-old --new-branch=1234-new
+    : review the output
+    git push origin 1234-old:refs/heads/features/new-code-style/test/1234/old
+    git push origin origin/features/new-code-style/development:refs/heads/features/new-code-style/test/1234/target
+    git push origin 1234-new:refs/heads/features/new-code-style/test/1234/new
+    ```
+    """
+
+    OLD_BRANCH = 'origin/features/new-code-style/test/{}/old'
+    TARGET_BRANCH = 'origin/features/new-code-style/test/{}/target'
+    GOOD_NEW_BRANCH = 'origin/features/new-code-style/test/{}/new'
+
+    def run_on_branch(self, name) -> None:
+        old_branch = self.OLD_BRANCH.format(name)
+        target_branch = self.TARGET_BRANCH.format(name)
+        target_commit = target_branch + '^{/Switch to the new code style}'
         new_branch = self.temp_branch('new')
-        with self.temp_worktree(head='pull/6863') as worktree:
+        with self.temp_worktree(head=old_branch) as worktree:
             cp = self.run_script(['-v', '--backup-branch=',
+                                  '--onto', target_branch,
                                   '--new-branch', new_branch],
                                  cwd=worktree.path)
             self.assertEqual(cp.returncode, 0)
-            self.assert_same_history('origin/features/new-code-style/development~1',
-                                     'origin/features/new-code-style/test/good/new/6863',
+            self.assert_same_history(target_commit,
+                                     self.GOOD_NEW_BRANCH.format(name),
                                      new_branch)
 
-class Options(Utilities):
+    def test_6863(self) -> None:
+        self.run_on_branch('6863')
 
-    def test_updating_6863(self) -> None:
+class Options(Utilities):
+    old_branch = 'origin/features/new-code-style/test/6863/old'
+    target_branch = 'origin/features/new-code-style/test/6863/target'
+    target_commit = target_branch + '^{/Switch to the new code style}'
+    good_new_branch = 'origin/features/new-code-style/test/6863/new'
+
+    def test_update_in_place(self) -> None:
         temp_branch = self.temp_branch('work')
-        with self.temp_worktree(branch=temp_branch, head='pull/6863') as worktree:
-            cp = self.run_script(['-v', '--backup-branch='],
+        with self.temp_worktree(branch=temp_branch,
+                                head=self.old_branch) as worktree:
+            cp = self.run_script(['-v', '--backup-branch=',
+                                  '--onto', self.target_branch],
                                  cwd=worktree.path)
             self.assertEqual(cp.returncode, 0)
-            self.assert_same_history('origin/features/new-code-style/development~1',
-                                     'origin/features/new-code-style/test/good/new/6863',
+            self.assert_same_history(self.target_commit,
+                                     self.good_new_branch,
                                      temp_branch)
 
 
