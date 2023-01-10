@@ -22,6 +22,7 @@ Invoke this script from a Git working directory with a branch of Mbed TLS.
 import argparse
 import os
 import pathlib
+import re
 import subprocess
 import sys
 from typing import List, Optional
@@ -172,8 +173,17 @@ class BranchRewriter:
         ok = True
         # 'git worktree remove' was added in Git 2.17.0. It's the most
         # recent Git feature that we need.
-        output = self.run_git(['worktree', '--help'])
-        if 'git worktree remove' not in output:
+        try:
+            output = self.run_git(['--version'])
+            self.info('Found git: ' + output.strip())
+        except subprocess.CalledProcessError:
+            output = ''
+        m = re.search(r'([0-9]+)\.([0-9]+)', output)
+        if not m:
+            self.log_error('No working git command found')
+            return False
+        version = tuple(int(s) for s in m.groups())
+        if version < (2, 17):
             self.log_error('Your version of Git is too old. This script needs Git >=2.17.0.')
             ok = False
         # Check that we're in a Git working directory. Remember its path.

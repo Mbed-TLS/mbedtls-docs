@@ -129,12 +129,6 @@ The rewrite script may not work if a commit deletes a file.
 
 Workaround: wait for a fix.
 
-### Windows
-
-Git detection may fail on Windows.
-
-Workaround: wait for a fix or use another Git implementation or another operating system.
-
 ## Troubleshooting
 
 ### If something goes wrong
