@@ -1,0 +1,586 @@
+#!/usr/bin/env python3
+"""Rewrite an Mbed TLS branch on top of the new coding style.
+
+Invoke this script from a Git working directory with a branch of Mbed TLS.
+"""
+
+# Copyright The Mbed TLS Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import argparse
+import os
+import pathlib
+import subprocess
+import sys
+from typing import List, Optional
+
+
+class BranchRewriter:
+    """Tools to rebase and rewrite a Git branch."""
+
+    GIT_EXE = 'git'
+
+    def __init__(self,
+                 working_branch_name: Optional[str] = None,
+                 verbose=False) -> None:
+        self.verbose = verbose
+        self.original_worktree_path = None # type: Optional[str]
+        self.worktree_path = None # type: Optional[str]
+        self.working_branch_name = \
+            working_branch_name if working_branch_name else None
+        self.rewritten_sha = None #type: Optional[str]
+        self.ok = True
+
+    def info(self, fmt, *args, **kwargs) -> None:
+        """In verbose mode, print a formatted message."""
+        if self.verbose:
+            sys.stderr.write(fmt.format(*args, **kwargs) + '\n')
+
+    def log_error(self, fmt, *args, **kwargs) -> None:
+        """Print a formatted message and remember that an error occurred."""
+        self.ok = False
+        sys.stderr.write(fmt.format(*args, **kwargs) + '\n')
+
+    def run_git(self, git_cmd: List[str], **kwargs) -> str:
+        """Run a git command and return its output."""
+        if 'universal_newlines' not in kwargs:
+            kwargs['universal_newlines'] = True
+        cmd = [self.GIT_EXE] + git_cmd
+        return subprocess.check_output(cmd, **kwargs)
+
+    def check_git(self, git_cmd: List[str], **kwargs) -> bool:
+        """Run a git command for its boolean result.
+
+        Return True if the command returns 0 and False if it returns 1.
+        Raise subprocess.CalledProcessError for any other status.
+        """
+        cmd = [self.GIT_EXE] + git_cmd
+        cp = subprocess.run(cmd, check=False, **kwargs)
+        if cp.returncode == 0:
+            return True
+        elif cp.returncode == 1:
+            return False
+        else:
+            raise subprocess.CalledProcessError(cp.returncode, cmd)
+
+    def run_git_checkout(self, revision: str) -> None:
+        """Check out the given revision in detached mode."""
+        self.run_git(['checkout', '--detach', '--quiet', revision])
+
+    def get_git_lines(self, git_cmd: List[str], **kwargs) -> List[str]:
+        """Run a git command and return its output, split into lines.
+
+        Ignore trailing empty lines, but preserve leading and inner empty lines.
+        """
+        output = self.run_git(git_cmd, **kwargs)
+        return output.rstrip('\n').split('\n')
+
+    def head_sha(self) -> str:
+        """The sha of the git HEAD."""
+        return self.run_git(['rev-parse', 'HEAD']).strip()
+
+    def checked_out_branch(self) -> Optional[str]:
+        """The name of the branch checked out in the Git working directory.
+
+        None if no branch is checked out (detached HEAD).
+        """
+        branch_name = self.run_git(['rev-parse', '--abbrev-ref', 'HEAD']).strip()
+        if branch_name == 'HEAD':
+            return None
+        return branch_name
+
+    def is_git_ref(self, category: str, ref: str) -> bool:
+        """Whether ref is a Git ref of the given category.
+
+        Categories:
+        * 'heads' = local branch
+        * 'remotes' = remote name slash remote branch
+        * 'sha' = sha of a commit
+        * 'tags' = tag
+        """
+        if category == 'sha':
+            try:
+                # Don't accidentally pass an option to 'git rev-parse'
+                # (it doesn't support --).
+                if not ref.startswith('-'):
+                    if self.run_git(['rev-parse', ref]).strip() == ref:
+                        return True
+                return False
+            except subprocess.CalledProcessError:
+                # Not a valid ref. It's not our job to raise an exception.
+                return False
+        path = 'refs/{}/{}'.format(category, ref)
+        return self.check_git(['show-ref', '--quiet', '--verify', path])
+
+    def ref_looks_ok_for_template(self, ref: str) -> bool:
+        """Whether ref looks ok to build another branch name on.
+
+        It must be a branch, tag or sha.
+        In particular, reject HEAD.
+        """
+        if self.is_git_ref('heads', ref):
+            return True
+        if self.is_git_ref('remotes', ref):
+            return True
+        if self.is_git_ref('tags', ref):
+            return True
+        if self.is_git_ref('sha', ref):
+            return True
+        return False
+
+    def fill_branch_name_template(self, template: str, ref: str,
+                                  kind: str) -> str:
+        """Build a branch name based on a template.
+
+        Replace '{}' by ref if present (otherwise return template unchanged).
+        ref must be a branch, tag or sha.
+        kind is a short, human-readable description of the template's purpose.
+        """
+        if '{}' not in template:
+            return template
+        if not self.ref_looks_ok_for_template(ref):
+            self.log_error('Cannot create branch name for {} from {}',
+                           kind, ref)
+            raise ValueError('Bad ref {} for {} branch name template {}'
+                             .format(ref, kind, template))
+        return template.replace('{}', ref)
+
+    def working_directory_is_clean(self) -> bool:
+        """Check whether the Git working directory is clean (no uncommited changes)."""
+        return (self.check_git(['diff', '--quiet']) and
+                self.check_git(['diff', '--quiet', '--cached']))
+
+    def list_commit_range(self, start: str, last: str) -> List[str]:
+        """List the commits from start to last, excluding last."""
+        commits = self.get_git_lines(['rev-list', start + '..' + last])
+        return list(reversed(commits))
+
+    def system_is_ok(self) -> bool:
+        """Check that the required tools are present and the working directory is suitable."""
+        ok = True
+        # 'git worktree remove' was added in Git 2.17.0. It's the most
+        # recent Git feature that we need.
+        output = self.run_git(['worktree', '--help'])
+        if 'git worktree remove' not in output:
+            self.log_error('Your version of Git is too old. This script needs Git >=2.17.0.')
+            ok = False
+        # Check that we're in a Git working directory. Remember its path.
+        output = self.run_git(['rev-parse', '--show-toplevel'])
+        self.original_worktree_path = output.rstrip('\n')
+        self.info('Git root: {}', self.original_worktree_path)
+        return ok
+
+    def generate_worktree_path(self, arg: str) -> str:
+        """Generate the path to a temporary worktree.
+
+        This function only constructs a path, it does not create the worktree.
+        """
+        assert self.original_worktree_path is not None
+        # If arg is a branch name, it can contain a slash. This is fine for git,
+        # but it causes the worktree's directory path to be weird, which is
+        # potentially annoying when cleaning up, both in this script and for
+        # the user. So use a different character that is valid in directory
+        # names but not in git branch names.
+        arg = arg.replace('/', '%')
+        worktree_dir = 'tmp-{arg}-{pid}'.format(arg=arg, pid=os.getpid())
+        return os.path.join(os.path.dirname(self.original_worktree_path),
+                            worktree_dir)
+
+    def cleanup_worktree(self) -> None:
+        """Remove the temporary worktree.
+
+        Do nothing if the temporary worktree does not exist.
+        """
+        worktree_path = self.worktree_path
+        self.worktree_path = None
+        if worktree_path is None: # not named yet
+            return
+        if not os.path.exists(worktree_path): # not created yet
+            self.info('No worktree to clean up: {}', worktree_path)
+            return
+        self.info('Removing worktree: {}', worktree_path)
+        self.run_git(['worktree', 'remove', worktree_path])
+
+    def create_backup_branch(self, template: str, ref: str) -> None:
+        """Create a branch pointing to ref.
+
+        The name of the new branch is template with `{}` replaced by ref.
+
+        Do nothing if there is already a branch with that name that points to
+        ref. If a branch exists with a different head, raise an error.
+        """
+        new_name = self.fill_branch_name_template(template, ref, 'backup')
+        try:
+            old_name_target = self.run_git(['rev-parse', ref],
+                                           stderr=subprocess.DEVNULL)
+            new_name_target = self.run_git(['rev-parse', new_name],
+                                           stderr=subprocess.DEVNULL)
+            if old_name_target == new_name_target:
+                self.info('Backup branch {} already points to {}', new_name, ref)
+                return
+        except subprocess.CalledProcessError:
+            # Commonly, new_name does not exist, and that's a good case for us.
+            # If some other error occurred (e.g. ref is invalid), ignore it:
+            # let 'git branch' fail with a more informative error.
+            self.info('Creating backup branch {} for {}', new_name, ref)
+            self.run_git(['branch', '--no-track', new_name, ref])
+
+    def do_rewrite(self, branch: str) -> None:
+        """Rewrite the given branch.
+
+        Do not call this method directly: call rewrite().
+
+        Override this method in child classes to do the desired rewriting.
+
+        This method is called with the current directory in a temporary
+        Git worktree with branch checked out in detached mode.
+        """
+        raise NotImplementedError
+
+    def rewrite(self, branch: str, update_branch: bool = False) -> None:
+        """Rewrite the given branch.
+
+        This method creates a temporary Git worktree and changes to it.
+
+        If update_branch is true and the rewrite succeeds, update branch
+        to the rewritten commit and check it out in the current directory
+        if it was already checked out before.
+        """
+        assert self.original_worktree_path is not None
+        assert self.worktree_path is None
+        update_original_worktree = False
+        original_branch_sha = self.run_git(['rev-parse', branch]).strip()
+        if update_branch and self.checked_out_branch() == branch:
+            if not self.working_directory_is_clean():
+                self.log_error('Refusing to update branch and working tree because the working tree is dirty.')
+                self.log_error('Hint: commit your changes first.')
+                return
+            self.info('Will update original worktree on success')
+            update_original_worktree = True
+        self.worktree_path = self.generate_worktree_path(branch)
+        self.info('Creating worktree: {}', self.worktree_path)
+        self.run_git(['worktree', 'add', '--detach', self.worktree_path])
+        os.chdir(self.worktree_path)
+        self.run_git_checkout(branch)
+        if self.working_branch_name:
+            self.info('Working on new branch {}', self.working_branch_name)
+            self.run_git(['checkout', '--quiet', '-b', self.working_branch_name])
+        self.do_rewrite(branch)
+        self.rewritten_sha = self.head_sha()
+
+        os.chdir(self.original_worktree_path)
+        if update_original_worktree:
+            # Always be verbose about updating the original working directory
+            self.run_git(['checkout', branch])
+            # A hard reset is safe because we stopped earlier if the working
+            # directory was dirty.
+            self.info('Moving branch {} from {} to {}',
+                      branch, original_branch_sha, self.rewritten_sha)
+            self.run_git(['reset', '--hard', self.rewritten_sha])
+        self.cleanup_worktree()
+
+    def cleanup(self) -> None:
+        """Clean up after a successful run."""
+        if self.ok:
+            self.cleanup_worktree()
+
+
+class MbedTLSBranchRewriter(BranchRewriter):
+    #pylint: disable=abstract-method # This class is still abstract
+    """Tools to rebase and rewrite a branch of Mbed TLS."""
+
+    UPSTREAM_URLS = frozenset(map(lambda s: s.lower(), [
+        'git@github.com:ARMmbed/mbedtls.git',
+        'git@github.com:Mbed-TLS/mbedtls.git',
+        'https://github.com/ARMmbed/mbedtls',
+        'https://github.com/Mbed-TLS/mbedtls',
+    ]))
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.upstream_remote = None #type: Optional[str]
+
+    def guess_upstream_remote(self) -> None:
+        """Find a Git remote for the upstream repository."""
+        if self.upstream_remote is not None:
+            return
+        self.info('Enumerating Git remotes...')
+        remotes = self.get_git_lines(['remote', '-v', 'show'])
+        for remote in remotes:
+            (name, rest) = remote.split('\t', 2)
+            (url, rest) = rest.split(' ', 1)
+            if url.lower() in self.UPSTREAM_URLS:
+                self.info('Found upstream remote: {}', name)
+                self.upstream_remote = name
+                return
+        raise ValueError('No Git remote found for upstream')
+
+
+class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
+    """Rebase and rewrite a branch of Mbed TLS to the new coding style."""
+
+    UNCRUSTIFY_SUPPORTED_VERSION = "0.75.1"
+    CONFIG_FILE = ".uncrustify.cfg"
+    UNCRUSTIFY_EXE = "uncrustify"
+
+    GENERATED_FILES_2_28 = frozenset([
+        pathlib.PurePath('library/error.c'),
+        pathlib.PurePath('library/version_features.c'),
+        pathlib.PurePath('programs/psa/psa_constant_names_generated.c'),
+        pathlib.PurePath('programs/test/query_config.c'),
+    ])
+
+    # To be updated once the new code style becomes official,
+    # or possibly change to tags instead of branches.
+    TARGET_BRANCH_PREFIX = 'features/new-code-style/'
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.target_branch = None #type: Optional[str]
+
+    def set_target_branch(self, target_branch: str) -> None:
+        """Record the given branch as the branch to rewrite onto."""
+        self.target_branch = target_branch
+
+    def system_is_ok(self) -> bool:
+        ok = super().system_is_ok()
+        output = subprocess.check_output([self.UNCRUSTIFY_EXE, '--version'],
+                                         universal_newlines=True)
+        self.info('Found uncrustify: {}', output.strip())
+        if self.UNCRUSTIFY_SUPPORTED_VERSION not in output:
+            self.log_error('Unsupported version of uncrustify. This script needs {}.',
+                           self.UNCRUSTIFY_SUPPORTED_VERSION)
+            ok = False
+        return ok
+
+    def guess_target_branch(self) -> None:
+        """Guess the branch that the current branch is to be merged into.
+
+        This method sets self.target_branch. It does nothing if that is
+        already set.
+
+        This method assumes development unless the branch forked from
+        an LTS branch.
+        """
+        if self.target_branch is not None:
+            return
+        self.guess_upstream_remote()
+        self.info('Guessing target branch...')
+        if self.check_git(['merge-base', '--is-ancestor',
+                           'mbedtls-2.28.0', 'HEAD']):
+            branch = 'mbedtls-2.28'
+        else:
+            branch = 'development'
+        self.target_branch = '{}/{}{}'.format(self.upstream_remote,
+                                              self.TARGET_BRANCH_PREFIX,
+                                              branch)
+        self.info('Guessed target branch: {}', self.target_branch)
+
+    def find_switch_commit(self) -> str:
+        """Return the sha of the commit with the code style switch."""
+        self.guess_target_branch()
+        assert self.target_branch is not None
+        revision = self.target_branch + '^{/Switch to the new code style}'
+        sha = self.run_git(['rev-parse', revision]).strip()
+        self.info('Switch commit: {}', sha)
+        return sha
+
+    def changed_files_in_commit(self, revision: str) -> List[str]:
+        """The list of files changed or added in the given revision."""
+        # The git command prints a list of the form:
+        #   * 'A\t{filename}' for an added file
+        #   * 'M\t{filename}' for a modified file
+        #   * 'D\t{filename}' for a deleted file
+        #   * 'R{confidence}\t{old_name}\t{new_name}' for a renamed file
+        lines = self.get_git_lines(['show', '--format=', '--name-status',
+                                    revision])
+        filenames = [line.rsplit('\t', 1)[-1]
+                     for line in lines
+                     if line[0] != 'D'] # skip deleted files
+        return filenames
+
+    @staticmethod
+    def is_c_file(path: pathlib.PurePath) -> bool:
+        """Whether path is a C source file, based on its name and location."""
+        dir_chain = path.parts[:-1]
+        if path.suffix in {'.c', '.h'}:
+            return True
+        if dir_chain == ('tests', 'suites') and path.suffix == '.function':
+            return True
+        if dir_chain == ('scripts', 'data_files') and path.suffix == '.fmt':
+            return True
+        return False
+
+    def is_file_exempt(self, path: pathlib.PurePath) -> Optional[str]:
+        """Whether path is exempt from restyling.
+
+        Return the reason why path is exempt (a non-empty string),
+        or None if path is not exempt.
+        """
+        if path.parts[0] == '3rdparty':
+            return '3rdparty'
+        # Hard-coded list of files that are generated in 2.28.
+        # In development, generated files are not checked into Git.
+        if path.parts in self.GENERATED_FILES_2_28:
+            return 'generated'
+        return None
+
+    def filter_styled_files(self, filenames: List[str]) -> List[str]:
+        """Return filenames with non-restylable files removed."""
+        keep = []
+        for filename in filenames:
+            path = pathlib.PurePath(filename)
+            if not self.is_c_file(path):
+                continue
+            why_exempt = self.is_file_exempt(path)
+            if why_exempt:
+                self.info('Exempt from restyling ({}): {}', why_exempt, filename)
+                continue
+            self.info('Will restyle: {}', filename)
+            keep.append(filename)
+        return keep
+
+    def restyle_files(self, filenames: List[str]) -> None:
+        """Restyle the given files in place."""
+        if not filenames:
+            return
+        for num in range(2):
+            self.info('Pass #{} of uncrustify', num)
+            subprocess.check_call([self.UNCRUSTIFY_EXE,
+                                   '-c', self.CONFIG_FILE,
+                                   '--no-backup'] +
+                                  filenames)
+
+    def restyle_commit_onto_current(self, new_commit: str) -> None:
+        """Apply a restyled content of new_commit onto HEAD."""
+        self.info('Applying {} onto {}', new_commit, self.head_sha())
+        # We want the new commit's metadata (author, commit message),
+        # the new commit's content (but restyled), and the old commit's
+        # history. This is a cherry-pick operation, with some custom
+        # way to merge the contents. We could perhaps define a custom merge
+        # strategy, but that seems hard (especially since we do want to
+        # tweak the content even if there are no merge conflicts). So we
+        # pick some method of resolving the conflict automatically
+        # that ensures that added and removed files are according to the
+        # cherry-picked commit, but might mess up modified files. Then
+        # we override the content of modified files, and finally we restyle
+        # files that need restyling.
+        self.run_git(['cherry-pick', '-Xtheirs', '--allow-empty', new_commit])
+        self.info('{} has been cherry-picked as {}', new_commit, self.head_sha())
+        # Restyle the code to the new style. Only restyle changed files.
+        changed_files = self.changed_files_in_commit('HEAD')
+        if changed_files:
+            self.run_git(['reset', '--quiet', new_commit, '--'] + changed_files)
+            self.run_git(['commit', '--amend', '--no-edit', '--allow-empty'])
+            self.run_git(['reset', '--quiet', '--hard'])
+            self.info('{} has been amended to {}', new_commit, self.head_sha())
+            files_to_restyle = self.filter_styled_files(changed_files)
+            if files_to_restyle:
+                self.restyle_files(files_to_restyle)
+                # Amend the commit to contain the result of restyling.
+                self.run_git(['commit', '--amend', '--no-edit',
+                              '--allow-empty', '--'] +
+                             files_to_restyle)
+        self.info('{} has been restyled as {}', new_commit, self.head_sha())
+
+    def do_rewrite(self, branch: str) -> None:
+        """Rewrite branch on top of the code style switch commit.
+
+        1. Rebase the head of branch onto the last commit with the old style.
+        2. Rewrite all new commits on top of the code style switch commit.
+
+        This method assumes it has ownership of the current worktree.
+        It does not create or modify any branch name.
+        """
+        switch_commit = self.find_switch_commit()
+        last_old_commit = switch_commit + '~1'
+        # Phase 1: rebase onto last_old_commit
+        self.info('Rebasing {} onto {}', self.head_sha(), last_old_commit)
+        self.run_git(['rebase', last_old_commit])
+        self.info('Head after rebase: {}', self.head_sha())
+        # Phase 2: Iterate over the new commits
+        new_commits = self.list_commit_range(last_old_commit, 'HEAD')
+        self.info('Will restyle {} new commits ({})',
+                  len(new_commits), ' '.join(new_commits))
+        self.info('Starting from code style switch commit {}', switch_commit)
+        self.run_git_checkout(switch_commit)
+        if self.working_branch_name:
+            self.run_git(['branch', '--force', self.working_branch_name, 'HEAD'])
+            self.run_git(['checkout', '--quiet', self.working_branch_name])
+        for new_commit in new_commits:
+            self.restyle_commit_onto_current(new_commit)
+
+def main() -> int:
+    """Command line entry point."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--backup-branch', metavar='BRANCH_NAME',
+                        default='old-code-style/{}',
+                        help='Back up the current history'
+                             ' (default: old-code-style/OLD_NAME)'
+                             ' (empty: do not back up)')
+    parser.add_argument('--onto', '-t', metavar='BRANCH',
+                        help='Branch to rewrite onto'
+                             ' (default/empty: guess development or mbedtls-2.28)')
+    parser.add_argument('--new-branch-name', '-c', metavar='BRANCH_NAME',
+                        default='',
+                        help='Use this branch for the new work (retained on failure),'
+                             ' do not change the original branch'
+                             ' (default/empty: update original branch on success)')
+    parser.add_argument('--verbose', '-v',
+                        action='store_true',
+                        help='be more verbose')
+    parser.add_argument('branch',
+                        nargs='?', default='',
+                        help='Branch to rewrite with code style changes'
+                             ' (default: branch checked out in the current directory)')
+    args = parser.parse_args()
+    branch_rewriter = CodeStyleBranchRewriter(
+        working_branch_name=args.new_branch_name,
+        verbose=args.verbose)
+    if not branch_rewriter.system_is_ok():
+        return 2
+    if not args.branch:
+        args.branch = branch_rewriter.checked_out_branch()
+        if not args.branch:
+            if '{}' in args.backup_branch:
+                branch_rewriter.log_error('No branch specified and detached head. Unable to construct backup branch name.')
+                branch_rewriter.log_error('Giving up. Please pass an explicit branch name or --backup-branch.')
+                return 2
+            args.branch = 'HEAD'
+    if args.onto:
+        branch_rewriter.set_target_branch(args.onto)
+    if args.backup_branch:
+        branch_rewriter.create_backup_branch(args.backup_branch, args.branch)
+    update_existing_branch = False
+    if not args.new_branch_name:
+        if branch_rewriter.is_git_ref('heads', args.branch):
+            update_existing_branch = True
+    branch_rewriter.rewrite(args.branch, update_existing_branch)
+    branch_rewriter.cleanup()
+    if branch_rewriter.ok and \
+       not args.new_branch_name and not update_existing_branch:
+        # The new work isn't available except via a sha, so it seems pretty
+        # important to let the user know even in non-verbose mode.
+        # Use wording similar to "leaving N commits behind" from 'git checkout'.
+        sys.stderr.write("""Warning: the rewritten commits are not connected to any branch.
+
+You should give them a name with:
+
+ git branch <new-branch-name> {sha}
+""".format(sha=branch_rewriter.rewritten_sha))
+    return 0 if branch_rewriter.ok else 1
+
+if __name__ == '__main__':
+    sys.exit(main())
