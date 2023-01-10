@@ -315,6 +315,9 @@ class Result(Utilities):
     def test_6889(self) -> None:
         self.run_on_branch('6889')
 
+    def test_rename_delete(self) -> None:
+        self.run_on_branch('rename-delete')
+
 
 class Detection(Utilities):
     """Test target branch detection."""
