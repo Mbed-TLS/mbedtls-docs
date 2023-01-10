@@ -411,6 +411,20 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
                      if line[0] != 'D'] # skip deleted files
         return filenames
 
+    def deleted_files_in_commit(self, revision: str) -> List[str]:
+        """The list of files changed or added in the given revision."""
+        # The git command prints a list of the form:
+        #   * 'A\t{filename}' for an added file
+        #   * 'M\t{filename}' for a modified file
+        #   * 'D\t{filename}' for a deleted file
+        #   * 'R{confidence}\t{old_name}\t{new_name}' for a renamed file
+        lines = self.get_git_lines(['show', '--format=', '--name-status',
+                                    revision])
+        deleted = [line.rsplit('\t', 1)[-1]
+                     for line in lines
+                     if line[0] == 'D']
+        return deleted
+
     @staticmethod
     def is_c_file(path: pathlib.PurePath) -> bool:
         """Whether path is a C source file, based on its name and location."""
@@ -466,6 +480,11 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
     def restyle_commit_onto_current(self, new_commit: str) -> None:
         """Apply a restyled content of new_commit onto HEAD."""
         self.info('Applying {} onto {}', new_commit, self.head_sha())
+        # If the commit deletes files that are restyled there will be
+        # a merge conflict. Manually get a list of the deleted files that
+        # are eligible for restyling.
+        deleted_files = self.deleted_files_in_commit(new_commit)
+        deleted_styled_files = self.filter_styled_files(deleted_files)
         # We want the new commit's metadata (author, commit message),
         # the new commit's content (but restyled), and the old commit's
         # history. This is a cherry-pick operation, with some custom
@@ -477,7 +496,23 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         # cherry-picked commit, but might mess up modified files. Then
         # we override the content of modified files, and finally we restyle
         # files that need restyling.
-        self.run_git(['cherry-pick', '-Xtheirs', '--allow-empty', new_commit])
+        if deleted_styled_files:
+            # There are some deleted files, so expect cherry-pick to return
+            # with exit status 1.
+            try:
+                self.run_git(['cherry-pick', '-Xtheirs', '--allow-empty', new_commit])
+            except subprocess.CalledProcessError as c:
+                if c.returncode != 1:
+                    raise c
+            # Resolve conflicts by removing any deleted files then continue.
+            self.run_git(['rm'] + deleted_styled_files)
+            # Continue the cherry-pick with the editor set to the 'true'
+            # command which returns success immediately. In other words,
+            # don't open an editor.
+            self.run_git(['cherry-pick', '--continue'],
+                         env={**os.environ, 'GIT_EDITOR':'true'})
+        else:
+            self.run_git(['cherry-pick', '-Xtheirs', '--allow-empty', new_commit])
         self.info('{} has been cherry-picked as {}', new_commit, self.head_sha())
         # Restyle the code to the new style. Only restyle changed files.
         changed_files = self.changed_files_in_commit('HEAD')
