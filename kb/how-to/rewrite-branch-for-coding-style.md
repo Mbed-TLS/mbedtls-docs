@@ -63,7 +63,7 @@ If all goes well, you have successfully migrated `mywork`. You can force-push it
 
 A backup of the old branch is available under the name `old-code-style/mywork`.
 
-If all did not go well, please read the error messages.
+If all does not go well, please consult the [known limitations](#known-limitations) and the [troubleshooting section](#troubleshooting) section.
 
 ### Trial migration
 
@@ -77,15 +77,96 @@ python3 ~/Downloads/mbedtls-rewrite-branch-style --onto upstream/development --n
 
 If all goes well, the branch `new-code-style/mywork` contains the migrated content of `mywork`.
 
-If all did not go well, please read the error messages.
+If all does not go well, please consult the [known limitations](#known-limitations) and the [troubleshooting section](#troubleshooting) section.
 
 ## Known limitations
 
-TODO
+### Syntactically invalid commits
+
+The automatic rewriting script can fail if an intermediate commit contains syntactically incorrect C code, for example unbalanced braces. If the script fails in an `uncrustify` command, this is the most likely reason.
+
+Workaround: first do a manual rebase where you fix the syntax of the problematic commit.
+
+Here is an example transcript with the end of the `--verbose` output showing this problem:
+```
+...
+Applying efef9ffbba73433323137d22d7c675e9ceb0291c onto cb0ca794a4a7bea9db82659b6d4ae8b3e43ef9ee
+efef9ffbba73433323137d22d7c675e9ceb0291c has been cherry-picked as c8a5ca2a1dbd3d4a0bf08b0216d8224bca8993fe
+efef9ffbba73433323137d22d7c675e9ceb0291c has been amended to 8ae5bf5f1b7441d27d4b0c616d44f7ecba0691a7
+Will restyle: library/x509_crt.c
+Pass #0 of uncrustify
+do_source_file(1507): Parsing: library/x509_crt.c as language C
+parse_cleanup(528): pc->orig_line is 845, orig_col is 1, Text() is '}', type is BRACE_CLOSE
+process_return(2180): temp->level is ZERO, cannot be decremented, at line 844, column 11
+Traceback (most recent call last):
+  File "../../bin/mbedtls-rewrite-branch-style", line 591, in <module>
+    sys.exit(main())
+  File "../../bin/mbedtls-rewrite-branch-style", line 575, in main
+    branch_rewriter.rewrite(args.branch, update_existing_branch)
+  File "../../bin/mbedtls-rewrite-branch-style", line 280, in rewrite
+    self.do_rewrite(branch)
+  File "../../bin/mbedtls-rewrite-branch-style", line 528, in do_rewrite
+    self.restyle_commit_onto_current(new_commit)
+  File "../../bin/mbedtls-rewrite-branch-style", line 496, in restyle_commit_onto_current
+    self.restyle_files(files_to_restyle)
+  File "../../bin/mbedtls-rewrite-branch-style", line 466, in restyle_files
+    subprocess.check_call([self.UNCRUSTIFY_EXE,
+  File "/usr/lib/python3.8/subprocess.py", line 364, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['uncrustify', '-c', '.uncrustify.cfg', '--no-backup', 'library/x509_crt.c']' returned non-zero exit status 70.
+```
+Look for the last “Applying ...” line in the transcript. Run `git show -s efef9ffbba73433323137d22d7c675e9ceb0291c` to list the commit date and commit message. Find this commit in your working branch (use `git log`); it will have a different commit ID because the commit ID in the transcript is after a rebase. In this example, the original commit with the same commit message was `93e4f76a3e9ca2d2448525657b3e0f7b3c6ed863`. To rewrite this commit, do an interactive rebase and ask to `93e4f76a3e9ca2d2448525657b3e0f7b3c6ed863`, keeping other commits intact. The last line of the transcript shows which file has the syntax error, and the previous messages give a hint as to where the error is. In the example above, the file is `library/x509_crt.c` and the error was detected at line 844. The actual problem turns out to be a missing `*/` a few lines above.
+
+### Branches with merges
+
+The rewrite script was written for simple cases of branches that fork from an official branch of Mbed TLS, and do not contain additional merges. If a branch contains merges, the script will fail.
+
+Workaround: manually rebase on top of the last commit before the style change. If there are no merges left in your branch, you can use the script to do the rest of the work. Otherwise you'll need to do a manual merge instead of rewriting your branch.
+
+### Deleted files
+
+The rewrite script may not work if a commit deletes a file.
+
+Workaround: wait for a fix.
+
+### Windows
+
+Git detection may fail on Windows.
+
+Workaround: wait for a fix or use another Git implementation or another operating system.
 
 ## Troubleshooting
 
-TODO
+### If something goes wrong
+
+If all did not go well, please re-run the script with the `--verbose` option and read the output to see what went wrong. If you can't figure it out, please post on the [mbed-tls mailing list](https://lists.trustedfirmware.org/mailman3/lists/mbed-tls.lists.trustedfirmware.org/) or raise an issue on the [mbedtls-docs repository](https://github.com/Mbed-TLS/mbedtls-docs/issues), including a link to the problematic branch and the **complete output from `mbedtls-rewrite-branch-style --verbose`**.
+
+### Cleaning up after an error run
+
+The script works in a temporary worktree following the pattern `tmp-%s-%d` where `%s` is the name of the branch being rewritten. If there is an error, this worktree is left behind. Use the command `git worktree list` to list existing worktrees. The following command shows output reduced worktrees that are probably from the branch rewriting script:
+```console
+$ git worktree list | grep /tmp-
+/home/me/work/tmp-mybranch-1234
+```
+Use `git worktree remove -f /home/me/work/tmp-mybranch-1234` to remove the worktree.
+
+### Wrong version of uncrustify
+
+If you see the message
+```
+Unsupported version of uncrustify. This script needs 0.75.1.
+```
+please install the requested version of uncrustify. Unfortunately, different versions give different outputs, so everyone needs to use the same version.
+
+If you have multiple versions of uncrustify installed, please make sure that the requested version comes first in the command search path (`$PATH` or `%PATH%`).
+
+### Backup branch out of date
+
+By default, the script backs up the old state of the branch under a name beginning with `old-code-style/`. If you run the rewrite script on a branch, then do more work on that branch, then run the rewrite script again, the script will fail with an error:
+```
+fatal: A branch named 'old-code-style/mybranch' already exists.
+```
+Please remove the old backup branch manually, then run the script again.
 
 ## Migrating existing work: the theory
 
