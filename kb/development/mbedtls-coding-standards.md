@@ -8,102 +8,161 @@ This document describes Mbed TLS preferences for code formatting, naming convent
 
 ## Code Formatting
 
+### Enforcement with uncrustify
+
+In order to maintain a consistent coding style, the C code in Mbed TLS is formatted with [Uncrustify](https://github.com/uncrustify/uncrustify). The reference version of Uncrustify is 0.75.1; older or newer versions may give different results.
+
+#### Code style check script
+
+A test on the continuous integration systems verifies that the C code has the expected style. The script [`scripts/code_style.py`](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/code_style.py) can check or fix the coding style.
+
+To check that the coding style is correct (for example before submitting a pull request):
+```sh
+scripts/code_style.py
+```
+
+To enforce the coding style on specific files:
+```sh
+scripts/code_style.py --fix library/file_i_edited.c tests/suites/test_suite_i_also_edited.function
+```
+
+To enforce the coding style on all files checked into Git:
+```sh
+scripts/code_style.py --fix
+```
+
+#### Exceptions to enforcement
+
+The automatic tool usually does a good job of making the code presentable, but it can sometimes make mistakes. It is possible to disable enforcement for a fragment of code by placing it between comments containing `*INDENT-OFF*` and `*INDENT-ON*` (despite the name, this controls all style enforcement, not just indentation). Do this only in egregious cases.
+
+```c
+    // normal code here
+/* *INDENT-OFF* */
+    // weird code here
+/* *INDENT-ON* */
+    // normal code here
+```
+
+Code in the `3rdparty` directory generally retains its original style, and is not subject to enforcement.
+
+### K&R
+
+Mbed TLS generally follows the style of *The C Programming Language*, Second Edition, 1988, by Brian Kernighan and Dennis Ritchie (“K&R2”). The main deviations are:
+
+* Indentation is 4 spaces (like K&R2, not 5 spaces like K&R1). Do not use tabs.
+* `case` is indented one level further than `switch`.
+* The body of `if`, `for` or `while` must be on a separate line and surrounded with braces, even if it's a single statement.
+
+### Indentation
+
 Mbed TLS source code files use 4 spaces for indentation, **not tabs**, with a preferred maximum line length of 80 characters.
 
-Every code statement should be on its own line.
+`case` is indented one level further than `switch`.
 
-**Avoid statements like this:**
 ```c
-    if( a == 1 ) { b = 1; do_function( b ); }
-    if( a == 1 ) do_function( a );
+switch (x) {
+    case 0:
+        zero();
+        break;
+    ...
+}
 ```
+
+Labels are indented at the same level as the enclosing block.
+```c
+int f()
+{
+    ...code...
+    if (ret != 0) {
+        goto exit;
+    }
+    ...code...
+exit:
+    ...cleanup...
+    return ret;
+}
+```
+
+Every code statement should be on its own line, except in `for` loop headers.
 
 ### Space placement
 
-Mbed TLS uses a non-standard space placement throughout the code, where there is no space between a function name and all parentheses are separated by one space from their content:
+Put a space in the following places:
+
+* Around binary operators: `(x + y) * z`
+* After a comma: `f(x, y)`
+* Before the asterisk in a pointer type: `int *p`
+* Between `if`, `switch`, `while`, `for` and the opening parenthesis: `if (f(x))`
+* Outside curly braces: `do { ... } while (!done)`, `struct mystruct s = { 0 }`
+* Inside the curly braces around initializers: `int a[] = { 1, 2, 3 };`
+
+Do not put a space in the following places:
+
+* After the function or macro name in a function or macro call: `f(x, y)`
+* Inside parentheses: `if (f(sizeof(int), (int) y))`
+* Inside square brackets: `a[i + 1]`
+* Before a comma: `f(x, y)`
+* After a prefix unary operator: `if (!condition)`, `++x`
+* Before a postfix unary operator: `x++`
+* Between an array and the following opening bracket: `int a[2];`, `a[i]`
+* Around field access symbols: `s.a`, `p->a`
+* After the asterisk in a pointer type: `int *p`
+* Between the asterisks double pointers types or derefences: `char **p`, `x + **p`
+
+### Use of parentheses
+
+`sizeof` expressions always use parentheses even when it is not necessary (when taking the size of an object):
 ```c
-    if( ( ret = demo_function( a, b, c ) ) != 0 )
-```
-The same applies to function definitions:
-```c
-    int demo_function( int a, const unsigned char *value, size_t len )
-```
-There are a few exceptions to this rule. This includes the preprocessor directive `defined` and casts, as well as arguments for function-like macros:
-```c
-    #if defined(MBEDTLS_HAVE_TIME)
-    timestamp = (uint32_t) time( NULL );
+    memset(buf, 0, sizeof(buf));
 ```
 
-### Braces placement and block declaration
+### Usage and placement of braces
 
-Braces (curly brackets) should be located on a line by themselves at the indentation level of the original block:
+Braces (curly brackets) are **mandatory in control statements** such as `if`, `while`, `for`, even when the content is a simple statement.
+
+Opening braces around compound statements are on the same line as the control statement if there is one. The closing brace has the same indentation as the line with the opening brace. It is generally alone on their line, except when followed by `else` or by the `while` of a `do ... while` statement.
+
 ```c
-    if( val >= 1 )
-    {
-        if( val == 1 )
-        {
-            /* code block here */
+    do {
+        x += f();
+        if (x == 0) {
+            continue;
         }
-        else
-        {
-            /* alternate code block */
-        }
-    }
-```
-In case a block is only single source code line, the braces can be omitted if the block initiator is only a single line:
-```c
-    if( val >= 1 )
-        a = 2;
-```
-But not if it is a multi-line initiator:
-```c
-    if( val >= 1 &&
-        this_big_statement_deserved_its_own_line == another_big_part )
-    {
-        a = 2;
-    }
+        x += g();
+    } while (condition);
 ```
 
-### Related lines: Multi-line formatting and indentation
+As an exception, **the opening brace of a function definition is on its own line**, in the leftmost column. This helps editors and other tools that treat non-indented braces as delimiting toplevel blocks.
 
-Multiple related source code lines should be formatted to be easily readable:
 ```c
-#define GET_UINT32_LE( n, b, i )                        \
-{                                                       \
-    (n) = ( (uint32_t) (b)[(i)    ]       )             \
-        | ( (uint32_t) (b)[(i) + 1] <<  8 )             \
-        | ( (uint32_t) (b)[(i) + 2] << 16 )             \
-        | ( (uint32_t) (b)[(i) + 3] << 24 );            \
+int f(void)
+{
+    return 42;
 }
-
-if( my_super_var == second_super_var &&
-    this_check_will_do != the_other_value )
-
-do_function( ctx, this_is_a_value, value_b,
-                  the_special_var );
-
-void this_is_a_function( context_struct *ctx, size_t length,
-                         unsigned char *result );
 ```
 
-### Extra parentheses for `return` and `sizeof`
+In compound type declarations, the opening brace is on the same line as the `struct`, `union` or `enum` keyword. The closing brace is on a separate line with the final semicolon.
 
-Within Mbed TLS return statements use parentheses to contain their value:
 ```c
-    return( 0 );
+typedef struct {
+    int x;
+    int y;
+} pair_t;
 ```
-Similarly, sizeof expressions always use parentheses even when it is not necessary (when taking the size of an object):
+
+Compound initializers can be on a single line if they fit.
+
 ```c
-    memset( buf, 0, sizeof( buf ) );
+pair_t z = { 1, 2 };
 ```
 
 ### Formatting of lists
 
 When a function or macro call doesn't fit on a single line, put one argument per line or a sensible grouping per line. For example, in the snippet below, `input_buffer` and `input_size` are on a line of their own even though the call could fit on two lines instead of three if they were separated:
 ```c
-    function_with_a_very_long_name( parameter1, parameter2,
-                                    input_buffer, input_size,
-                                    output_buffer, output_size );
+    function_with_a_very_long_name(parameter1, parameter2,
+                                   input_buffer, input_size,
+                                   output_buffer, output_size);
 ```
 
 Lists of items other than function arguments should generally have one item per line. Exceptions:
@@ -113,11 +172,10 @@ Lists of items other than function arguments should generally have one item per 
 
 In lists of items such array initializers and enum definitions, do include the optional comma after the last element. This simplifies merging, reordering, etc.
 ```c
-typedef enum foo
-{
+typedef enum {
     FOO_1,
     FOO_2,      // <- do put a comma here
-}
+} foo_t;
 ```
 Exceptions: you can and omit the trailing comma in structure initializers that fit on one line, or if the last element must always remain last (e.g. a null terminator).
 
@@ -125,9 +183,9 @@ Exceptions: you can and omit the trailing comma in structure initializers that f
 
 When using preprocessor directives to enable or disable parts of the code, use `#if defined` instead of `#ifdef`. Add a comment to the `#endif` directive if the distance to the opening directive is bigger than a few lines or contains other directives:
 ```c
-    #if define(MBEDTLS_HAVE_FEATURE)
-    /* ten lines of code or other directives */
-    #endif /* MBEDTLS_HAVE_FEATURE */
+#if defined(MBEDTLS_HAVE_FEATURE)
+/* ten lines of code or other directives */
+#endif /* MBEDTLS_HAVE_FEATURE */
 ```
 
 ## Naming conventions
@@ -185,12 +243,12 @@ This section applies fully to classic `mbedtls_xxx()` APIs and mostly to the new
 If a module uses a context structure for passing around its state, the module should contain an `init()` and `free()` function, with the module or context name prepended to it. The `init()` function must always return `void`. If some initialization must be done that may fail (such as allocating memory), it should be done in a separate function, usually called `setup()`. The `free()` function must free any allocated memory within the context, but not the context itself. It must set to zero any data in the context or substructures:
 ```c
     mbedtls_cipher_context_t ctx;
-    mbedtls_cipher_init( &ctx );
-    ret = mbedtls_cipher_setup( &ctx, ... );
+    mbedtls_cipher_init(&ctx);
+    ret = mbedtls_cipher_setup(&ctx, ...);
     /* Check ret, goto cleanup on error */
     /* Do things, goto cleanup on error */
     cleanup:
-    mbedtls_cipher_free( &ctx );
+    mbedtls_cipher_free(&ctx);
 ```
 The goal of separating the `init()` and `setup()` part is that if you have multiple contexts, you can call all the `init()` functions first and then all contexts are ready to be passed to the `free()` function in case an error happens in one of the `setup()` functions or elsewhere.
 
@@ -210,18 +268,17 @@ Most functions should return `int`, more specifically `0` on success (the operat
 
 Function should avoid in-out parameters for length (multiplexing buffer size on entry with length used/written on exit) since they tend to impair readability. For example:
 ```c
-    mbedtls_write_thing( void *thing, unsigned char *buf, size_t *len ); // no
-    mbedtls_write_thing( void *thing, unsigned char *buf, size_t buflen,
-                         size_t *outlen ); // yes
+mbedtls_write_thing(..., unsigned char *buf, size_t *len); // no
+mbedtls_write_thing(..., unsigned char *buf, size_t buflen, size_t *outlen); // yes
 ```
 
-For PSA functions, [input buffers](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#input-buffer-sizes) have a `size_t xxx_size` parameter after the buffer pointer, and [output buffers](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#output-buffer-sizes) have a `size_t xxx_size` parameter for the buffer size followed by a `size_t *xxx_length` parameter for the output length. This convention is also preferred in new `mbedtls_xxx` code, but older modules often use different conventions.
+For PSA functions, [input buffers](https://arm-software.github.io/psa-api/crypto/1.1/overview/conventions.html#input-buffer-sizes) have a `size_t xxx_size` parameter after the buffer pointer, and [output buffers](https://arm-software.github.io/psa-api/crypto/1.1/overview/conventions.html#output-buffer-sizes) have a `size_t xxx_size` parameter for the buffer size followed by a `size_t *xxx_length` parameter for the output length. This convention is also preferred in new `mbedtls_xxx` code, but older modules often use different conventions.
 
 You can use in-out parameters for functions that receive a pointer to some buffer, and update it after parsing from or writing to that buffer:
 ```c
-    mbedtls_asn1_get_int( unsigned char **p,
-                          const unsigned char *end,
-                          int *value );
+mbedtls_asn1_get_int(unsigned char **p,
+                     const unsigned char *end,
+                     int *value);
 ```
 In that case, the `end` argument should always point to one past the one of the buffer on entry.
 
@@ -231,10 +288,10 @@ Also, contexts are usually in-out parameters, which is acceptable.
 
 Function declarations should keep `const` correctness in mind when declaring function arguments. Arguments that are pointers and are *not* changed by the functions should be marked as such:
 ```c
-    int do_calc_length( const unsigned char *str )
+int do_calc_length(const unsigned char *str);
 ```
 
-## Coding style
+## Code structure
 
 ### ISO C99
 
@@ -286,47 +343,47 @@ static char self_test_key = {
 
 This is acceptable, but deprecated:
 ```c
-    if(
+    if (
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
-        psa_condition( )
+        psa_condition()
 #else
-        legacy_condition( )
+        legacy_condition()
 #endif
       )
-        do_stuff( );
+        do_stuff();
 ```
 Such code is generally more readable with an intermediate variable, thus the following style is preferred:
 ```c
 #if defined(MBEDTLS_USE_PSA_CRYPTO)
-    const int want_stuff = psa_condition( );
+    const int want_stuff = psa_condition();
 #else
-    const int want_stuff = legacy_condition( );
+    const int want_stuff = legacy_condition();
 #endif
-    if( want_stuff )
-        do_stuff( );
+    if (want_stuff)
+        do_stuff();
 ```
 
 Do not put partial instructions in a conditionally compiled span. For example, do not write the code above like this:
 ```c
 #if defined(MBEDTLS_USE_PSA_CRYPTO)     // NO!
-    if( psa_condition( ) )              // NO!
+    if (psa_condition())                // NO!
 #else                                   // NO!
-    if( legacy_condition( ) )           // NO!
+    if (legacy_condition())             // NO!
 #endif                                  // NO!
-        do_stuff( );                    // NO!
+        do_stuff();                     // NO!
 ```
 Having two instances of `if` in the source code, but only one actually compiled, is confusing both for humans and for tools such as indenters and linters.
 
 Exception: the following idiom, with a chain of if-else-if statements, is accepted.
 ```c
 #if defined(MBEDTLS_FOO)
-    if( is_a_foo( type ) )
-        process_foo( type, data );
+    if (is_a_foo(type))
+        process_foo(type, data);
     else
 #endif /* MBEDTLS_FOO */
 #if defined(MBEDTLS_BAR)
-    if( is_a_bar( type ) )
-        process_bar( type, data );
+    if (is_a_bar(type))
+        process_bar(type, data);
     else
 #endif /* MBEDTLS_BAR */
     {
@@ -344,26 +401,25 @@ If possible, use the C core language rather than macros. For example, if an expr
 
 ### Macro definition hygiene
 
-When the code contains a macro call `MBEDTLS_FOO( x, y )`, it should behave as much as possible as if `MBEDTLS_FOO` was a function. Deviate from this only to the extent necessary to make the macro practical.
+When the code contains a macro call `MBEDTLS_FOO(x, y)`, it should behave as much as possible as if `MBEDTLS_FOO` was a function. Deviate from this only to the extent necessary to make the macro practical.
 
 If the arguments of a macro are C expressions (they usually are), put parentheses around the argument in the expansion. For example:
 ```c
-#define FOO_SIZE( bits ) ( ( (bits) + 7 ) / 8 + 4 )
+#define FOO_SIZE(bits) (((bits) + 7) / 8 + 4)
 ```
-The expansion contains `( (bits) + 7 )`, not `bits + 7`, so that a call like `FOO_SIZE( x << 3 )` is parsed correctly. As an exception, it's ok to omit parentheses if the argument is directly passed to a function argument (or comma operator): `#define A( x ) f( x, 0 )` is acceptable.
+The expansion contains `((bits) + 7)`, not `bits + 7`, so that a call like `FOO_SIZE(x << 3)` is parsed correctly. As an exception, it's ok to omit parentheses if the argument is directly passed to a function argument (or comma operator): `#define A(x) f(x, 0)` is acceptable.
 
-If the expansion of a macro is a C expression, put parentheses around the expansion. Continuing the example above, this is so that a call like `FOO_SIZE( x ) * 2` is parsed correctly. As an exception, it's ok to omit parentheses if the expansion is a function call or other highest-precedence operator: `#define A( x ) f( x, 0 )` is acceptable.
+If the expansion of a macro is a C expression, put parentheses around the expansion. Continuing the example above, this is so that a call like `FOO_SIZE(x) * 2` is parsed correctly. As an exception, it's ok to omit parentheses if the expansion is a function call or other highest-precedence operator: `#define A(x) f(x, 0)` is acceptable.
 
-If a macro expands to a statement, wrap it in `do { ... } while( 0 )` so that it can be used in contexts that expect a single statement. For example:
+If a macro expands to a statement, wrap it in `do { ... } while (0)` so that it can be used in contexts that expect a single statement. For example:
 ```c
 #define MBEDTLS_MPI_CHK(f)       \
-    do                           \
-    {                            \
-        if( ( ret = (f) ) != 0 ) \
+    do {                          \
+        if ((ret = (f)) != 0)    \
             goto cleanup;        \
-    } while( 0 )`
+    } while (0)`
 ```
-The expansion is not just `if( ( ret = (f) ) != 0 ) goto cleanup` because that would not work in a context like `if( condition ) MBEDTLS_MPI_CHK( f( ) ); else ++x;` (the `else` would get attached to the wrong `if`).
+The expansion is not just `if ((ret = (f)) != 0) goto cleanup` because that would not work in a context like `if (condition) MBEDTLS_MPI_CHK(f()); else ++x;` (the `else` would get attached to the wrong `if`).
 
 Follow the expression paradigm or the statement paradigm if possible. Other paradigms are permitted if necessary, for example a macro that expands to an initializer such as
 ```c
