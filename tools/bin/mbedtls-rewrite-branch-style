@@ -493,7 +493,9 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         # cherry-picked commit, but might mess up modified files. Then
         # we override the content of modified files, and finally we restyle
         # files that need restyling.
-        self.run_git(['cherry-pick', '-Xtheirs', '--allow-empty', new_commit])
+        self.run_git(['cherry-pick', '-Xtheirs',
+                      '--allow-empty', '--keep-redundant-commits',
+                      new_commit])
         self.info('{} has been cherry-picked as {}', new_commit, self.head_sha())
         # Restyle the code to the new style. Only restyle changed files.
         changed_files = self.changed_files_in_commit('HEAD')
