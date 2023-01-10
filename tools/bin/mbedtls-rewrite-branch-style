@@ -86,6 +86,8 @@ class BranchRewriter:
         Ignore trailing empty lines, but preserve leading and inner empty lines.
         """
         output = self.run_git(git_cmd, **kwargs)
+        if not output:
+            return []
         return output.rstrip('\n').split('\n')
 
     def head_sha(self) -> str:
