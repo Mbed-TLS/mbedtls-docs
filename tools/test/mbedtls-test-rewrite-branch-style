@@ -309,6 +309,9 @@ class Result(Utilities):
     def test_6863(self) -> None:
         self.run_on_branch('6863')
 
+    def test_6882(self) -> None:
+        self.run_on_branch('6882')
+
     def test_6888(self) -> None:
         self.run_on_branch('6888')
 
