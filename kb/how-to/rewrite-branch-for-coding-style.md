@@ -59,7 +59,7 @@ Run the following command in a terminal, from the Git working directory with `my
 python3 ~/Downloads/mbedtls-rewrite-branch-style
 ```
 
-If all goes well, you have successfully migrated `mywork`. You can force-push it to your work of Mbed TLS (`git push --force-with-lease origin mywork`).
+If all goes well, you have successfully migrated `mywork`. You can force-push it to your fork of Mbed TLS (`git push --force-with-lease origin mywork`).
 
 A backup of the old branch is available under the name `old-code-style/mywork`.
 
