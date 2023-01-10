@@ -43,7 +43,7 @@ Please have the following tools and files available:
 * Uncrustify 0.75.1. Please note that older or newer versions are likely not to give the desired result.
 * Python 3.6 or newer.
 * A Git worktree containing the branch of Mbed TLS you want to migrate.
-* A local copy of [`scripts/code_style_rewrite_branch.py`](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/code_style_rewrite_branch.py) (preferably the most recent version from `development`, since it may have received bug fixes).
+* A local copy of [`mbedtls-rewrite-branch-style`](https://github.com/Mbed-TLS/mbedtls-docs/raw/main/tools/bin/mbedtls-rewrite-branch-style) (preferably the most recent version, since it may have received bug fixes).
 
 ### Simple migration
 
@@ -56,7 +56,7 @@ Prerequisites:
 Run the following command in a terminal, from the Git working directory with `mywork` checked out:
 
 ```sh
-python3 /path/to/code_style_rewrite_branch.py mywork upstream/development
+python3 ~/Downloads/mbedtls-rewrite-branch-style
 ```
 
 If all goes well, you have successfully migrated `mywork`. You can force-push it to your work of Mbed TLS (`git push --force-with-lease origin mywork`).
@@ -69,11 +69,10 @@ If all did not go well, please read the error messages.
 
 The following procedure does not modify any existing Git working directory and does not rewrite any existing branch name. It explains how to migrate a branch `mywork` which branched from `development` before the code style switch. (For work on Mbed TLS 2.28, replace `development` by `mbedtls-2.28` throughout these instructions.). The result of the migration will be placed into a branch called `new-code-style/mywork` (it must not exist yet).
 
-Run the following commands from any Git working directory with a remote called `upstream` pointing to [the official Mbed TLS repository](https://github.com/Mbed-TLS/mbedtls).
+Run the following commands from any Git working directory. Adjust `~/Downloads` to the path containing the rewrite script, and `upstream` to the name of a Git remote pointing to [the official Mbed TLS repository](https://github.com/Mbed-TLS/mbedtls).
 
-```
-git branch --detach new-code-style/mywork mywork
-python3 /path/to/code_style_rewrite_branch.py new-code-style/mywork upstream/development
+```sh
+python3 ~/Downloads/mbedtls-rewrite-branch-style --onto upstream/development --new-branch-name new-code-style/mywork mywork
 ```
 
 If all goes well, the branch `new-code-style/mywork` contains the migrated content of `mywork`.
@@ -94,7 +93,7 @@ If you started working on a branch of Mbed TLS with the old code style, any part
 
 It is not enough to rewrite the final state of your work to the new format, because that will still be a merge conflict (between just restyling, and semantically meaningful work followed by restyling). You must rebase-and-restyle your branch. This document explains how and when.
 
-The Mbed TLS project provides a script [`scripts/code_style_rewrite_branch.py`](https://github.com/Mbed-TLS/mbedtls/blob/development/scripts/code_style_rewrite_branch.py) which takes a Git branch with work done in the old code style, and migrates it to the new code style. Suppose your work is in a branch `mywork`, and it's intended to be submitted to some target branch (such as `development`). The migration works in two phases:
+The Mbed TLS project provides a script [`mbedtls-rewrite-branch-style`](https://github.com/Mbed-TLS/mbedtls-docs/raw/main/tools/bin/mbedtls-rewrite-branch-style) which takes a Git branch with work done in the old code style, and migrates it to the new code style. Suppose your work is in a branch `mywork`, and it's intended to be submitted to some target branch (such as `development`). The migration works in two phases:
 
 1. First identify the new commits, and attach them to the commit preceding the code style switch. This is an ordinary Git rebase (`git rebase code-style-switch-commit~ mywork`).
 2. Iterate over the commits from the `mywork` branch after it forks from the target branch. For each commit, construct a new commit whose content is the restyled content of the old commit, and form a chain starting at the code style switch commit.
