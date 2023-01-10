@@ -125,7 +125,7 @@ Workaround: manually rebase on top of the last commit before the style change. I
 
 ### Deleted files
 
-The rewrite script may not work if a commit deletes a file.
+The rewrite script may not work if a commit deletes a restyled file.
 
 Workaround: wait for a fix.
 
