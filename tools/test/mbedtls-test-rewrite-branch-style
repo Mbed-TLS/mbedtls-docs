@@ -341,11 +341,11 @@ class Detection(Utilities):
             self.assertRegex(cp.stderr,
                              r'Guessed target branch: (\S+/)?' + expected_target)
 
-    def test_6888(self) -> None:
-        self.run_on_branch('6888', 'development')
+    def test_6802(self) -> None:
+        self.run_on_branch('6802', 'development')
 
-    def test_6889(self) -> None:
-        self.run_on_branch('6889', 'mbedtls-2.28')
+    def test_6844(self) -> None:
+        self.run_on_branch('6844', 'mbedtls-2.28')
 
 
 class Options(Utilities):

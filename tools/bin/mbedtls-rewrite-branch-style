@@ -358,9 +358,13 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         pathlib.PurePath('programs/test/query_config.c'),
     ])
 
-    # To be updated once the new code style becomes official,
-    # or possibly change to tags instead of branches.
-    TARGET_BRANCH_PREFIX = 'features/new-code-style/'
+    # The code style change commit, or a commit soon after it.
+    TARGET_BRANCHES = {
+        'development': 'c848d226bf2355ba54ab95cca15839557cf935c0',
+        'mbedtls-2.28': 'b9e56fb5606225b62a0eaf4a90339d1e5739e4c1',
+    }
+    # For branch detection: a commit soon after mbedtls-2.28 LTS diverged
+    MBEDTLS_2_28_0 = '8b3f26a5ac38d4fdccbc5c5366229f3e01dafcc0'
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -392,17 +396,21 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         """
         if self.target_branch is not None:
             return
-        self.guess_upstream_remote()
         self.info('Guessing target branch...')
         if self.check_git(['merge-base', '--is-ancestor',
-                           'mbedtls-2.28.0', 'HEAD']):
-            branch = 'mbedtls-2.28'
+                           self.MBEDTLS_2_28_0, 'HEAD']):
+            branch_name = 'mbedtls-2.28'
         else:
-            branch = 'development'
-        self.target_branch = '{}/{}{}'.format(self.upstream_remote,
-                                              self.TARGET_BRANCH_PREFIX,
-                                              branch)
-        self.info('Guessed target branch: {}', self.target_branch)
+            branch_name = 'development'
+        commit_id = self.TARGET_BRANCHES[branch_name]
+        if not self.check_git(['rev-parse', commit_id],
+                              stdout=subprocess.DEVNULL):
+            self.log_error('Commit ID {} not found for the guessed target branch {}.')
+            self.log_error('Please run "git fetch" on the upstream mbedtls repository.')
+            raise Exception('Guessed target commit {} not found'
+                            .format(commit_id))
+        self.target_branch = commit_id
+        self.info('Guessed target branch: {} = {}', branch_name, commit_id)
 
     def find_switch_commit(self) -> str:
         """Return the sha of the commit with the code style switch."""

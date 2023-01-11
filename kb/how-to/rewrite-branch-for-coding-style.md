@@ -144,6 +144,15 @@ $ git worktree list | grep /tmp-
 ```
 Use `git worktree remove -f /home/me/work/tmp-mybranch-1234` to remove the worktree.
 
+### Git rebase fails
+
+The rewrite script starts by rebasing the given branch on top of the last upstream commit before the code style change. If there is a conflict, the script fails:
+```
+subprocess.CalledProcessError: Command '['git', 'rebase', '449bd8303eed8164b83682d2ce028dca0e49b1fa~1']' returned non-zero exit status 1.
+```
+
+In this case, please do the rebase manually and resolve the conflicts, then run the rewrite script again.
+
 ### Wrong version of uncrustify
 
 If you see the message
