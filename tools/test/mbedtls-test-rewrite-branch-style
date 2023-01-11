@@ -309,11 +309,20 @@ class Result(Utilities):
     def test_6863(self) -> None:
         self.run_on_branch('6863')
 
+    def test_6882(self) -> None:
+        self.run_on_branch('6882')
+
+    def test_6883(self) -> None:
+        self.run_on_branch('6883')
+
     def test_6888(self) -> None:
         self.run_on_branch('6888')
 
     def test_6889(self) -> None:
         self.run_on_branch('6889')
+
+    def test_6890(self) -> None:
+        self.run_on_branch('6890')
 
 
 class Detection(Utilities):

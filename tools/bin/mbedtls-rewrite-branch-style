@@ -22,6 +22,7 @@ Invoke this script from a Git working directory with a branch of Mbed TLS.
 import argparse
 import os
 import pathlib
+import re
 import subprocess
 import sys
 from typing import List, Optional
@@ -85,6 +86,8 @@ class BranchRewriter:
         Ignore trailing empty lines, but preserve leading and inner empty lines.
         """
         output = self.run_git(git_cmd, **kwargs)
+        if not output:
+            return []
         return output.rstrip('\n').split('\n')
 
     def head_sha(self) -> str:
@@ -172,9 +175,18 @@ class BranchRewriter:
         ok = True
         # 'git worktree remove' was added in Git 2.17.0. It's the most
         # recent Git feature that we need.
-        output = self.run_git(['worktree', '--help'])
-        if 'git worktree remove' not in output:
-            self.log_error('Your version of Git is too old. This script needs Git >=2.17.0.')
+        try:
+            output = self.run_git(['--version'])
+            self.info('Found git: ' + output.strip())
+        except subprocess.CalledProcessError:
+            output = ''
+        m = re.search(r'([0-9]+)\.([0-9]+)', output)
+        if not m:
+            self.log_error('! No working git command found')
+            return False
+        version = tuple(int(s) for s in m.groups())
+        if version < (2, 17):
+            self.log_error('! Your version of Git is too old. This script needs Git >=2.17.0.')
             ok = False
         # Check that we're in a Git working directory. Remember its path.
         output = self.run_git(['rev-parse', '--show-toplevel'])
@@ -302,8 +314,8 @@ class MbedTLSBranchRewriter(BranchRewriter):
     """Tools to rebase and rewrite a branch of Mbed TLS."""
 
     UPSTREAM_URLS = frozenset(map(lambda s: s.lower(), [
-        'git@github.com:ARMmbed/mbedtls.git',
-        'git@github.com:Mbed-TLS/mbedtls.git',
+        'git@github.com:ARMmbed/mbedtls',
+        'git@github.com:Mbed-TLS/mbedtls',
         'https://github.com/ARMmbed/mbedtls',
         'https://github.com/Mbed-TLS/mbedtls',
     ]))
@@ -321,7 +333,11 @@ class MbedTLSBranchRewriter(BranchRewriter):
         for remote in remotes:
             (name, rest) = remote.split('\t', 2)
             (url, rest) = rest.split(' ', 1)
-            if url.lower() in self.UPSTREAM_URLS:
+            normalized_url = url.lower()
+            if normalized_url.endswith('.git'):
+                normalized_url = normalized_url[:-4]
+            print(normalized_url)
+            if normalized_url in self.UPSTREAM_URLS:
                 self.info('Found upstream remote: {}', name)
                 self.upstream_remote = name
                 return
@@ -360,7 +376,7 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
                                          universal_newlines=True)
         self.info('Found uncrustify: {}', output.strip())
         if self.UNCRUSTIFY_SUPPORTED_VERSION not in output:
-            self.log_error('Unsupported version of uncrustify. This script needs {}.',
+            self.log_error('! Unsupported version of uncrustify. This script needs {}.',
                            self.UNCRUSTIFY_SUPPORTED_VERSION)
             ok = False
         return ok
@@ -477,7 +493,9 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         # cherry-picked commit, but might mess up modified files. Then
         # we override the content of modified files, and finally we restyle
         # files that need restyling.
-        self.run_git(['cherry-pick', '-Xtheirs', '--allow-empty', new_commit])
+        self.run_git(['cherry-pick', '-Xtheirs',
+                      '--allow-empty', '--keep-redundant-commits',
+                      new_commit])
         self.info('{} has been cherry-picked as {}', new_commit, self.head_sha())
         # Restyle the code to the new style. Only restyle changed files.
         changed_files = self.changed_files_in_commit('HEAD')
