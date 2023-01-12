@@ -10,7 +10,7 @@ This document describes Mbed TLS preferences for code formatting, naming convent
 
 ### Enforcement with uncrustify
 
-In order to maintain a consistent coding style, the C code in Mbed TLS is formatted with [Uncrustify](https://github.com/uncrustify/uncrustify). The reference version of Uncrustify is 0.75.1; older or newer versions may give different results.
+In order to maintain a consistent coding style, the C code in Mbed TLS is formatted with [Uncrustify](https://github.com/uncrustify/uncrustify). The reference version of Uncrustify is 0.75.1; older or newer versions are not suitable because they give different results. See the [“Installing uncrustify”](uncrustify.md#installing-uncrustify) article for some tips.
 
 #### Code style check script
 
