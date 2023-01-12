@@ -29,4 +29,4 @@ If you also have the latest uncrustify installed, the `install` command will com
 
 ### Windows binaries
 
-You can download [official Windows binaries hosted on Sourceforge](https://sourceforge.net/projects/uncrustify/files/).
+You can download [official Windows binaries hosted on Sourceforge](https://sourceforge.net/projects/uncrustify/files/uncrustify-0.75.1/).
