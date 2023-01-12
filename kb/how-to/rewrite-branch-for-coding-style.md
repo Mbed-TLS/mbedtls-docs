@@ -40,7 +40,7 @@ If there is an ongoing review of a pull request, please communicate with the rev
 Please have the following tools and files available:
 
 * Git 2.17.0 or newer.
-* [Uncrustify](https://github.com/uncrustify/uncrustify) 0.75.1. Please note that older or newer versions are likely not to give the desired result. See the [“Installing uncrustify”](uncrustify.md#installing-uncrustify) article for some tips.
+* [Uncrustify](https://github.com/uncrustify/uncrustify) 0.75.1. Please note that older or newer versions are not suitable because they give different results. See the [“Installing uncrustify”](uncrustify.md#installing-uncrustify) article for some tips.
 * Python 3.6 or newer.
 * A Git worktree containing the branch of Mbed TLS you want to migrate.
 * A local copy of [the branch rewriting script `mbedtls-rewrite-branch-style`](https://github.com/Mbed-TLS/mbedtls-docs/raw/main/tools/bin/mbedtls-rewrite-branch-style). Preferably use the most recent version, since it may have received bug fixes. You can check out the [`mbedtls-docs` repository](https://github.com/Mbed-TLS/mbedtls-docs).
