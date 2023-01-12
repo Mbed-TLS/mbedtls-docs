@@ -123,12 +123,6 @@ The rewrite script was written for simple cases of branches that fork from an of
 
 Workaround: manually rebase on top of the last commit before the style change. If there are no merges left in your branch, you can use the script to do the rest of the work. Otherwise you'll need to do a manual merge instead of rewriting your branch.
 
-### Deleted files
-
-The rewrite script may not work if a commit deletes a restyled file.
-
-Workaround: wait for a fix.
-
 ## Troubleshooting
 
 ### If something goes wrong
