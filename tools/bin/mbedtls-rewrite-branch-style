@@ -307,9 +307,12 @@ class BranchRewriter:
             self.run_git(['reset', '--hard', self.rewritten_sha])
         self.cleanup_worktree()
 
-    def cleanup(self) -> None:
-        """Clean up after a successful run."""
-        if self.ok:
+    def cleanup(self, force: bool = False) -> None:
+        """Clean up after a successful run.
+
+        If force is true, clean up even on error.
+        """
+        if force or self.ok:
             self.cleanup_worktree()
 
 
@@ -629,6 +632,32 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         for new_commit in new_commits:
             self.restyle_commit_onto_current(new_commit)
 
+    def check_result(self, expected_content: str) -> None:
+        """Check that the resulting branch is similar to expected_content.
+
+        Similarity means that the commit history is identical except for
+        committed metadata, as with `git range-diff`.
+        """
+        assert self.target_branch is not None
+        common_ancestor = self.target_branch + '^{/Switch to the new code style}~'
+        common_ancestor_sha = self.run_git(['rev-parse', common_ancestor]).strip()
+        assert self.rewritten_sha is not None
+        self.maybe_fetch(expected_content)
+        if not self.check_git(['merge-base', '--is-ancestor',
+                               common_ancestor, expected_content]):
+            self.ok = False
+            self.log_error('{} ({}) is not an ancestor of {}',
+                           common_ancestor, common_ancestor_sha,
+                           expected_content)
+            return
+        range_diff = self.get_git_lines(['range-diff', '--no-color',
+                                         common_ancestor, expected_content, self.rewritten_sha])
+        for num, line in enumerate(range_diff, 1):
+            if not re.match(r'\A *[0-9]+: *[0-9a-f]+ *= ', line):
+                self.ok = False
+                self.log_error('Bad range-diff line {}: {}', num, line)
+        self.info('Check passed: {} === {}', self.rewritten_sha, expected_content)
+
 def main() -> int:
     """Command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -637,6 +666,13 @@ def main() -> int:
                         help='Back up the current history'
                              ' (default: old-code-style/OLD_NAME)'
                              ' (empty: do not back up)')
+    parser.add_argument('--check', metavar='REF',
+                        default='',
+                        help='Check that REF is a valid result from rewriting.'
+                             ' Do not create/rewrite any branches.')
+    parser.add_argument('--fetch-from', metavar='REMOTE',
+                        default='',
+                        help='Fetch necessary commits from the specified repository.')
     parser.add_argument('--onto', '-t', metavar='BRANCH',
                         help='Branch to rewrite onto'
                              ' (default/empty: guess development or mbedtls-2.28)')
@@ -653,8 +689,12 @@ def main() -> int:
                         help='Branch to rewrite with code style changes'
                              ' (default: branch checked out in the current directory)')
     args = parser.parse_args()
+    if args.check:
+        args.backup_branch = ''
+        args.new_branch_name = ''
     branch_rewriter = CodeStyleBranchRewriter(
         working_branch_name=args.new_branch_name,
+        fetch_from=args.fetch_from,
         verbose=args.verbose)
     if not branch_rewriter.system_is_ok():
         return 2
@@ -672,12 +712,15 @@ def main() -> int:
     if args.backup_branch:
         branch_rewriter.create_backup_branch(args.backup_branch, args.branch)
     update_existing_branch = False
-    if not args.new_branch_name:
+    if not args.check and not args.new_branch_name:
         if branch_rewriter.is_git_ref('heads', args.branch):
             update_existing_branch = True
     branch_rewriter.rewrite(args.branch, update_existing_branch)
-    branch_rewriter.cleanup()
+    if args.check:
+        branch_rewriter.check_result(args.check)
+    branch_rewriter.cleanup(force=not args.check)
     if branch_rewriter.ok and \
+       not args.check and \
        not args.new_branch_name and not update_existing_branch:
         # The new work isn't available except via a sha, so it seems pretty
         # important to let the user know even in non-verbose mode.
