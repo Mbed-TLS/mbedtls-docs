@@ -34,11 +34,13 @@ class BranchRewriter:
     GIT_EXE = 'git'
 
     def __init__(self,
+                 fetch_from: Optional[str] = None,
                  working_branch_name: Optional[str] = None,
                  verbose=False) -> None:
         self.verbose = verbose
         self.original_worktree_path = None # type: Optional[str]
         self.worktree_path = None # type: Optional[str]
+        self.fetch_from = fetch_from if fetch_from else None
         self.working_branch_name = \
             working_branch_name if working_branch_name else None
         self.rewritten_sha = None #type: Optional[str]
@@ -118,7 +120,9 @@ class BranchRewriter:
                 # Don't accidentally pass an option to 'git rev-parse'
                 # (it doesn't support --).
                 if not ref.startswith('-'):
-                    if self.run_git(['rev-parse', ref]).strip() == ref:
+                    parsed = self.run_git(['rev-parse', ref],
+                                          stderr=subprocess.DEVNULL).strip()
+                    if parsed == ref:
                         return True
                 return False
             except subprocess.CalledProcessError:
@@ -385,6 +389,33 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
             ok = False
         return ok
 
+    def maybe_fetch(self, ref: str) -> None:
+        """Fetch the given ref. Do not update any local branches.
+
+        If the ref is of the form REMOTENAME/..., fetch a branch from that
+        remote. Otherwise, fetch from the remote configured with the
+        fetch_from parameter when instantiating this class.
+        """
+        # If ref is an acceptable git ref of any type, accept it.
+        # This means we won't try to update an existing remote ref which
+        # might have changed upstream since the last fetch.
+        if self.check_git(['rev-parse', '--quiet', '--verify', ref],
+                          stdout=subprocess.DEVNULL):
+            return
+        fetch_from = self.fetch_from
+        local = ''
+        pos = ref.find('/')
+        if pos != -1 and ref[:pos] in self.get_git_lines(['remote']):
+            fetch_from = ref[:pos]
+            local = ref
+            ref = ref[pos + 1:]
+        if fetch_from is None:
+            return
+        if self.verbose:
+            self.info('Fetch {} from {}', ref, self.fetch_from)
+        self.run_git(['fetch', '--quiet', fetch_from,
+                      ref + ':' + local])
+
     def guess_target_branch(self) -> None:
         """Guess the branch that the current branch is to be merged into.
 
@@ -397,12 +428,14 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         if self.target_branch is not None:
             return
         self.info('Guessing target branch...')
+        self.maybe_fetch(self.MBEDTLS_2_28_0)
         if self.check_git(['merge-base', '--is-ancestor',
                            self.MBEDTLS_2_28_0, 'HEAD']):
             branch_name = 'mbedtls-2.28'
         else:
             branch_name = 'development'
         commit_id = self.TARGET_BRANCHES[branch_name]
+        self.maybe_fetch(commit_id)
         if not self.check_git(['rev-parse', commit_id],
                               stdout=subprocess.DEVNULL):
             self.log_error('Commit ID {} not found for the guessed target branch {}.')
@@ -633,6 +666,7 @@ def main() -> int:
                 branch_rewriter.log_error('Giving up. Please pass an explicit branch name or --backup-branch.')
                 return 2
             args.branch = 'HEAD'
+    branch_rewriter.maybe_fetch(args.branch)
     if args.onto:
         branch_rewriter.set_target_branch(args.onto)
     if args.backup_branch:
