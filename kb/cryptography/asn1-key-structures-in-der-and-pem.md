@@ -168,7 +168,7 @@ openssl asn1parse -inform DER
 Limitations:
 
 * Gives up on invalid ASN.1.
-* Gives up on unrecognized OIDs (you can use an [OID file](https://manned.org/asn1parse.1ssl#head5)).
+* Gives up on unrecognized OIDs (you can use an OID file — see [NOTES in `man asn1parse`](https://www.openssl.org/docs/man3.0/man1/openssl-asn1parse.html#NOTES)).
 
 Also, many subcommands that work with ASN.1 formatted data (`openssl x509`, `openssl pkey`, etc.) have a `-text` option to dump a text representation of most of the data.
 
