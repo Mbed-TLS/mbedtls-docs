@@ -11,6 +11,7 @@ The RSA, PKCS#1, SSL and TLS communities use the [Distinguished Encoding Rules (
 
 * [A Warm Welcome to ASN.1 and DER](https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/)
 * [A Layman's Guide to a Subset of ASN.1, BER, and DER](http://luca.ntop.org/Teaching/Appunti/asn1.html)
+* [ASN.1 Made Simple](https://www.oss.com/asn1/resources/asn1-made-simple/introduction.html)
 
 ## PEM files
 Because DER encoding results in a truly binary representation of the encoded data, the PEM format was devised for sending these in an encoding of printable characters, so that they can be mailed. We focus on the PEM format below.
