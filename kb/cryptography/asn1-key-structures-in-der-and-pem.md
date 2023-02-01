@@ -7,6 +7,11 @@ PEM and the ASN.1 structures that are used in saving cryptographic keys and cert
 ## ASN.1 and DER encoding
 The RSA, PKCS#1, SSL and TLS communities use the [Distinguished Encoding Rules (DER)](http://en.wikipedia.org/wiki/Distinguished_Encoding_Rules) encoding of [ASN.1](http://en.wikipedia.org/wiki/ASN.1) to represent keys and certificates in a portable format. The certificate and key information is stored in the binary DER for ASN.1, and applications providing RSA, SSL and TLS should use DER encoding to parse the data. While ASN.1 is a complex representation format and can be difficult to understand, it also has its merits.
 
+### Some good resources on ASN.1 and DER
+
+* [A Warm Welcome to ASN.1 and DER](https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/)
+* [A Layman's Guide to a Subset of ASN.1, BER, and DER](http://luca.ntop.org/Teaching/Appunti/asn1.html)
+
 ## PEM files
 Because DER encoding results in a truly binary representation of the encoded data, the PEM format was devised for sending these in an encoding of printable characters, so that they can be mailed. We focus on the PEM format below.
 
