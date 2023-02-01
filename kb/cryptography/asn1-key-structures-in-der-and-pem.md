@@ -182,3 +182,7 @@ Highlights the correspondence between the hex data and pieces of the decoded tre
 
 * [Online version](https://lapo.it/asn1js/).
 * Offline version: Unpack the [zip](http://lapo.it/asn1js/asn1js.zip) in an empty directory and point a browser at the `index.html` file.
+
+### `asn1_indent`
+
+[`asn1_indent`](https://raw.githubusercontent.com/Mbed-TLS/mbedtls-docs/main/tools/bin/asn1_indent) is a home-made script that just splits the nested SEQUENCES from ASN.1 data. Useful when inspecting or tweaking data to form bad-case test cases.
