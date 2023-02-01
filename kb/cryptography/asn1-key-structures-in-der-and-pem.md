@@ -174,7 +174,7 @@ Also, many subcommands that work with ASN.1 formatted data (`openssl x509`, `ope
 
 ### dumpasn1
 
-`dumpasn1` is a utility by Peter Gutmann. It is available as a Debian/Ubuntu package.
+`dumpasn1` is a [utility by Peter Gutmann](https://www.cs.auckland.ac.nz/~pgut001/#standards). It is available as a Debian/Ubuntu package. It's a standalone single-file C program plus a configuration file with a list of OID.
 
 ### LAPO ASN.1 JavaScript decoder
 
