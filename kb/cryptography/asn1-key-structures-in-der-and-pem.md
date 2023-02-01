@@ -156,3 +156,29 @@ Within the base64 encoded data, the following DER structure is present:
 ```
 
 The `EncryptedData OCTET STRING` is a PKCS#8 `PrivateKeyInfo`, as described earlier.
+
+## Useful tools
+
+### OpenSSL
+
+```
+openssl asn1parse -inform DER
+```
+
+Limitations:
+
+* Gives up on invalid ASN.1.
+* Gives up on unrecognized OIDs (you can use an [OID file](https://manned.org/asn1parse.1ssl#head5)).
+
+Also, many subcommands that work with ASN.1 formatted data (`openssl x509`, `openssl pkey`, etc.) have a `-text` option to dump a text representation of most of the data.
+
+### dumpasn1
+
+`dumpasn1` is a utility by Peter Gutmann. It is available as a Debian/Ubuntu package.
+
+### LAPO ASN.1 JavaScript decoder
+
+Highlights the correspondence between the hex data and pieces of the decoded tree.
+
+* [Online version](https://lapo.it/asn1js/).
+* Offline version: Unpack the [zip](http://lapo.it/asn1js/asn1js.zip) in an empty directory and point a browser at the `index.html` file.
