@@ -166,16 +166,15 @@ The `EncryptedData OCTET STRING` is a PKCS#8 `PrivateKeyInfo`, as described earl
 openssl asn1parse -inform DER
 ```
 
-Limitations:
+Limitation: gives up on invalid ASN.1.
 
-* Gives up on invalid ASN.1.
-* Gives up on unrecognized OIDs (you can use an OID file — see [NOTES in `man asn1parse`](https://www.openssl.org/docs/man3.0/man1/openssl-asn1parse.html#NOTES)).
+To customize which OIDs are recognized, you can use an OID file — see [NOTES in `man asn1parse`](https://www.openssl.org/docs/man3.0/man1/openssl-asn1parse.html#NOTES).
 
 Also, many subcommands that work with ASN.1 formatted data (`openssl x509`, `openssl pkey`, etc.) have a `-text` option to dump a text representation of most of the data.
 
 ### dumpasn1
 
-`dumpasn1` is a [utility by Peter Gutmann](https://www.cs.auckland.ac.nz/~pgut001/#standards). It is available as a Debian/Ubuntu package. It's a standalone single-file C program plus a configuration file with a list of OID.
+`dumpasn1` is a [utility by Peter Gutmann](https://www.cs.auckland.ac.nz/~pgut001/#standards). It is available as a Debian/Ubuntu package. It's a standalone single-file C program plus a configuration file with a list of OIDs.
 
 ### LAPO ASN.1 JavaScript decoder
 
