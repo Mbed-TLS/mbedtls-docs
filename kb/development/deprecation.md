@@ -1,8 +1,10 @@
 # Deprecations
 
-To ensure backwards-compatibility between versions of Mbed TLS, functions or constants in the public interface may not be removed except during the release of a new major version. Instead, they may be 'deprecated', indicating to users that they will be removed in the future.
+To ensure backwards-compatibility between versions of Mbed TLS, elements of the public interface may not be removed except during the release of a new major version. Instead, they may be 'deprecated', indicating to users that they will be removed in the future.
 
-When a build is made with `MBEDTLS_DEPRECATED_WARNING` defined, a compiler warning will be generated to warn a user that the function or constant will be removed at some point in the future, notifying users that they should change to a replacement function or constant at their own convenience. To find examples of past deprecations, look at the previous major version of Mbed TLS.
+When a build is made with `MBEDTLS_DEPRECATED_WARNING` defined, a compiler warning will be generated to warn a user that a function or constant will be removed at some point in the future, notifying users that they should change to a replacement function or constant at their own convenience. Note: this only works when using GCC-like compilers that recognize `__attribute__((deprecated))`.
+
+To find examples of past deprecations, look at the previous major version of Mbed TLS.
 
 ## Deprecating functions
 
