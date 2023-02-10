@@ -31,7 +31,7 @@ would become:
 ```c
 const int X = MBEDTLS_DEPRECATED_NUMERIC_CONSTANT(42);
 ```
-The file where the constant is defined must include `mbedtls/platform_util.h` as it contains the definition of `MBEDTLS_DEPRECATED_NUMERIC_CONSTANT`
+The file where the constant is defined must include `mbedtls/platform_util.h` as it contains the definition of `MBEDTLS_DEPRECATED_NUMERIC_CONSTANT`.
 
 Any testcases (in `.data` files) that use the deprecated constant must have `MBEDTLS_TEST_DEPRECATED` added to their `depends_on:` line.
 
