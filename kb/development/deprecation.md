@@ -34,3 +34,19 @@ const int X = MBEDTLS_DEPRECATED_NUMERIC_CONSTANT(42);
 The file where the constant is defined must include `mbedtls/platform_util.h` as it contains the definition of `MBEDTLS_DEPRECATED_NUMERIC_CONSTANT`
 
 Any testcases (in `.data` files) that use the deprecated constant must have `MBEDTLS_TEST_DEPRECATED` added to their `depends_on:` line.
+
+## Partial deprecation
+
+From time to time it is necessary to deprecate one specific aspect of a function. For example, calling a function in a particular mode or with a particular parameter may be deprecated. In this case, simply add a line to the function's doxygen description explaining the deprecation. For example:
+```c
+/**
+ * \brief           This function divides x by y
+ *
+ * \deprecated      It is deprecated to call this function with y = 0.
+ *                  Future versions of this function will return an error
+ *                  when called with y = 0, rather than returning INT_MAX as
+ *                  is the current behaviour.
+ *
+ * ...
+ */
+```
