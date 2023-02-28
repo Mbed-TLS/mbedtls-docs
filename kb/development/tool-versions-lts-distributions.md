@@ -2,9 +2,9 @@
 
 Mbed TLS' minimum tool version requirements are usually set based on the versions shipped in long-term support releases of major operating systems. The table below lists versions of relevant software in distributions that are in support.
 
-[RHEL](https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates) 5 is still on extended lifecycle support until November 2020. The list of packages is identical to the one in [CentOS 5](http://vault.centos.org/5.11/os/SRPMS/). Likewise the list of packages in RHEL 6 (extended lifecycle support until June 2024) is identical to [CentOS 6](http://vault.centos.org/6.10/os/Source/SPackages/), and RHEL 7 to [CentOS 7](http://vault.centos.org/7.8.2003/os/Source/SPackages/).
+[RHEL](https://access.redhat.com/support/policy/updates/errata#Life_Cycle_Dates) 6 is on extended lifecycle support until June 2024. The list of packages is identical to [CentOS 6](http://vault.centos.org/6.10/os/Source/SPackages/), and in RHEL 7 to [CentOS 7](http://vault.centos.org/7.8.2003/os/Source/SPackages/).
 
-[Ubuntu](https://wiki.ubuntu.com/Releases) 14.04 is on extended security maintenance (ESM) until April 2022. Ubuntu 16.04 is supported until April 2021, and on ESM until April 2024. Debian long-time support lasts less long, so the oldest versions of software that are supported in a Debian release are slightly less old than for Ubuntu, therefore we don't need to look at Debian versions.
+Ubuntu 16.04 is on extended security maintenance (ESM) until April 2024. Debian long-time support lasts less long, so the oldest versions of software that are supported in a Debian release are slightly less old than for Ubuntu, therefore we don't need to look at Debian versions.
 
 [pkgs.org](https://pkgs.org/) indexes the software versions in many currently-supported distributions. This includes Ubuntu LTS and CentOS, but not RHEL ELS.
 
