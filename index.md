@@ -25,7 +25,7 @@ For more information, see the following:
 maxdepth: 2
 caption: Contents
 ---
-getting_started.md
+getting_started/index.md
 reviews/index.md
 roadmap.md
 architecture/proposed/long-term-plans.md
