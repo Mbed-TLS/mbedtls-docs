@@ -1,10 +1,15 @@
 ## Downloading and building
 
-### Getting the Mbed TLS library
+### Getting Mbed TLS
 
 Mbed TLS releases are available in the [public GitHub repository](https://github.com/Mbed-TLS/mbedtls).
+To download directly, use the following Git command:
 
-### Building the Mbed TLS library
+```sh
+git clone https://github.com/Mbed-TLS/mbedtls.git
+```
+
+### Building Mbed TLS
 
 **Prerequisites to building the library with the provided makefiles:**
 * GNU Make.
