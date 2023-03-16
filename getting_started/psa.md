@@ -1,23 +1,6 @@
-## Getting started with Mbed TLS
+## Using PSA
 
-### What is Mbed TLS?
-
-Mbed TLS is an open source cryptographic library that supports a wide range of
-cryptographic operations, including:
-* Key management
-* Hashing
-* Symmetric cryptography
-* Asymmetric cryptography
-* Message authentication (MAC)
-* Key generation and derivation
-* Authenticated encryption with associated data (AEAD)
-
-Mbed TLS provides a reference implementation of the cryptography interface of
-the Arm Platform Security Architecture (PSA). It is written in portable C.
-
-Mbed TLS is distributed under the Apache License, version 2.0.
-
-#### Platform Security Architecture (PSA)
+### What is Platform Security Architecture (PSA)?
 
 Arm's Platform Security Architecture (PSA) is a holistic set of threat models,
 security analyses, hardware and firmware architecture specifications, and an
@@ -25,50 +8,6 @@ open source firmware reference implementation. PSA provides a recipe, based on
 industry best practice, that enables you to design security into both hardware
 and firmware consistently. Part of the API provided by PSA is the cryptography
 interface, which provides access to a set of primitives.
-
-### Using Mbed TLS
-
-* [Getting the Mbed TLS library](#getting-the-mbed-tls-library)
-* [Building the Mbed TLS library](#building-the-mbed-tls-library)
-* [Using the PSA Crypto API](#using-the-psa-crypto-api)
-* [Importing a key](#importing-a-key)
-* [Signing a message using RSA](#signing-a-message-using-RSA)
-* [Encrypting or decrypting using symmetric ciphers](#encrypting-or-decrypting-using-symmetric-ciphers)
-* [Hashing a message](#hashing-a-message)
-* [Deriving a new key from an existing key](#deriving-a-new-key-from-an-existing-key)
-* [Generating a random value](#generating-a-random-value)
-* [Authenticating and encrypting or decrypting a message](#authenticating-and-encrypting-or-decrypting-a-message)
-* [Generating and exporting keys](#generating-and-exporting-keys)
-* [More about the PSA Crypto API](#more-about-the-psa-crypto-api)
-
-### Getting the Mbed TLS library
-
-Mbed TLS releases are available in the [public GitHub repository](https://github.com/Mbed-TLS/mbedtls).
-
-### Building the Mbed TLS library
-
-**Prerequisites to building the library with the provided makefiles:**
-* GNU Make.
-* A C toolchain (compiler, linker, archiver) that supports C99.
-* Python 3.6 to generate the test code.
-* Perl to run the tests.
-
-If you have a C compiler such as GCC or Clang, just run `make` in the top-level
-directory to build the library, a set of unit tests and some sample programs.
-
-To select a different compiler, set the `CC` variable to the name or path of the
-compiler and linker (default: `cc`) and set `AR` to a compatible archiver
-(default: `ar`); for example:
-```
-make CC=arm-linux-gnueabi-gcc AR=arm-linux-gnueabi-ar
-```
-The provided makefiles pass options to the compiler that assume a GCC-like
-command line syntax. To use a different compiler, you may need to pass different
-values for `CFLAGS`, `WARNINGS_CFLAGS` and `LDFLAGS`.
-
-To run the unit tests on the host machine, run `make test` from the top-level
-directory. If you are cross-compiling, copy the test executable from the `tests`
-directory to the target machine.
 
 ### Using the PSA Crypto API
 
