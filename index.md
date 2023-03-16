@@ -26,6 +26,7 @@ maxdepth: 2
 caption: Contents
 ---
 getting_started/index.md
+API Reference <https://mbed-tls.readthedocs.io/projects/api>
 reviews/index.md
 roadmap.md
 architecture/proposed/long-term-plans.md
