@@ -12,18 +12,18 @@ Mbed TLS supports a number of different build environments out-of-the-box. Howev
 ## Building with Make
 
 If using Make, you can build by running:
-```
+```sh
 make
 ```
 To run the test suite, run:
-```
+```sh
 make check
 ```
 
 To select a different compiler, set the `CC` variable to the name or path of the
 compiler and linker (default: `cc`) and set `AR` to a compatible archiver
 (default: `ar`); for example:
-```
+```sh
 make CC=arm-linux-gnueabi-gcc AR=arm-linux-gnueabi-ar
 ```
 The provided makefiles pass options to the compiler that assume a GCC-like
@@ -34,24 +34,24 @@ values for `CFLAGS`, `WARNINGS_CFLAGS` and `LDFLAGS`.
 ## Building with CMake
 
 If you have CMake, the build process is better able to handle all the dependencies and do minimal builds. To build the source using CMake, run:
-```
+```sh
 cmake .
 make
 ```
 In order to run the tests, enter:
-```
+```sh
 make test
 ```
 The test suites need Perl to be built. If you don't have Perl installed, you'll want to disable the test suites with:
-```
+```sh
 cmake -DENABLE_TESTING=Off .
 ```
 If you disabled the test suites, but kept the programs enabled, you can still run a much smaller set of tests with:
-```
+```sh
 programs/test/selftest
 ```
 To configure CMake for building a shared library, use:
-```
+```sh
 cmake -DUSE_SHARED_MBEDTLS_LIBRARY=On .
 ```
 
@@ -71,15 +71,15 @@ The following modes are supported:
 * **Check:** This activates the compiler warnings that depend on optimization and treats all warnings as errors.
 
 For debug mode, enter at the command line:
-```
+```sh
 cmake -D CMAKE_BUILD_TYPE:Debug .
 ```
 To list other available CMake options, use:
-```
+```sh
 cmake -LH
 ```
 Note that with CMake, if you want to change the compiler or its options after you already ran CMake, you need to clear its cache first:
-```
+```sh
 find . -iname '*cmake*' -not -name CMakeLists.txt -exec rm -rf {} +
 CC=gcc CFLAGS='-fstack-protector-strong' cmake .
 ```
