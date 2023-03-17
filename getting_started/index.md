@@ -4,6 +4,7 @@
 glob:
 maxdepth: 2
 ---
-download_and_build.md
+downloading.md
+building.md
 psa.md
 ```
