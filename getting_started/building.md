@@ -84,8 +84,8 @@ find . -iname '*cmake*' -not -name CMakeLists.txt -exec rm -rf {} +
 CC=gcc CFLAGS='-fstack-protector-strong' cmake .
 ```
 
-## Windows Visual Studio 2010 and later
+## Windows Visual Studio 2013 and later
 
-Inside Visual C++: open `visualc/VS2010/mbedTLS.sln` and select **Rebuild all**.
+Inside Visual C++: open `visualc/VS2013/mbedTLS.sln` and select **Rebuild all**.
 
 If you are using a later version of Visual Studio, it should prompt you to upgrade the files on first use. Accept this, and you are ready to build and compile.
