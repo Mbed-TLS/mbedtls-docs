@@ -6,7 +6,7 @@ Mbed TLS supports a number of different build environments out-of-the-box. Howev
 
 * GNU Make, CMake or Visual Studio.
 * A C toolchain (compiler, linker, archiver) that supports C99.
-* Python 3.6 to generate the test code.
+* Python 3.6 or later to generate the test code.
 * Perl to run the tests.
 
 ## Building with Make
