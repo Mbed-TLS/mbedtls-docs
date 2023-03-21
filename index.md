@@ -30,7 +30,6 @@ API Reference <https://mbed-tls.readthedocs.io/projects/api>
 project/index.md
 reviews/index.md
 tech-updates/security-advisories/index.md
-maintainers.md
 CONTRIBUTING.md
 kb/index.md
 ```
