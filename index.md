@@ -27,9 +27,8 @@ caption: Contents
 ---
 getting_started/index.md
 API Reference <https://mbed-tls.readthedocs.io/projects/api>
+project/index.md
 reviews/index.md
-roadmap.md
-architecture/proposed/long-term-plans.md
 tech-updates/security-advisories/index.md
 maintainers.md
 CONTRIBUTING.md
