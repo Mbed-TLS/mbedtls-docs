@@ -1,0 +1,16 @@
+# Readthedocs redirects
+# See https://docs.readthedocs.io/en/stable/user-defined-redirects.html
+
+- type: sphinx_htmldir
+
+- type: page
+  from_url: /security-advisories/security-advisories/
+  to_url: /tech-updates/security-advisories/
+
+- type: exact
+  from_url: /en/latest/security-advisories/advisories/$rest
+  to_url: /en/latest/tech-updates/security-advisories/
+
+- type: page
+  from_url: /roadmap/
+  to_url: /project/roadmap/
