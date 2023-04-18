@@ -16,12 +16,16 @@ Classifications are done through labels, e.g.: priority-high.
 
 Please note that these are the priorities used by the core team. External contributors are welcome to review PRs according to their own priorities, and such review activity will help highlight PRs which should get attention from the core team.
 
+## priority-very-high
+
+Same criteria as priority-high, below, but needed for the Mbed TLS teams' most important commitments.
+
 
 ## priority-high
 
-This classification is used for PRs which are typically one of:
+This classification is used for PRs which have a target date for merging - typically one of:
 
-- Security (or other high-priority) bug fixes
+- Security (or other high-priority) bug fixes needed in the next release
 - Items that the Mbed TLS team have planned for delivery in the current quarter
 
 These PRs should receive review promptly.
@@ -58,7 +62,6 @@ This is for PRs which are potentially useful or nice to have, but are unlikely t
 * Enhancements that don't suit embedded applications
 * Code (especially assembly) for platforms where the team has little experience for review or maintenance, or limited ability to test
   * Note: we currently have the capability to maintain & test aarch32, aarch64, x86 and x86-64 on Ubuntu, FreeBSD and Windows
-
 * Minor quality/test improvements, e.g. clean-up of test infrastructure or build scripts
 * Items where the team might not be able to afford the maintenance cost
 
