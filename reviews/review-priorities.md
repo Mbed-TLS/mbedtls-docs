@@ -18,10 +18,10 @@ Please note that these are the priorities used by the core team. External contri
 
 ## priority-very-high
 
-Same criteria as priority-high, below, but needed for the Mbed TLS teams' most important commitments.
+Same criteria as priority-high, below, but needed for the Mbed TLS team's most important commitments.
 
 
-## priority-high
+## priority-high and 
 
 This classification is used for PRs which have a target date for merging - typically one of:
 
