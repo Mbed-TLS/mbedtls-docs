@@ -20,6 +20,8 @@ Please note that these are the priorities used by the core team. External contri
 
 Same criteria as priority-high, below, but needed for the Mbed TLS team's most important commitments.
 
+This classification is often used for vulnerability fixes with a public disclosure date.
+
 
 ## priority-high and 
 
