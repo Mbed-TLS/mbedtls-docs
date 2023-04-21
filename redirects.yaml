@@ -1,0 +1,20 @@
+# Readthedocs redirects
+# See https://docs.readthedocs.io/en/stable/user-defined-redirects.html
+#
+# In order to prevent exposing the API token, PR jobs do not update the
+# redirects - changes to this file are only applied when they are merged
+# into the main branch.
+
+- type: sphinx_htmldir
+
+- type: page
+  from_url: /security-advisories/security-advisories/
+  to_url: /tech-updates/security-advisories/
+
+- type: exact
+  from_url: /en/latest/security-advisories/advisories/$rest
+  to_url: /en/latest/tech-updates/security-advisories/
+
+- type: page
+  from_url: /roadmap/
+  to_url: /project/roadmap/
