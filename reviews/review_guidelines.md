@@ -1,4 +1,4 @@
-# Mbed TLS Review Guidelines for Reviewers
+# Guidelines for Reviewers
 
 ## Introduction
 

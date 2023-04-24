@@ -1,4 +1,4 @@
-# Mbed TLS Review Guidelines for Contributors
+# Guidelines for Contributors
 
 ## Introduction
 
