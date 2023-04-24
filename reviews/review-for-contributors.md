@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document describes the process of having your pull request (PR) reviewed.
+This document describes the process of having your pull request (PR) reviewed. For a wider overview of the contribution process, see [CONTRIBUTING.md](https://github.com/Mbed-TLS/mbedtls/blob/development/CONTRIBUTING.md).
 
 ## Goals of the review process
 
@@ -12,11 +12,18 @@ See the [guideline for reviewers](<review_guidelines.md>) for a list of things r
 
 ## General considerations
 
-As a project, we find reviewer bandwidth to be our most common bottleneck. As a consequence, the review process should be optimised for reviewers.
+As a project, we find reviewer bandwidth to be our most common bottleneck. As a consequence, the review process should be optimised for reviewers. We recommend the following flow:
 
-Reviewers will generally assign themselves on a PR when there are available to review it, or when they commit to reviewing it later.
+1. Make a (draft) pull request.
+2. For the the CI results.
+3. If there are failures, fix them and go back to 2. (Ask for help if needed.)
+4. Move the draft to a pull request. If you have label-setting permissions, remove "needs-ci" and "needs-work" and add "needs-reviewer" and "needs-review". If you don't have label-setting permissions and someone hasn't already set the labels, post a comment saying the pull request is ready for review.
+
+Reviewers will generally assign themselves on a PR when there are available to review it, or when they commit to reviewing it later. You should not request specific reviewers on a PR unless this was previously agreed with them.
 
 Large contributions (say, more than 500 lines) should be discussed in advance on the mailing list, and as much as possible broken down into a series of smaller PRs.
+
+Please note that we have a pretty high review bar. Reviewers should not approve a PR unless they fully understand it and are convinced it's correct, secure and maintainable. If they're not confident about the code, they don't need to find an actual bug in order to reject it; the burden of proof is on the submitter.
 
 ## Use of GitHub
 
@@ -38,7 +45,7 @@ We use GitHub reviewing facilities; these have a few limitations which impact ou
 
 Some changes need to be backported to the Long-Term Support (LTS) branches: security fixes, bug fixes, and some testing improvements. In that case, as a general rule we wait until the backport is ready and approved before merging the main PR.
 
-A backport is a separate PR that, instead of targeting `development` as usual, targets a LTS branch. That secondary PR should have the same title as the main one with "[Backport x.yy] " prepended, where x.yy is the name of LTS branch (for example 2.28). The description should start with "This is the x.yy backport of #zzzz", where zzzz is the number of the original PR, and then mention if the backport is trivial, or if there were conflicts that had to be resolved, or important differences with the main branch (for example: "only contextual conflicts", or "had to add/remove XXX because feature YYY is present only on one side", or "skipped commits U and V because they were irrelevant").
+A backport is a separate PR that, instead of targeting `development` as usual, targets a LTS branch. That secondary PR should have the same title as the main one with "Backport x.yy: " prepended, where x.yy is the name of LTS branch (for example 2.28). The description should start with "This is the x.yy backport of #zzzz", where zzzz is the number of the original PR, and then mention if the backport is trivial, or if there were conflicts that had to be resolved, or important differences with the main branch (for example: "only contextual conflicts", or "had to add/remove XXX because feature YYY is present only on one side", or "skipped commits U and V because they were irrelevant").
 
 Trivial backports can be created by making a new branch base on the LTS branch, then running `git cherry-pick development..original_branch`. Regardless of how you create the backports, please try to follow the same commit structure as the original branch (possibly with some commits skipped), unless the backport is too different for it to make sense.
 
