@@ -44,6 +44,17 @@ Note that the bignum/MPI API, though it's not a crypto API, will also likely be 
 
 The X.509 and TLS APIs (`mbedtls_x509_` and `mbedtls_ssl_` namespaces) will of course remain, only the legacy crypto API is being retired. Some functions in those modules may change signature / argument types, but other than that those APIs are unaffected.
 
+### Simplify and unify error codes
+
+Currently, `mbedtls_xxx` functions return `MBEDTLS_ERR_xxx` error codes, and `psa_xxx` functions return `PSA_ERROR_xxx` error codes. These use overlapping value spaces, so a function has to pick, it's impossible for a function to return either kind of error code depending on the error.
+
+We plan to renumber `MBEDTLS_ERR_xxx` error codes so that there is no overlap. Then we could have all functions return a `psa_status_t`, and we wouldn't need to convert between the two sets (which adds complexity and code size).
+
+With this renumbering, `MBEDTLS_ERR_xxx` error codes that have a matching PSA error will be merged. There will no longer be separate error codes for similar errors in different modules. For example, all `MBEDTLS_ERR_xxx_ALLOC_FAILED` will be replaced by `PSA_ERROR_INSUFFICIENT_MEMORY`.
+
+As part of this change, we also plan to remove the association of “low-level” and “high-level” Mbed TLS error codes. Error codes will work like an enum.
+
+Merging error codes break legitimate code (`case ERR_FOO: case ERR_BAR:` is an error if `ERR_FOO` and `ERR_BAR` have the same value), so this change has to be done in a major release.
 
 ### Secure by default, hard to misuse
 
