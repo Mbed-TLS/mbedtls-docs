@@ -19,7 +19,7 @@ The current bignum module relies heavily on the use of `malloc`. This requires d
 
 The module supports negative numbers, which are generally not relevant for cryptography and complicate many algorithms. Support for negative numbers is likely to be removed once the part of the ECC code that takes advantage of it is rewritten.
 
-We would like to replace it with a module that performs constant-time arithmetic on numbers modulo N, without any dynamic allocation. As this requires an extensive change of the API of the bignum module, this is a major endeavor involving significant changes to asymmetric crypto modules.
+Since Mbed TLS 3.3.0, we are have started to redesign the bignum code. New internal library modules perform arithmetic on numbers modulo N, without any dynamic allocation. Asymmetric crypto modules will be rewritten to use these new arithmetic primitives. We will also gradually extend the set of functions that are constant-time.
 
 ### Replacing ALT implementations by PSA drivers
 
