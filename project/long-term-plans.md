@@ -6,7 +6,7 @@ This page lists some ideas that are being considered for Mbed TLS. Just because 
 
 ### Project split
 
-There is a plan to split Mbed TLS into a cryptography library and an X.509+TLS library. The split would be roughly between what currently gets built as `libmbedcrypto.a` and what gets built as `libmbedx509.a` + `libmbedtls.a`.
+There is a plan to split Mbed TLS into a PSA cryptography library and an X.509+TLS library. In the long term, the PSA cryptography library will only offer `psa_xxx` interfaces, and [the `mbedtls_xxx` cryptography interfaces will no longer exist](#making-psa-crypto-the-only-crypto-api). In the shorter term, we are planning an intermediate step where the PSA cryptography reference implementation is its own repository, but that repository still exposes legacy cryptography interfaces, and Mbed TLS will consume and re-expose both interfaces.
 
 Experience with the ill-fated Mbed Crypto split has shown that before doing this, significant preparation is needed:
 
