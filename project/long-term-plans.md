@@ -78,6 +78,8 @@ Getting rid of dynamic allocation inside the library is a difficult task involvi
 
 The Mbed TLS maintainers are always open to adding new cryptographic mechanisms that are suitable for production. The limiting factor is the bandwidth available for coding and reviewing. Mbed TLS is not limited to cryptographic mechanisms validated by any particular standards body, nor, as the name might suggest, to mechanisms used in the TLS protocol.
 
+Regarding post-quantum cryptography (PQC) in particular, we do plan to wait until there are official standards: as of 2023, apart from stateful hash-based signatures, there are too many open questions about selected algorithms (choice of parameters, data formats, hybrid combinations...).
+
 ## Security
 
 ### More constant-trace code
