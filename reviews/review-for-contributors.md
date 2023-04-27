@@ -15,7 +15,7 @@ See the [guideline for reviewers](<review_guidelines.md>) for a list of things r
 As a project, we find reviewer bandwidth to be our most common bottleneck. As a consequence, the review process should be optimised for reviewers. We recommend the following flow:
 
 1. Make a (draft) pull request.
-2. For the the CI results.
+2. Wait for the CI results.
 3. If there are failures, fix them and go back to 2. (Ask for help if needed.)
 4. Move the draft to a pull request. If you have label-setting permissions, remove "needs-ci" and "needs-work" and add "needs-reviewer" and "needs-review". If you don't have label-setting permissions and someone hasn't already set the labels, post a comment saying the pull request is ready for review.
 
