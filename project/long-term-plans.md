@@ -46,15 +46,17 @@ The X.509 and TLS APIs (`mbedtls_x509_` and `mbedtls_ssl_` namespaces) will of c
 
 ### Simplify and unify error codes
 
-Currently, `mbedtls_xxx` functions return `MBEDTLS_ERR_xxx` error codes, and `psa_xxx` functions return `PSA_ERROR_xxx` error codes. These use overlapping value spaces, so a function has to pick, it's impossible for a function to return either kind of error code depending on the error.
+Currently, `mbedtls_xxx` functions return compound `MBEDTLS_ERR_xxx` error codes, which can be the sum of a low-level error code and a high-level error code, and which are generally tied to one specific module. In contrast `psa_xxx` functions return `PSA_ERROR_xxx` error codes.
 
-We plan to renumber `MBEDTLS_ERR_xxx` error codes so that there is no overlap. Then we could have all functions return a `psa_status_t`, and we wouldn't need to convert between the two sets (which adds complexity and code size).
+Error codes are unambiguous (0 means success, PSA error codes are in the range [-255,-128], and combined MBEDTLS error codes cannot reach that range). However we are reluctant to take advantage of that fact and have functions that can return either `MBEDTLS_ERR_xxx` or `PSA_ERROR_xxx` error codes, because it would be harder for calling code to analyze the error codes.
 
-With this renumbering, `MBEDTLS_ERR_xxx` error codes that have a matching PSA error will be merged. There will no longer be separate error codes for similar errors in different modules. For example, all `MBEDTLS_ERR_xxx_ALLOC_FAILED` will be replaced by `PSA_ERROR_INSUFFICIENT_MEMORY`.
+We would like to simplify the error space in several ways.
 
-As part of this change, we also plan to remove the association of “low-level” and “high-level” Mbed TLS error codes. Error codes will work like an enum.
+* There should be a single error space, which extends the PSA error space with error codes that are specific to Mbed TLS. This would remove the need to convert between errors (which adds complexity and code size).
+* There should be a single error code for a given meaning. For example, all out-of-memory errors should be reported as `PSA_ERROR_INSUFFICIENT_MEMORY`. Today, if bignum code fails to allocate memory during an RSA signature verification, the error code would be `MBEDTLS_ERR_MPI_ALLOC_FAILED + MBEDTLS_ERR_RSA_PUBLIC_FAILED`.
+* Error codes should behave like an enum. Combining a low-level code and a high-level code adds a lot of complexity and code size without being really helpful.
 
-Merging error codes break legitimate code (`case ERR_FOO: case ERR_BAR:` is an error if `ERR_FOO` and `ERR_BAR` have the same value), so this change has to be done in a major release.
+Merging error codes break legitimate code (`case ERR_FOO: case ERR_BAR:` is an error if `ERR_FOO` and `ERR_BAR` have the same value), so most of this change has to be done in a major release.
 
 ### Secure by default, hard to misuse
 
