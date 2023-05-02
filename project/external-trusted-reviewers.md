@@ -5,3 +5,5 @@ Mbed TLS welcomes contributors from the wider community who would be interested 
 We are grateful for the contribution of our current trusted reviewers:
 
 [David Brown](https://github.com/d3zd3z)
+
+[Demi Marie Obenour](https://github.com/DemiMarie)
