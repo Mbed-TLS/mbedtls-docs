@@ -393,11 +393,13 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         return ok
 
     def maybe_fetch(self, ref: str) -> None:
-        """Fetch the given ref. Do not update any local branches.
+        """Fetch the given ref if needed. Do not update any local branches.
 
         If the ref is of the form REMOTENAME/..., fetch a branch from that
         remote. Otherwise, fetch from the remote configured with the
         fetch_from parameter when instantiating this class.
+
+        This method does nothing if ref already exists.
         """
         # If ref is an acceptable git ref of any type, accept it.
         # This means we won't try to update an existing remote ref which
