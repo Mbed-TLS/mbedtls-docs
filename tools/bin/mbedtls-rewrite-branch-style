@@ -406,6 +406,7 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         # might have changed upstream since the last fetch.
         if self.check_git(['rev-parse', '--quiet', '--verify', ref],
                           stdout=subprocess.DEVNULL):
+            self.info('Not fetching locally available ref {}', ref)
             return
         fetch_from = self.fetch_from
         local = ''
@@ -415,9 +416,9 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
             local = ref
             ref = ref[pos + 1:]
         if fetch_from is None:
+            self.info('Not fetching non-remote ref {}', ref)
             return
-        if self.verbose:
-            self.info('Fetch {} from {}', ref, self.fetch_from)
+        self.info('Fetch {} from {}', ref, self.fetch_from)
         self.run_git(['fetch', '--quiet', fetch_from,
                       ref + ':' + local])
 
