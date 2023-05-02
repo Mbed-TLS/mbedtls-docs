@@ -659,7 +659,9 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
             if not re.match(r'\A *[0-9]+: *[0-9a-f]+ *= ', line):
                 self.ok = False
                 self.log_error('Bad range-diff line {}: {}', num, line)
-        self.info('Check passed: {} === {}', self.rewritten_sha, expected_content)
+        if self.ok:
+            self.info('Check passed: {} === {}',
+                      self.rewritten_sha, expected_content)
 
 def main() -> int:
     """Command line entry point."""
