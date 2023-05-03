@@ -34,11 +34,13 @@ class BranchRewriter:
     GIT_EXE = 'git'
 
     def __init__(self,
+                 fetch_from: Optional[str] = None,
                  working_branch_name: Optional[str] = None,
                  verbose=False) -> None:
         self.verbose = verbose
         self.original_worktree_path = None # type: Optional[str]
         self.worktree_path = None # type: Optional[str]
+        self.fetch_from = fetch_from if fetch_from else None
         self.working_branch_name = \
             working_branch_name if working_branch_name else None
         self.rewritten_sha = None #type: Optional[str]
@@ -118,7 +120,9 @@ class BranchRewriter:
                 # Don't accidentally pass an option to 'git rev-parse'
                 # (it doesn't support --).
                 if not ref.startswith('-'):
-                    if self.run_git(['rev-parse', ref]).strip() == ref:
+                    parsed = self.run_git(['rev-parse', ref],
+                                          stderr=subprocess.DEVNULL).strip()
+                    if parsed == ref:
                         return True
                 return False
             except subprocess.CalledProcessError:
@@ -303,9 +307,12 @@ class BranchRewriter:
             self.run_git(['reset', '--hard', self.rewritten_sha])
         self.cleanup_worktree()
 
-    def cleanup(self) -> None:
-        """Clean up after a successful run."""
-        if self.ok:
+    def cleanup(self, force: bool = False) -> None:
+        """Clean up after a successful run.
+
+        If force is true, clean up even on error.
+        """
+        if force or self.ok:
             self.cleanup_worktree()
 
 
@@ -385,6 +392,36 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
             ok = False
         return ok
 
+    def maybe_fetch(self, ref: str) -> None:
+        """Fetch the given ref if needed. Do not update any local branches.
+
+        If the ref is of the form REMOTENAME/..., fetch a branch from that
+        remote. Otherwise, fetch from the remote configured with the
+        fetch_from parameter when instantiating this class.
+
+        This method does nothing if ref already exists.
+        """
+        # If ref is an acceptable git ref of any type, accept it.
+        # This means we won't try to update an existing remote ref which
+        # might have changed upstream since the last fetch.
+        if self.check_git(['rev-parse', '--quiet', '--verify', ref],
+                          stdout=subprocess.DEVNULL):
+            self.info('Not fetching locally available ref {}', ref)
+            return
+        fetch_from = self.fetch_from
+        local = ''
+        pos = ref.find('/')
+        if pos != -1 and ref[:pos] in self.get_git_lines(['remote']):
+            fetch_from = ref[:pos]
+            local = ref
+            ref = ref[pos + 1:]
+        if fetch_from is None:
+            self.info('Not fetching non-remote ref {}', ref)
+            return
+        self.info('Fetch {} from {}', ref, self.fetch_from)
+        self.run_git(['fetch', '--quiet', fetch_from,
+                      ref + ':' + local])
+
     def guess_target_branch(self) -> None:
         """Guess the branch that the current branch is to be merged into.
 
@@ -397,12 +434,14 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         if self.target_branch is not None:
             return
         self.info('Guessing target branch...')
+        self.maybe_fetch(self.MBEDTLS_2_28_0)
         if self.check_git(['merge-base', '--is-ancestor',
                            self.MBEDTLS_2_28_0, 'HEAD']):
             branch_name = 'mbedtls-2.28'
         else:
             branch_name = 'development'
         commit_id = self.TARGET_BRANCHES[branch_name]
+        self.maybe_fetch(commit_id)
         if not self.check_git(['rev-parse', commit_id],
                               stdout=subprocess.DEVNULL):
             self.log_error('Commit ID {} not found for the guessed target branch {}.')
@@ -596,6 +635,34 @@ class CodeStyleBranchRewriter(MbedTLSBranchRewriter):
         for new_commit in new_commits:
             self.restyle_commit_onto_current(new_commit)
 
+    def check_result(self, expected_content: str) -> None:
+        """Check that the resulting branch is similar to expected_content.
+
+        Similarity means that the commit history is identical except for
+        committed metadata, as with `git range-diff`.
+        """
+        assert self.target_branch is not None
+        common_ancestor = self.target_branch + '^{/Switch to the new code style}~'
+        common_ancestor_sha = self.run_git(['rev-parse', common_ancestor]).strip()
+        assert self.rewritten_sha is not None
+        self.maybe_fetch(expected_content)
+        if not self.check_git(['merge-base', '--is-ancestor',
+                               common_ancestor, expected_content]):
+            self.ok = False
+            self.log_error('{} ({}) is not an ancestor of {}',
+                           common_ancestor, common_ancestor_sha,
+                           expected_content)
+            return
+        range_diff = self.get_git_lines(['range-diff', '--no-color',
+                                         common_ancestor, expected_content, self.rewritten_sha])
+        for num, line in enumerate(range_diff, 1):
+            if not re.match(r'\A *[0-9]+: *[0-9a-f]+ *= ', line):
+                self.ok = False
+                self.log_error('Bad range-diff line {}: {}', num, line)
+        if self.ok:
+            self.info('Check passed: {} === {}',
+                      self.rewritten_sha, expected_content)
+
 def main() -> int:
     """Command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -604,6 +671,13 @@ def main() -> int:
                         help='Back up the current history'
                              ' (default: old-code-style/OLD_NAME)'
                              ' (empty: do not back up)')
+    parser.add_argument('--check', metavar='REF',
+                        default='',
+                        help='Check that REF is a valid result from rewriting.'
+                             ' Do not create/rewrite any branches.')
+    parser.add_argument('--fetch-from', metavar='REMOTE',
+                        default='',
+                        help='Fetch necessary commits from the specified repository.')
     parser.add_argument('--onto', '-t', metavar='BRANCH',
                         help='Branch to rewrite onto'
                              ' (default/empty: guess development or mbedtls-2.28)')
@@ -620,8 +694,12 @@ def main() -> int:
                         help='Branch to rewrite with code style changes'
                              ' (default: branch checked out in the current directory)')
     args = parser.parse_args()
+    if args.check:
+        args.backup_branch = ''
+        args.new_branch_name = ''
     branch_rewriter = CodeStyleBranchRewriter(
         working_branch_name=args.new_branch_name,
+        fetch_from=args.fetch_from,
         verbose=args.verbose)
     if not branch_rewriter.system_is_ok():
         return 2
@@ -633,17 +711,21 @@ def main() -> int:
                 branch_rewriter.log_error('Giving up. Please pass an explicit branch name or --backup-branch.')
                 return 2
             args.branch = 'HEAD'
+    branch_rewriter.maybe_fetch(args.branch)
     if args.onto:
         branch_rewriter.set_target_branch(args.onto)
     if args.backup_branch:
         branch_rewriter.create_backup_branch(args.backup_branch, args.branch)
     update_existing_branch = False
-    if not args.new_branch_name:
+    if not args.check and not args.new_branch_name:
         if branch_rewriter.is_git_ref('heads', args.branch):
             update_existing_branch = True
     branch_rewriter.rewrite(args.branch, update_existing_branch)
-    branch_rewriter.cleanup()
+    if args.check:
+        branch_rewriter.check_result(args.check)
+    branch_rewriter.cleanup(force=not args.check)
     if branch_rewriter.ok and \
+       not args.check and \
        not args.new_branch_name and not update_existing_branch:
         # The new work isn't available except via a sha, so it seems pretty
         # important to let the user know even in non-verbose mode.
