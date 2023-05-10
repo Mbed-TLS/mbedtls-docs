@@ -7,6 +7,12 @@ PEM and the ASN.1 structures that are used in saving cryptographic keys and cert
 ## ASN.1 and DER encoding
 The RSA, PKCS#1, SSL and TLS communities use the [Distinguished Encoding Rules (DER)](http://en.wikipedia.org/wiki/Distinguished_Encoding_Rules) encoding of [ASN.1](http://en.wikipedia.org/wiki/ASN.1) to represent keys and certificates in a portable format. The certificate and key information is stored in the binary DER for ASN.1, and applications providing RSA, SSL and TLS should use DER encoding to parse the data. While ASN.1 is a complex representation format and can be difficult to understand, it also has its merits.
 
+### Some good resources on ASN.1 and DER
+
+* [A Warm Welcome to ASN.1 and DER](https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/)
+* [A Layman's Guide to a Subset of ASN.1, BER, and DER](http://luca.ntop.org/Teaching/Appunti/asn1.html)
+* [ASN.1 Made Simple](https://www.oss.com/asn1/resources/asn1-made-simple/introduction.html)
+
 ## PEM files
 Because DER encoding results in a truly binary representation of the encoded data, the PEM format was devised for sending these in an encoding of printable characters, so that they can be mailed. We focus on the PEM format below.
 
@@ -151,3 +157,32 @@ Within the base64 encoded data, the following DER structure is present:
 ```
 
 The `EncryptedData OCTET STRING` is a PKCS#8 `PrivateKeyInfo`, as described earlier.
+
+## Useful tools
+
+### OpenSSL
+
+```
+openssl asn1parse -inform DER
+```
+
+Limitation: gives up on invalid ASN.1.
+
+To customize which OIDs are recognized, you can use an OID file — see [NOTES in `man asn1parse`](https://www.openssl.org/docs/man3.0/man1/openssl-asn1parse.html#NOTES).
+
+Also, many subcommands that work with ASN.1 formatted data (`openssl x509`, `openssl pkey`, etc.) have a `-text` option to dump a text representation of most of the data.
+
+### dumpasn1
+
+`dumpasn1` is a [utility by Peter Gutmann](https://www.cs.auckland.ac.nz/~pgut001/#standards). It is available as a Debian/Ubuntu package. It's a standalone single-file C program plus a configuration file with a list of OIDs.
+
+### LAPO ASN.1 JavaScript decoder
+
+Highlights the correspondence between the hex data and pieces of the decoded tree.
+
+* [Online version](https://lapo.it/asn1js/).
+* Offline version: Unpack the [zip](http://lapo.it/asn1js/asn1js.zip) in an empty directory and point a browser at the `index.html` file.
+
+### `asn1_indent`
+
+[`asn1_indent`](https://raw.githubusercontent.com/Mbed-TLS/mbedtls-docs/main/tools/bin/asn1_indent) is a home-made script that just splits the nested SEQUENCES from ASN.1 data. Useful when inspecting or tweaking data to form bad-case test cases.

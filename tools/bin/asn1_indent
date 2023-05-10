@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""
+Usage: $0 HEXDATA
+       ... | $0
+Parse HEXDATA as the hexadecimal representation of ASN.1 structured data and
+print the data out with indentation reflecting the ASN.1 nested structure.
+Whitespace in HEXDATA is ignored.
+"""
+
+import binascii
+import re
+import sys
+
+def process(data, offset, slice_end, level):
+    while offset < slice_end:
+        tag = data[offset]
+        is_constructed = tag & 0x20
+        content_offset = offset + 2
+        length = data[offset + 1]
+        if length == 0x80:
+            raise Exception("Indefinite length is not supported at {}".format(offset))
+        elif length & 0x80:
+            content_offset += length & 0x7f
+            length_bytes = data[offset+2:content_offset]
+            length = int(binascii.hexlify(length_bytes).decode('ascii'), 16)
+        content_end = content_offset+length
+        if is_constructed:
+            maybe_content = ''
+        else:
+            maybe_content = binascii.hexlify(data[content_offset:content_end]).decode('ascii')
+            if tag & 0x3f == 0x03: # BIT STRING
+                maybe_content = maybe_content[:2] + ' ' + maybe_content[2:]
+        print(' ' * level +
+              binascii.hexlify(data[offset:content_offset]).decode('ascii'),
+              maybe_content)
+        if is_constructed:
+            process(data, content_offset, content_offset + length, level + 1)
+        offset = content_offset + length
+
+BLANK_RE = re.compile(r'\s+')
+
+def prepare(raw):
+    return binascii.unhexlify(BLANK_RE.sub('', raw))
+
+def main(args):
+    if len(args) == 0:
+        raw = sys.stdin.read()
+    elif args[0] == '--help':
+        sys.stdout.write(usage)
+        exit(0)
+    elif len(args) == 1:
+        raw = args[0]
+    else:
+        sys.stderr.write('Too many arguments!\n')
+        sys.stderr.write(__doc__)
+        exit(2)
+    data = prepare(raw)
+    process(data, 0, len(data), 0)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

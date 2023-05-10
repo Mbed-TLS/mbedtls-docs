@@ -6,7 +6,7 @@ This page lists some ideas that are being considered for Mbed TLS. Just because 
 
 ### Project split
 
-There is a plan to split Mbed TLS into a cryptography library and an X.509+TLS library. The split would be roughly between what currently gets built as `libmbedcrypto.a` and what gets built as `libmbedx509.a` + `libmbedtls.a`.
+There is a plan to split Mbed TLS into a PSA cryptography library and an X.509+TLS library. In the long term, the PSA cryptography library will only offer `psa_xxx` interfaces, and [the `mbedtls_xxx` cryptography interfaces will no longer exist](#making-psa-crypto-the-only-crypto-api). In the shorter term, we are planning an intermediate step where the PSA cryptography reference implementation is its own repository, but that repository still exposes legacy cryptography interfaces, and Mbed TLS will consume and re-expose both interfaces.
 
 Experience with the ill-fated Mbed Crypto split has shown that before doing this, significant preparation is needed:
 
@@ -19,7 +19,7 @@ The current bignum module relies heavily on the use of `malloc`. This requires d
 
 The module supports negative numbers, which are generally not relevant for cryptography and complicate many algorithms. Support for negative numbers is likely to be removed once the part of the ECC code that takes advantage of it is rewritten.
 
-We would like to replace it with a module that performs constant-time arithmetic on numbers modulo N, without any dynamic allocation. As this requires an extensive change of the API of the bignum module, this is a major endeavor involving significant changes to asymmetric crypto modules.
+Since Mbed TLS 3.3.0, we have started to redesign the bignum code. New internal library modules perform arithmetic on numbers modulo N, without any dynamic allocation. Asymmetric crypto modules will be rewritten to use these new arithmetic primitives. We will also gradually extend the set of functions that are constant-time.
 
 ### Replacing ALT implementations by PSA drivers
 
@@ -28,14 +28,6 @@ It is currently possible to replace some of the library modules and functions by
 The design of the ALT interfaces is cumbersome, especially when replacing a whole module. The ALT implementer must respect the semantics of the original functions, and cannot easily reuse part of the exiting code (for example, to perform padding). This limits the evolution possibilities of the library since changes of semantics that are backward-compatible for applications usually break ALT implementations.
 
 In Mbed TLS 3.0, existing ALT implementations continue to work, since PSA drivers are not fully implemented yet. However, it is likely that no new ALT possibility will be added. Once PSA drivers are ready for production, ALT implementations will be deprecated, likely to be removed in Mbed TLS 4.0.
-
-### Automated and standardised code styling
-
-Our [coding standards](/kb/development/mbedtls-coding-standards.md) are currently enforced by manual code reviews which can lead to inconsistencies across the code base and places the burden on reviewers to spot these errors. It would be much more effective and efficient to automate the enforcement of the coding standards so that non-compliance is found and reported via an appropriate error.
-
-In order to facilitate automation, the coding standards should be revised to remove inconsistencies such as putting spaces inside parentheses *except* for `#if defined(XXX)`.
-
-Many new Mbed TLS developers may also find our coding standards to be a barrier to entry as they are unusual when compared to many other open source C libraries. The coding standards should be revised to reduce the disparity between other commonly used coding styles.
 
 ## API design
 
@@ -46,12 +38,25 @@ Currently there are two APIs for most crypto operations:
 - one in the `mbedtls_` namespace, which historically was the only one - referred to as "the legacy crypto API" below;
 - one in the `psa_` namespace, which was added more recently (first experimental and now stable both in the development branch and the current LTS branch), which implements the Crypto part of the [PSA Certified API Specification](https://arm-software.github.io/psa-api/) - referred to as "the PSA Crypto API" below.
 
-As it is undesirable to maintain two APIs in the long run, we are going to retire the legacy API in the future, leaving the PSA Crypto API as the only API for crypto operations. The timeline and details have not been decided yet, however it is likely that in the next major version (Mbed TLS 4.0), most (if not all) of the legacy API will be removed from our public API, with possible exceptions for the abstraction layers PK, Cipher and MD.
+As it is undesirable to maintain two APIs in the long run, we are going to retire the legacy API in the future, leaving the PSA Crypto API as the only API for crypto operations. The timeline and details have not been decided yet, however it is likely that in the next major version (Mbed TLS 4.0), most (if not all) of the legacy API will be removed from our public API, with possible exceptions for the abstraction layers PK, Cipher and MD. The current options `MBEDTLS_PSA_CRYPTO_C`, `MBEDTLS_USE_PSA_CRYPTO` and `MBEDTLS_PSA_CRYPTO_CONFIG` will effectively be always enabled.
 
 Note that the bignum/MPI API, though it's not a crypto API, will also likely be removed from our public API at this point. This follows the general trend of making more things opaque/private (for example, most struct members became private in Mbed TLS 3.0).
 
 The X.509 and TLS APIs (`mbedtls_x509_` and `mbedtls_ssl_` namespaces) will of course remain, only the legacy crypto API is being retired. Some functions in those modules may change signature / argument types, but other than that those APIs are unaffected.
 
+### Simplify and unify error codes
+
+Currently, `mbedtls_xxx` functions return compound `MBEDTLS_ERR_xxx` error codes, which can be the sum of a low-level error code and a high-level error code, and which are generally tied to one specific module. In contrast `psa_xxx` functions return `PSA_ERROR_xxx` error codes.
+
+Error codes are unambiguous (0 means success, PSA error codes are in the range [-255,-128], and combined MBEDTLS error codes cannot reach that range). However we are reluctant to take advantage of that fact and have functions that can return either `MBEDTLS_ERR_xxx` or `PSA_ERROR_xxx` error codes, because it would be harder for calling code to analyze the error codes.
+
+We would like to simplify the error space in several ways.
+
+* There should be a single error space, which extends the PSA error space with error codes that are specific to Mbed TLS. This would remove the need to convert between errors (which adds complexity and code size).
+* There should be a single error code for a given meaning. For example, all out-of-memory errors should be reported as `PSA_ERROR_INSUFFICIENT_MEMORY`. Today, if bignum code fails to allocate memory during an RSA signature verification, the error code would be `MBEDTLS_ERR_MPI_ALLOC_FAILED + MBEDTLS_ERR_RSA_PUBLIC_FAILED`.
+* Error codes should behave like an enum. Combining a low-level code and a high-level code adds a lot of complexity and code size without being really helpful.
+
+Merging error codes break legitimate code (`case ERR_FOO: case ERR_BAR:` is an error if `ERR_FOO` and `ERR_BAR` have the same value), so most of this change has to be done in a major release.
 
 ### Secure by default, hard to misuse
 
@@ -74,6 +79,8 @@ Getting rid of dynamic allocation inside the library is a difficult task involvi
 ### New cryptographic algorithms
 
 The Mbed TLS maintainers are always open to adding new cryptographic mechanisms that are suitable for production. The limiting factor is the bandwidth available for coding and reviewing. Mbed TLS is not limited to cryptographic mechanisms validated by any particular standards body, nor, as the name might suggest, to mechanisms used in the TLS protocol.
+
+Regarding post-quantum cryptography (PQC) in particular, we do plan to wait until there are official standards: as of 2023, apart from stateful hash-based signatures, there are too many open questions about selected algorithms (choice of parameters, data formats, hybrid combinations...).
 
 ## Security
 

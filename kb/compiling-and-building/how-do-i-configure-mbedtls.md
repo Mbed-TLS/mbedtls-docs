@@ -22,7 +22,7 @@ The `config.py` script automatically finds the `mbedtls_config.h` file when it r
 
 ## Alternative configuration files
 
-You might want to keep the custom configuration file for your application outside the Mbed TLS source tree. You can do this by defining the macro `MBEDTLS_CONFIG_FILE` for the desired filename (including the quote or angular brackets) at compile time. For example, using **make**:
+You might want to keep the custom configuration file for your application outside the Mbed TLS source tree. You can do this by defining the macro `MBEDTLS_CONFIG_FILE` for the desired filename (including the quote or angular brackets) at compile time. For example, using **make**: (Note: The angle brackets `<>` are included in the command, but they could be replaced with properly escaped double quotes `\"\"`.)
     ```
      CFLAGS="-Ipath/to/config -DMBEDTLS_CONFIG_FILE='<my_config.h>'" make
     ```
