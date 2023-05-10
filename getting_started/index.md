@@ -1,4 +1,4 @@
-# Getting started with Mbed TLS
+# Getting Started
 ```{toctree}
 ---
 glob:
