@@ -33,9 +33,9 @@ If you are interested in collaborating on any of the roadmap features or other f
  * [PSA Crypto][PSA Secure Element, Crypto Accelerator Support Enhancements](https://github.com/orgs/Mbed-TLS/projects/1#column-17950148)
  * [Raw Public Key Mode](https://github.com/ARMmbed/mbedtls/pull/336)
  * [EdDSA](https://github.com/orgs/Mbed-TLS/projects/1#column-17950143)
+ * [PSA Crypto] SHA3
  * [Mbed TLS][Performance Optimization - ECP and Bignum](https://github.com/orgs/Mbed-TLS/projects/1#column-17950164)
- * [Publish Threat Model](https://github.com/orgs/ARMmbed/projects/18#column-15836340)
- ​
+ * [Publish Threat Model](https://github.com/orgs/ARMmbed/projects/18#column-15836340)​
  * [PSA Crypto] Clean up and Stabilization 
  * DTLS1.3 
  * Post Quantum Crypto
@@ -59,8 +59,7 @@ If you are interested in collaborating on any of the roadmap features or other f
 * [PSA Crypto]​ M-AEAD Implementation
 * [PSA Crypto]​ EdDSA API  Design 
 * [PSA Crypto]​ PBKDF2 API  Design 
-* [PSA Crypto]​ ECJPAKE API Design  
-* [PSA Crypto] SHA3​
+* [PSA Crypto]​ ECJPAKE API Design  ​
 * DTLS-SRTP 
 * Lucky13 Security Improvements 
 * [PSA Crypto] [PSA Crypto API implementation v1.0 Specification - Phase1](https://github.com/orgs/ARMmbed/projects/18#column-15836285)
