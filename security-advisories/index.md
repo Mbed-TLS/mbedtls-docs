@@ -1,6 +1,4 @@
-# Tech Updates / Security Advisories
-
-## Advisories
+# Security Advisories
 
 ```{toctree}
 ---
