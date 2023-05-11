@@ -6,7 +6,7 @@ If you are interested in collaborating on any of the roadmap features or other f
 
 **2023 CQ2 (In Development)**
 * [Mbed TLS] [Code size optimisation (driver only build - ECC - Initial)](https://github.com/orgs/Mbed-TLS/projects/1#column-18986128)
-* [PSA Crypto] Memory Optimizations - Phase1
+* [PSA Crypto] Memory Optimizations (code size) - Phase1
 * [PSA Crypto] PSA driver – Handle Opaque Persistent Key in Secure Element - Investigation
 * [Bignum] [ECP Curves field reduction - NIST](https://github.com/orgs/Mbed-TLS/projects/1#column-17950163)
 * [Mbed TLS] [Use PSA: misc. gaps](https://github.com/orgs/Mbed-TLS/projects/1#column-18337954)
@@ -15,14 +15,14 @@ If you are interested in collaborating on any of the roadmap features or other f
 **2023 CQ3**
 * [Mbed TLS] [Code size optimisation (driver only build - ECC)](https://github.com/orgs/Mbed-TLS/projects/1#column-18986128)
 * [Mbed TLS] [TLS1.3 early data](https://github.com/orgs/Mbed-TLS/projects/1#column-18972084) 
-* [PSA Crypto] Memory Optimizations
+* [PSA Crypto] Memory Optimizations (code size)
 * PAKE API investigation for SPAKE2+ 
 * [PSA Crypto] [PBKDF2 PSA Driver Implementation](https://github.com/orgs/Mbed-TLS/projects/1#column-18986190)
 
 **2023 CQ4**
 * [Mbed TLS] [Code size optimisation (driver only build - Cipher and AEAD)](https://github.com/orgs/Mbed-TLS/projects/1#column-19075367)
-* [PSA Crypto] PSA driver – Handle Opaque Persistent Key in Secure Element - Investigation
-* [PSA Crypto] Memory Optimizations
+* [PSA Crypto] PSA driver – Handle Opaque Persistent Key in Secure Element - Implementation
+* [PSA Crypto] Memory Optimizations (code size)
   
 **Future**
  * [PSA Crypto] Separate repository from Mbed TLS 
