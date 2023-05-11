@@ -29,7 +29,7 @@ getting_started/index.md
 API Reference <https://mbed-tls.readthedocs.io/projects/api>
 project/index.md
 reviews/index.md
-tech-updates/security-advisories/index.md
+security-advisories/index.md
 CONTRIBUTING.md
 kb/index.md
 ```
