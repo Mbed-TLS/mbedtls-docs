@@ -72,7 +72,7 @@ The following modes are supported:
 
 For debug mode, enter at the command line:
 ```sh
-cmake -D CMAKE_BUILD_TYPE:Debug .
+cmake -D CMAKE_BUILD_TYPE=Debug .
 ```
 To list other available CMake options, use:
 ```sh
