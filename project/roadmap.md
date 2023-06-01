@@ -23,6 +23,7 @@ If you are interested in collaborating on any of the roadmap features or other f
 * [Mbed TLS] [Code size optimisation (driver only build - Cipher and AEAD)](https://github.com/orgs/Mbed-TLS/projects/1#column-19075367)
 * [PSA Crypto] PSA driver – Handle Opaque Persistent Key in Secure Element - Implementation
 * [PSA Crypto] Memory Optimizations (code size)
+* [PSA Crypto] Thread safety
   
 **Future**
  * [PSA Crypto] Separate repository from Mbed TLS 
@@ -38,11 +39,12 @@ If you are interested in collaborating on any of the roadmap features or other f
  * [Publish Threat Model](https://github.com/orgs/ARMmbed/projects/18#column-15836340)​
  * [PSA Crypto] Clean up and Stabilization 
  * DTLS1.3 
+ * [Mbed TLS] [PKCS7 Generation](<https://github.com/Mbed-TLS/mbedtls/pull/3970>)
  * Post Quantum Crypto
 
 **Completed**
 * [Mbed TLS] [Code size optimisation (driver only build - hashes inc. HMAC)](https://github.com/orgs/Mbed-TLS/projects/1#column-19083975)
-* [Mbed TLS] [PKCS7](https://github.com/orgs/Mbed-TLS/projects/1#column-17950135)
+* [Mbed TLS] [PKCS7 Parser](https://github.com/orgs/Mbed-TLS/projects/1#column-17950135)
 * [PSA Crypto] [PSA Crypto restartable sign message](https://github.com/orgs/Mbed-TLS/projects/1#column-18883250)
 * [PSA Crypto] [ECJ-PAKE PSA Implementation](https://github.com/orgs/Mbed-TLS/projects/1#column-18883296) 
 * [Mbed TLS] [Connection ID DTLS1.2](https://github.com/Mbed-TLS/mbedtls/pull/6264)
