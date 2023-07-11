@@ -985,6 +985,7 @@ class MakefileMaker:
                                                      self.shared_library_extension)
                                              for dep in dependent_libraries],
                         [sjoin('$(CC)',
+                               '$(WARNING_CFLAGS)',
                                '$(COMMON_FLAGS)',
                                '$(LDFLAGS)',
                                '$(DLLFLAGS)',
@@ -1073,6 +1074,8 @@ class MakefileMaker:
             flags.append('$(LDFLAGS_L_THREADS)')
         if 'dlopen' in app:
             flags.append('$(LDFLAGS_L_DLOPEN)')
+        if 'zeroize' in app:
+            flags.append('-g3')
         return flags
 
     def add_run_target(self, program: str,
@@ -1113,6 +1116,8 @@ class MakefileMaker:
                         short='Gen   $@')
             self.add_clean(base + '_generated.c')
         extra_flags = '-I ' + src.target_dir() # for generated files
+        if 'zeroize' in base:
+            extra_flags += ' -g3'
         object_file = src.target(self.object_extension)
         self.object_target('PROGRAMS', src, extra_flags=extra_flags)
         if base in self._auxiliary_sources:
@@ -1134,6 +1139,7 @@ class MakefileMaker:
                     [sjoin('$(CC)',
                            object_file,
                            sjoin(*object_deps),
+                           '$(WARNING_CFLAGS)',
                            '$(COMMON_FLAGS)',
                            '$(LDFLAGS)',
                            '$(PROGRAMS_LDFLAGS)',
@@ -1176,6 +1182,9 @@ class MakefileMaker:
         self.add_run_target('programs/test/benchmark')
         self.add_run_target('programs/test/selftest')
         # TODO: *_demo.sh
+        self.target('test_zeroize',
+                    ['programs/test/zeroize'],
+                    ['gdb -x ../tests/scripts/test_zeroize.gdb -nw -batch -nx'])
 
     def define_tests_common_objects(self) -> None:
         """Emit the definition of tests_common_objects.
@@ -1731,6 +1740,7 @@ class BuildTreeMaker:
         if not self.options.in_tree_build and not os.path.exists(source_link):
             os.symlink(self.source_path, source_link)
         for link in [['include', 'psa'], # hack for psa_constant_names.py
+                     ['programs', 'test', 'zeroize.c'],
                      ['scripts'],
                      ['tests', 'configs'],
                      ['tests', 'compat.sh'],
