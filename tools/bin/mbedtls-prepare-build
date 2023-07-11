@@ -1773,6 +1773,7 @@ _preset_options = {
         CC='clang',
         CFLAGS='-O',
         COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
+        WARNING_CFLAGS='-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE',
     ),
     'cf': argparse.Namespace(
         _help='Constant flow with MSan, current configuration',
@@ -1875,6 +1876,7 @@ _preset_options = {
         CC='clang',
         CFLAGS='-O',
         COMMON_FLAGS='-fsanitize=memory -g3',
+        WARNING_CFLAGS='-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE',
     ),
     'noplatform': argparse.Namespace(
         _help='Full except platform/fsio/net',
