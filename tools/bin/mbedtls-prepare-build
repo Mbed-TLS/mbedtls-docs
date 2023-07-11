@@ -1233,6 +1233,7 @@ class MakefileMaker:
         function_file = os.path.join(source_dir, function_base + '.function')
         function_files = self.test_generator.function_files(function_file)
         c_file = os.path.join('tests', base + '.c')
+        object_file = os.path.join('tests', base + self.object_extension)
         exe_basename = base + self.executable_extension
         exe_file = os.path.join('tests', exe_basename)
         if function_base in groups:
@@ -1245,20 +1246,22 @@ class MakefileMaker:
                                   [data_file])],
                     ['cd tests && ' + generate_command],
                     short='Gen   $@')
+        self.object_target('TESTS', GeneratedFile(c_file),
+                           auto_deps=False,
+                           deps=self.c_with_dependencies(function_file),
+                           extra_flags='$(TESTS_CFLAGS)')
         self.target(exe_file,
                     (self.c_dependencies_only(function_files) +
-                     ['$(lib)', '$(test_build_deps)', c_file]),
+                     ['$(lib)', '$(test_build_deps)', object_file]),
                     [sjoin('$(CC)',
+                           object_file,
                            '$(WARNING_CFLAGS)',
                            '$(COMMON_FLAGS)',
-                           '$(CFLAGS)',
-                           '$(TESTS_CFLAGS)',
-                           '$(TESTS_EXTRA_OBJECTS)',
-                           c_file,
                            '$(LDFLAGS)',
                            '$(TESTS_LDFLAGS)',
                            '$(test_common_objects)',
                            '$(test_libs)',
+                           '$(TESTS_EXTRA_OBJECTS)',
                            '-o $@')],
                     clean=False,
                     short='CC    $@')
@@ -1290,27 +1293,25 @@ class MakefileMaker:
                     short='VALGRIND tests/' + exe_basename,
                     phony=True)
 
-    def test_group_targets(self, groups: Dict[str, List[str]]) -> None:
-        """Emit run targets for test groups.
+    def test_group_target(self, base : str, executables : List[str]) -> None:
+        """Emit run targets for a test group.
 
         A test group is a group of test executables that share the same
-        .function file. The groups parameter is a dictionary mapping group
-        names to the list of executables that they contain.
+        .function file.
         """
         use_run_test_suites = False
-        for base, executables in groups.items():
-            shell_code = '''
+        shell_code = '''
 failures=;
 for x in {}; do
-./$$x || failures="$$failures $$x";
+$(RUN) ./$$x $(RUNS) || failures="$$failures $$x";
 done;
 if [ -n "$$failures" ]; then echo; echo "Failures:$$failures"; false; fi
 '''.format(' '.join([re.sub(r'.*/', r'', exe) for exe in executables]))
-            self.target('tests/' + base + '.run',
-                        groups[base] + ['tests/seedfile'],
-                        ['$(SETENV)cd tests && ' + shell_code],
-                        short='',
-                        phony=True)
+        self.target('tests/' + base + '.run',
+                    executables + ['tests/seedfile'],
+                    ['$(SETENV)cd tests && ' + shell_code],
+                    short='',
+                    phony=True)
 
     def tests_section(self) -> None:
         """Emit makefile rules to build and run test suites."""
@@ -1343,7 +1344,13 @@ if [ -n "$$failures" ]; then echo; echo "Failures:$$failures"; false; fi
         for src in data_files:
             self.test_subsection(src, executables, groups)
         self.assign('test_apps', *executables)
-        self.test_group_targets(groups)
+        for base in sorted(groups.keys()):
+            # If there's both a foo.data and a foo.bar.data, the
+            # foo.run targets runs the foo executable, and we can't reuse
+            # that name for a group.
+            if 'tests/' + base in executables:
+                continue
+            self.test_group_target(base, groups[base])
         self.target('tests', ['$(test_apps)'],
                     [],
                     help='Build the host tests.',
