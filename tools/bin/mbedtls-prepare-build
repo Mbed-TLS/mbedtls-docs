@@ -1774,6 +1774,15 @@ _preset_options = {
         CFLAGS='-O',
         COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
     ),
+    'cf': argparse.Namespace(
+        _help='Constant flow with MSan, current configuration',
+        config_set=['MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN'],
+        config_unset=['MBEDTLS_AESNI_C'],
+        CC='clang',
+        CFLAGS='-O',
+        COMMON_FLAGS='-fsanitize=memory -g3',
+        WARNING_CFLAGS='-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE',
+    ),
     'coverage': argparse.Namespace(
         _help='Build with coverage instrumentation',
         config_name='full',
