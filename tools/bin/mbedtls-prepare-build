@@ -1876,6 +1876,10 @@ _preset_options = {
         CFLAGS='-O',
         COMMON_FLAGS='-fsanitize=memory -g3',
     ),
+    'opt': argparse.Namespace(
+        _help='Optimized build',
+        CFLAGS='-O3',
+    ),
     'thumb': argparse.Namespace(
         _help='Default configuration for arm-linux-gnueabi',
         CC='arm-linux-gnueabi-gcc',
