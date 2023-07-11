@@ -1199,13 +1199,27 @@ class MakefileMaker:
         """
         tests_common_sources = self.list_source_files(self.options.source,
                                                       'tests/src/*.c',
-                                                      'tests/src/drivers/*.c')
-        tests_common_objects = []
+                                                      'tests/src/drivers/*.c',
+                                                      'tests/src/test_helpers/*.c')
+        tests_crypto_objects = []
+        tests_x509_objects = []
+        tests_ssl_objects = []
         for src in tests_common_sources:
             self.object_target('TESTS', src)
             object_file = src.target(self.object_extension)
-            tests_common_objects.append(object_file)
-        self.assign('test_common_objects', *tests_common_objects)
+            if 'ssl' in object_file:
+                tests_ssl_objects.append(object_file)
+            elif 'x509' in object_file:
+                tests_x509_objects.append(object_file)
+            else:
+                tests_crypto_objects.append(object_file)
+        self.assign('test_crypto_objects', *tests_crypto_objects)
+        self.assign('test_x509_objects', *tests_x509_objects)
+        self.assign('test_ssl_objects', *tests_ssl_objects)
+        self.assign('test_common_objects',
+                    '$(test_crypto_objects)',
+                    '$(test_x509_objects)',
+                    '$(test_ssl_objects)')
 
     def test_subsection(self, src: SourceFile,
                         executables: List[str],
@@ -1744,7 +1758,8 @@ class BuildTreeMaker:
         """Go ahead and prepate the build tree."""
         for subdir in ([['include', 'mbedtls'],
                         ['library'],
-                        ['tests', 'src', 'drivers']] +
+                        ['tests', 'src', 'drivers'],
+                        ['tests', 'src', 'test_helpers']] +
                        [['programs', d] for d in self.programs_subdirs()]):
             self.make_subdir(subdir)
         source_link = os.path.join(self.options.dir, 'source')
