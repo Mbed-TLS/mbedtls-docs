@@ -1821,12 +1821,13 @@ _preset_options = {
         config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
     ),
     'full-asan': argparse.Namespace(
-        _help='Full configuration with GCC+ASan+UBSan',
+        _help='Full configuration with Clang+ASan+UBSan',
         config_name='full',
         config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
-        CC='gcc',
+        CC='clang',
         CFLAGS='-O',
-        COMMON_FLAGS='-fsanitize=address,undefined -fno-common -g3',
+        COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
+        WARNING_CFLAGS='-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE',
     ),
     'full-debug': argparse.Namespace(
         _help='Full configuration, debug build',
