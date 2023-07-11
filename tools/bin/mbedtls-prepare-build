@@ -164,7 +164,7 @@ Options = argparse.Namespace
 A submodule is a subdirectory of the source tree which has the same
 general structure as the source tree.
 """
-_submodule_names = ['crypto']
+SUBMODULE_NAMES = ['crypto']
 
 
 class SourceFile:
@@ -364,6 +364,24 @@ class MakefileMaker:
         'library/psa_crypto_driver_wrappers.h',
     ])
 
+    @staticmethod
+    def gather_submodules(source_dir) -> Iterable[str]:
+        """Iterate over the existing submodules under source_dir.
+
+        3rdparty directories are considered submodules, as well as
+        names registered in SUBMODULE_NAMES.
+        """
+        for m in SUBMODULE_NAMES:
+            if os.path.isdir(os.path.join(source_dir, m)):
+                yield m
+        for d in glob.glob(os.path.join(source_dir, '3rdparty', '*')):
+            continue #TODO
+            if os.path.isdir(os.path.join(d, 'include')) or \
+               os.path.isdir(os.path.join(d, 'library')) or \
+               os.path.isdir(os.path.join(d, 'programs')) or \
+               os.path.isdir(os.path.join(d, 'tests')):
+                yield d[len(source_dir)+1:]
+
     def __init__(self, options: Options, source_path: str) -> None:
         """Initialize a makefile generator.
 
@@ -399,8 +417,7 @@ class MakefileMaker:
             # dependencies change over time.
             'library/psa_crypto_driver_wrappers.c': self.PSA_CRYPTO_DRIVER_WRAPPERS_DEPENDENCIES,
         }
-        self.submodules = [submodule for submodule in _submodule_names
-                           if self.source_exists(submodule)]
+        self.submodules = list(self.gather_submodules(self.options.source))
         if self.source_exists('tests/scripts/generate_test_code.py'):
             self.test_generator = OnTargetTestGenerator(options) #type: TestGeneratorInterface
         else:
@@ -661,6 +678,11 @@ class MakefileMaker:
             dirs.append(subdir)
             if submodule is not None:
                 dirs.append(os.path.join(submodule, subdir))
+            if submodule == '3rdparty/everest':
+                dirs.append(os.path.join(submodule, 'include/everest'))
+                if '/kremlib/' in filename:
+                    dirs.append(os.path.join(submodule, 'include/everest/kremlib'))
+                print(filename, dirs)
         return dirs
 
     def include_path_options(self, filename: str) -> str:
@@ -777,9 +799,16 @@ class MakefileMaker:
         return ['$(SOURCE_DIR)/' + filename for filename in sorted(deps)]
 
     def object_target(self, section: str,
-                      src: SourceFile, extra: Iterable[str]) -> None:
-        c_file = src.make_path()
-        dependencies = self.c_with_dependencies(src.relative_path())
+                      src: SourceFile,
+                      deps: Iterable[str] = (),
+                      auto_deps: bool = True,
+                      extra_flags: str = '') -> None:
+        c_path = src.make_path()
+        dependencies = list(deps)
+        if auto_deps:
+            dependencies += self.c_with_dependencies(src.relative_path())
+        else:
+            dependencies += [c_path]
         for short, switch, extension in [
                 ('CC -S ', '-S', self.assembly_extension),
                 ('CC    ', '-c', self.object_extension),
@@ -790,11 +819,18 @@ class MakefileMaker:
                                '$(WARNING_CFLAGS)',
                                '$(COMMON_FLAGS)',
                                '$(CFLAGS)',
-                               ' '.join(['$({}_CFLAGS)'.format(section)] +
-                                        list(extra)),
+                               ' '.join(['$({}_CFLAGS)'.format(section)]),
+                               # TODO: some files need extra -I (currently:
+                               # 3rdparty/everest/library/**/*.c need
+                               # 3rdparty/everest/include/everst and some
+                               # need .../kremlib as well). This is currently
+                               # handled in the include_path method, but
+                               # we don't call it here, only for a section
+                               # as a whole.
+                               extra_flags.strip(),
                                '-o $@',
-                               switch, c_file)],
-                        short=(short + c_file))
+                               switch, c_path)],
+                        short=(short + c_path))
 
     class Library(enum.Enum):
         CRYPTO = 1
@@ -855,7 +891,7 @@ class MakefileMaker:
         self.target(generated,
                     [script_path] + sources,
                     [sjoin(script_path, '-o $@', *sources)])
-        self.object_target('LIBRARY', GeneratedFile(generated), [])
+        self.object_target('LIBRARY', GeneratedFile(generated))
 
     def list_source_files(self,
                           root: str,
@@ -871,7 +907,7 @@ class MakefileMaker:
         """
         # FIXME: for error.c at least, we need the root, not the submodule.
         all_sources = {}
-        for submodule in _submodule_names + ['']:
+        for submodule in self.submodules + ['']:
             submodule_root = os.path.join(root, submodule)
             start = len(submodule_root)
             if submodule:
@@ -912,7 +948,7 @@ class MakefileMaker:
         # Enumerate modules and emit the rules to build them
         modules = self.list_source_files(self.options.source, 'library/*.c')
         for module in modules:
-            self.object_target('LIBRARY', module, [])
+            self.object_target('LIBRARY', module)
         contents = collections.defaultdict(list)
         # Enumerate libraries and the rules to build them
         for module in modules:
@@ -1076,9 +1112,9 @@ class MakefileMaker:
                         [script_path],
                         short='Gen   $@')
             self.add_clean(base + '_generated.c')
-        extra_includes = ['-I', src.target_dir()] # for generated files
+        extra_flags = '-I ' + src.target_dir() # for generated files
         object_file = src.target(self.object_extension)
-        self.object_target('PROGRAMS', src, extra_includes)
+        self.object_target('PROGRAMS', src, extra_flags=extra_flags)
         if base in self._auxiliary_sources:
             return
         exe_file = src.target(self.executable_extension)
@@ -1153,7 +1189,7 @@ class MakefileMaker:
                                                       'tests/src/drivers/*.c')
         tests_common_objects = []
         for src in tests_common_sources:
-            self.object_target('TESTS', src, [])
+            self.object_target('TESTS', src)
             object_file = src.target(self.object_extension)
             tests_common_objects.append(object_file)
         self.assign('test_common_objects', *tests_common_objects)
@@ -1599,12 +1635,13 @@ class BuildTreeMaker:
             else:
                 options.config_mode = 'copy'
         self.config = _config_classes[options.config_mode](options)
+        self.submodules = self.makefile.submodules
 
     def programs_subdirs(self) -> Iterable[str]:
         """Detect subdirectories for sample programs."""
         tops = ([self.options.source] +
                 [os.path.join(self.options.source, submodule)
-                 for submodule in _submodule_names])
+                 for submodule in self.submodules])
         return [os.path.basename(d)
                 for top in tops
                 for d in glob.glob(os.path.join(top, 'programs', '*'))
@@ -1640,9 +1677,9 @@ class BuildTreeMaker:
         name in the source tree in any submodule.
 
         Check the root first, then the submodules in the order given by
-        _submodule_names.
+        SUBMODULE_NAMES.
         """
-        for submodule in [''] + _submodule_names:
+        for submodule in [''] + SUBMODULE_NAMES:
             sub_link = [submodule] + link
             if os.path.exists(os.path.join(self.options.source, *sub_link)):
                 self.link_to_source(sub_link, link)
