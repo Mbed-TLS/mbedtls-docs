@@ -1126,14 +1126,18 @@ class MakefileMaker:
         object_deps = [dep + self.object_extension
                        for dep in self.auxiliary_objects(base)
                        if self.source_exists(dep + '.c')]
-        if base == 'programs/test/dlopen':
-            object_deps.append('library/platform.o library/platform_util.o')
-        else:
-            object_deps.append('$(test_common_objects)')
         libs = list(reversed(self.program_libraries(base)))
         lib_files = ['library/{}{}'.format(lib.libname(), self.library_extension)
                      for lib in libs]
         dash_l_libs = [self.dash_l_lib(lib) for lib in libs]
+        if base == 'programs/test/dlopen':
+            object_deps.append('library/platform.o library/platform_util.o')
+        else:
+            object_deps.append('$(test_crypto_objects)')
+            if self.Library.X509 in libs:
+                object_deps.append('$(test_x509_objects)')
+            if self.Library.TLS in libs:
+                object_deps.append('$(test_ssl_objects)')
         self.target(exe_file,
                     [object_file] + object_deps + lib_files,
                     [sjoin('$(CC)',
