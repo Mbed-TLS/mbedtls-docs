@@ -860,7 +860,7 @@ class MakefileMaker:
         """
         module = os.path.basename(module)
         if module.startswith('x509') or \
-           module in ['certs', 'pkcs11']:
+           module in ['certs', 'pkcs7', 'pkcs11']:
             return cls.Library.X509
         elif module.startswith('ssl') or \
              module in ['debug', 'net', 'net_sockets']:
