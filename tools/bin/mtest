@@ -813,12 +813,7 @@ def main():
     backup_config_options(restore=False, delete_backup=False)
 
     try:
-        first = True
         for target in args.targets:
-            if first:
-                first = False
-            else:
-                log("\n", indent=0)
             if target.compiler in ALL_COMPILERS:
                 log(f"{target.arch_isa} {target.compiler} {target.cflags}", indent=0)
             else:
@@ -851,6 +846,7 @@ def main():
                     else:
                         log("skipping running tests: " + toolchain_exes(target)["qemu_error"])
             finally:
+                log("\n", indent=0)
                 log(indent_adjust=-4)
     finally:
         backup_config_options(restore=True, delete_backup=True)
