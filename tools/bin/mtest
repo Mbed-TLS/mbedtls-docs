@@ -510,8 +510,8 @@ def size(target):
         size_data = [x.split()[0:3] for x in size.splitlines()[1:]]
         text_sum = sum(int(x[0]) for x in size_data)
         data_sum = sum(int(x[1]) for x in size_data)
-        bss_sum  = sum(int(x[2]) for x in size_data)
-        log(f"total text = {text_sum}\ntotal data = {data_sum}\ntotal bss  = {bss_sum}")
+        log(f"total text = {text_sum}")
+        log(f"total data = {data_sum}")
         log(f"total text + data (i.e., binary size) = {text_sum + data_sum}")
     finally:
         log(indent_adjust=-4)
