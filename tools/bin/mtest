@@ -130,23 +130,7 @@ def clean():
     subrun(["make", "clean"], silent=True)
 
 
-def toolchain(target):
-    # basic CFLAGS setup
-    c_flags = f"-I{ROOT}/include"
-    if "-O" not in target.cflags:
-        if args.size_tfm and target.compiler in { "clang", "armclang" }:
-            c_flags += " -Oz"
-        else:
-            c_flags += " -Os"
-    if "-std" not in target.cflags: c_flags += " -std=c99"
-    if args.no_warnings:
-        c_flags += " -Wno-everything"
-    else:
-        c_flags += " " + WARNING_FLAGS.get(target.compiler, "")
-    if target.cflags:
-        c_flags += " " + target.cflags.strip()
-    c_flags = c_flags.strip()
-
+def toolchain_exes(target):
     compiler_exe = target.compiler
 
     # construct triple needed in gcc and objdump executable name
@@ -163,6 +147,104 @@ def toolchain(target):
         triple_abi = "gnuabi64"
     triple = f"{triple_arch}-linux-{triple_abi}"
 
+    if target.compiler == "gcc":
+        if not target.is_native:
+            # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
+            if "-march" in target.cflags or "-mcpu" in target.cflags:
+                # user-specified arch/isa/cpu
+                triple = "aarch64-linux-gnu"
+                for v in range(1,7):
+                    if f"-march=armv{v}" in target.cflags: triple = "arm-linux-gnueabi"
+                if "-mthumb" in target.cflags: triple = "arm-linux-gnueabi"
+                m = re.search(r"-mcpu=cortex-(\S+)", target.cflags)
+                if m:
+                    v = m.group(1)
+                    if (v[0] == 'a' and int(v[1:]) < 34): triple = "arm-linux-gnueabi"
+                    if (v[0] == 'm'): triple = "arm-linux-gnueabi"
+                if "-mcpu=arm" in target.cflags: triple = "arm-linux-gnueabi"
+
+        compiler_exe = f"{triple}-gcc"
+        for i in range(25, 1, -1):
+            if shutil.which(compiler_exe) is not None: break
+            compiler_exe = f"{triple}-gcc-{i}"
+
+    if shutil.which(compiler_exe) is None:
+        compiler_exe = None
+    if target.compiler == "gcc":
+        compiler_error = f"could not locate gcc executable {triple}-gcc or {triple}-gcc-<majorversion>"
+    else:
+        compiler_error = f"could not locate {target.compiler} executable"
+
+    # non-arch-specific size should work in all cases, but may as well prefer <triple>-size
+    if args.size:
+        size_exe = triple + "-size"
+        if shutil.which(size_exe) is None:
+            size_exe = "size"
+        if shutil.which(size_exe) is None:
+            size_exe = None
+    else:
+        size_exe = None
+    size_error = f"could not locate size executable {triple}-size or size"
+
+    # we need an architecture-specific obj-dump for disassembly (unless it's a native build)
+    if args.disassemble:
+        objdump_exe = triple + "-objdump"
+        if shutil.which(objdump_exe) is None:
+            if target.is_native:
+                objdump_exe = "objdump"
+            if shutil.which(objdump_exe) is None:
+                objdump_exe = None
+    else:
+        objdump_exe = None
+    if target.is_native:
+        objdump_error = f"could not locate size executable {triple}-objdump or objdump"
+    else:
+        objdump_error = f"could not locate size executable {triple}-objdump"
+
+    if target.arch.startswith("armv"):
+        qemu_arch = "arm"
+    else:
+        qemu_arch = QEMU_NAME_MAP.get(target.arch, target.arch)
+    qemu_exe = f"qemu-{qemu_arch}-static"
+    qemu_error = f"could not locate qemu executable {qemu_exe}"
+    if shutil.which(qemu_exe) is None:
+        qemu_exe = None
+
+    return {
+        "compiler": compiler_exe,
+        "objdump": objdump_exe,
+        "size": size_exe,
+        "triple": triple,
+        "qemu": qemu_exe,
+        "compiler_error": compiler_error,
+        "size_error": size_error,
+        "objdump_error": objdump_error,
+        "qemu_error": qemu_error
+    }
+
+
+def toolchain(target, exit_on_failure=True):
+    # basic CFLAGS setup
+    c_flags = f"-I{ROOT}/include"
+    if "-O" not in target.cflags:
+        if args.size_tfm and target.compiler in { "clang", "armclang" }:
+            c_flags += " -Oz"
+        else:
+            c_flags += " -Os"
+    if "-std" not in target.cflags: c_flags += " -std=c99"
+    if args.no_warnings:
+        c_flags += " -Wno-everything"
+    else:
+        c_flags += " " + WARNING_FLAGS.get(target.compiler, "")
+    if target.cflags:
+        c_flags += " " + target.cflags.strip()
+    c_flags = c_flags.strip()
+
+    if args.memsan:
+        c_flags  += " " + MEMSAN_CFLAGS
+    elif args.asan:
+        c_flags  += " " + ASAN_CFLAGS
+
     if target.compiler == "armclang":
         if target.isa == "thumb1":
             # strictly speaking, includes "some 32-bit Thumb2 instructions" but this is the oldest ISA armclang supports
@@ -174,24 +256,13 @@ def toolchain(target):
         elif target.isa == "aarch64":
             c_flags += " --target=aarch64-arm-none-eabi -mcpu=cortex-a78"
         else:
-            error(f"unsupported ISA {target.isa} for armclang")
+            if exit_on_failure: error(f"unsupported ISA {target.isa} for armclang")
 
     elif target.compiler == "gcc":
         if not target.is_native:
             # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
-            if "-march" in c_flags or "-mcpu" in c_flags:
-                # user-specified arch/isa/cpu
-                triple = "aarch64-linux-gnu"
-                for v in range(1,7):
-                    if f"-march=armv{v}" in c_flags: triple = "arm-linux-gnueabi"
-                if "-mthumb" in c_flags: triple = "arm-linux-gnueabi"
-                m = re.search(r"-mcpu=cortex-(\S+)", c_flags)
-                if m:
-                    v = m.group(1)
-                    if (v[0] == 'a' and int(v[1:]) < 34): triple = "arm-linux-gnueabi"
-                    if (v[0] == 'm'): triple = "arm-linux-gnueabi"
-                if "-mcpu=arm" in c_flags: triple = "arm-linux-gnueabi"
-            else:
+            if not ("-march" in c_flags or "-mcpu" in c_flags):
+                # not user-specified arch/isa/cpu
                 if target.arch == "armv5" and target.isa == "thumb1":
                     c_flags += " -mcpu=arm926ej-s -mthumb"
                 elif target.arch == "armv5" and target.isa == "arm":
@@ -217,13 +288,6 @@ def toolchain(target):
             if target.arch == "x86_64":
                 # Support AESNI intrinsics
                 c_flags += " -mpclmul -msse2 -maes"
-            # search for compiler exe (highest version available)
-            compiler_exe = f"{triple}-gcc"
-            for i in range(25, 1, -1):
-                if shutil.which(compiler_exe) is not None: break
-                compiler_exe = f"{triple}-gcc-{i}"
-            else:
-                error(f"could not locate gcc executable {triple}-gcc or {triple}-gcc-<majorversion>")
 
     elif target.compiler == "clang":
         if not target.is_native:
@@ -257,44 +321,20 @@ def toolchain(target):
             else:
                 error(f"unsupported target {target.arch} {target.isa} for clang")
 
-    if args.memsan:
-        c_flags += " " + MEMSAN_CFLAGS
-        ld_flags = target.ldflags
-    elif args.asan:
-        c_flags += " " + ASAN_CFLAGS
-        ld_flags = target.ldflags + " " + ASAN_LDFLAGS
-    else:
-        ld_flags = target.ldflags
-
+    ld_flags = target.ldflags
+    if args.asan:
+        ld_flags += " " + ASAN_LDFLAGS
     if not target.is_native:
         ld_flags += " --static"
 
-    # non-arch-specific size should work in all cases, but may as well prefer <triple>-size
-    size_exe = triple + "-size"
-    if args.size:
-        if shutil.which(size_exe) is None:
-            size_exe = "size"
-        if shutil.which(size_exe) is None:
-            error(f"could not locate size executable {triple}-size or size")
-
-    # we need an architecture-specific obj-dump for disassembly (unless it's a native build)
-    objdump_exe = triple + "-objdump"
-    if args.disassemble and shutil.which(objdump_exe) is None:
-        if target.is_native:
-            objdump_exe = "objdump"
-        if shutil.which(objdump_exe) is None:
-            error(f"could not locate objdump executable {objdump_exe}")
-
-    # check for compiler exe
-    if shutil.which(compiler_exe) is None:
-        error(f"could not locate compiler executable {compiler_exe}")
+    exes = toolchain_exes(target)
 
     return {
         "CFLAGS": c_flags.strip(),
         "LDFLAGS": ld_flags.strip(),
-        "CC": compiler_exe,
-        "OBJDUMP": objdump_exe,
-        "SIZE": size_exe
+        "CC": exes["compiler"],
+        "OBJDUMP": exes["objdump"],
+        "SIZE": exes["size"]
     }
 
 
@@ -373,6 +413,10 @@ def flags_to_hr_str(flags):
     return hrs.strip()
 
 
+def can_disassemble(target):
+    return toolchain_exes(target)["objdump"] is not None
+
+
 def disassemble(target):
     # note: clang seems to want "-gdwarf-4" passed to CFLAGS to show source with --source properly
     # run objdump -d to disassemble
@@ -399,6 +443,10 @@ def disassemble(target):
             if found: diss.append(l)
         while len(diss) > 0 and diss[-1] == "": diss = diss[:-1]
         return "\n".join(diss)
+
+
+def can_build(target):
+    return toolchain_exes(target)["compiler"] is not None
 
 
 def build(target, tests):
@@ -438,6 +486,10 @@ def build(target, tests):
         log(indent_adjust=-4)
 
 
+def can_size(target):
+    return toolchain_exes(target)["size"] is not None
+
+
 def size(target):
     log("size")
     try:
@@ -465,6 +517,13 @@ def size(target):
         log(indent_adjust=-4)
 
 
+def can_run(target):
+    if target.is_native:
+        return True
+    else:
+        return toolchain_exes(target)["qemu"] is not None
+
+
 def run(target, tests, quiet=False):
     if target.baremetal or not tests: return
 
@@ -476,11 +535,8 @@ def run(target, tests, quiet=False):
             if target.is_native:
                 output, _ = subrun(f"{TEST_DIR}/" + t, test_dir=True, silent=quiet)
             else:
-                if target.arch.startswith("armv"):
-                    qemu_arch = "arm"
-                else:
-                    qemu_arch = QEMU_NAME_MAP.get(target.arch, target.arch)
-                output, _ = subrun([f"qemu-{qemu_arch}-static", t], test_dir=True, silent=quiet)
+                qemu_exe = toolchain_exes(target)["qemu"]
+                output, _ = subrun([qemu_exe, t], test_dir=True, silent=quiet)
             if quiet and output:
                 log(output.splitlines()[-1])
     finally:
@@ -526,7 +582,7 @@ mtest -k alignment
 
 Report library size, as built by armclang -Oz with TF-M configuration for armv8 thumb2:
 mtest -S
-mtest -S clang # as above, but use clang instead of the default armclang
+mtest -S clang       # as above, but use clang instead of the default armclang
 
 Build aes.o multiple times, with every combination of the given options:
 mtest aes.o MBEDTLS_AES_SETKEY_ENC_ALT,MBEDTLS_AES_DECRYPT_ALT,MBEDTLS_AES_ROM_TABLES,MBEDTLS_AES_ENCRYPT_ALT,MBEDTLS_AES_SETKEY_DEC_ALT,MBEDTLS_AES_FEWER_TABLES,MBEDTLS_PADLOCK_C
@@ -534,7 +590,7 @@ mtest aes.o MBEDTLS_AES_SETKEY_ENC_ALT,MBEDTLS_AES_DECRYPT_ALT,MBEDTLS_AES_ROM_T
 Disassemble cmac.o
 mtest cmac.o -d
 
-Disassemble mbedtls_xor, built with clang -Os for arm
+Disassemble mbedtls_xor for arm, built with clang -Os
 mtest -d mbedtls_xor -Os clang arm
 '''
 
@@ -770,16 +826,30 @@ def main():
             try:
                 log(indent_adjust=4)
                 backup_config_options(restore=True, delete_backup=False)
-                build(target, args.tests)
+                if can_build(target):
+                    build(target, args.tests)
+                else:
+                    log("skipping target: " + toolchain_exes(target)["compiler_error"])
+                    continue
                 if args.size:
-                    size(target)
-                if (args.disassemble):
-                    d = disassemble(target)
-                    log(f"Disassembly for {args.disassemble}:")
-                    print(d)
-                    print()
-                run(target, args.tests, quiet=quiet)
-                first = False
+                    if can_size(target):
+                        size(target)
+                    else:
+                        log("skipping size: " + toolchain_exes(target)["size_error"])
+                if args.disassemble:
+                    if can_disassemble(target):
+                        d = disassemble(target)
+                        distgt = '' if args.disassemble == True else ' for ' + args.disassemble
+                        log(f"Disassembly{distgt}:")
+                        print(d)
+                        print()
+                    else:
+                        log("skipping disassemble: " + toolchain_exes(target)["objdump_error"])
+                if args.tests:
+                    if can_run(target):
+                        run(target, args.tests, quiet=quiet)
+                    else:
+                        log("skipping running tests: " + toolchain_exes(target)["qemu_error"])
             finally:
                 log(indent_adjust=-4)
     finally:
