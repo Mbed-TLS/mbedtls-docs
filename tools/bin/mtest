@@ -133,7 +133,11 @@ def clean():
 def toolchain(target):
     # basic CFLAGS setup
     c_flags = f"-I{ROOT}/include"
-    if "-O" not in target.cflags: c_flags += " -Os"
+    if "-O" not in target.cflags:
+        if args.size_tfm and target.compiler in { "clang", "armclang" }:
+            c_flags += " -Oz"
+        else:
+            c_flags += " -Os"
     if "-std" not in target.cflags: c_flags += " -std=c99"
     if args.no_warnings:
         c_flags += " -Wno-everything"
@@ -375,18 +379,26 @@ def disassemble(target):
     objdump = toolchain(target)["OBJDUMP"]
     objfiles = ["library/libmbedcrypto.a", "library/libmbedtls.a", "library/libmbedx509.a" ] + args.build_targets
     objfiles = [f"{ROOT}/{f}" for f in objfiles if os.path.exists(f"{ROOT}/{f}")]
-    output, _ = subrun([objdump] + objfiles + [f"--disassemble={args.disassemble}", "--visualize-jumps=extended-color"], silent=True)
-    # extract the relevant bit of output
-    found = False
-    diss = []
-    for l in output.splitlines():
-        if l.strip().endswith(f"{args.disassemble}>:"):
-            found = True
-        if found and re.search(r"[\w_]+.o:\s+file format", l): break
-        if found and l.strip().startswith("Disassembly of section"): break
-        if found: diss.append(l)
-    while diss[-1] == "": diss = diss[:-1]
-    return "\n".join(diss)
+    if args.disassemble == True:
+        disarg = "--disassemble"
+    else:
+        disarg = f"--disassemble={args.disassemble}"
+    output, _ = subrun([objdump] + objfiles + [disarg, "--visualize-jumps=extended-color"], silent=True)
+    if args.disassemble == True:
+        # return complete output
+        return output
+    else:
+        # extract the relevant bit of output
+        found = False
+        diss = []
+        for l in output.splitlines():
+            if l.strip().endswith(f"{args.disassemble}>:"):
+                found = True
+            if found and re.search(r"[\w_]+.o:\s+file format", l): break
+            if found and l.strip().startswith("Disassembly of section"): break
+            if found: diss.append(l)
+        while len(diss) > 0 and diss[-1] == "": diss = diss[:-1]
+        return "\n".join(diss)
 
 
 def build(target, tests):
@@ -437,7 +449,12 @@ def size(target):
             size_target = "library/libmbedcrypto.a"
         log(f'{t["SIZE"]} {size_target}')
         size = subrun([t["SIZE"], size_target], silent=True)[0]
-        log(size)
+        lines = size.splitlines()
+        # sort modules by text+data size
+        lines = lines[:1] + sorted(lines[1:], key=lambda l:int(l.split()[0]) + int(l.split()[1]))
+        for l in lines:
+            # skip modules with zero size
+            if not re.search(r"^\s*0\s+0\s+0\s+0\s+0\s", l): log(l)
         size_data = [x.split()[0:3] for x in size.splitlines()[1:]]
         text_sum = sum(int(x[0]) for x in size_data)
         data_sum = sum(int(x[1]) for x in size_data)
@@ -507,13 +524,17 @@ mtest base64 armv6-thumb1 aarch64 x86_64
 Run alignment test suite on key targets:
 mtest -k alignment
 
-Report library size, as built with TF-M configuration for armv8 thumb2:
+Report library size, as built by armclang -Oz with TF-M configuration for armv8 thumb2:
 mtest -S
+mtest -S clang # as above, but use clang instead of the default armclang
 
 Build aes.o multiple times, with every combination of the given options:
 mtest aes.o MBEDTLS_AES_SETKEY_ENC_ALT,MBEDTLS_AES_DECRYPT_ALT,MBEDTLS_AES_ROM_TABLES,MBEDTLS_AES_ENCRYPT_ALT,MBEDTLS_AES_SETKEY_DEC_ALT,MBEDTLS_AES_FEWER_TABLES,MBEDTLS_PADLOCK_C
 
-Disassemble mbedtls_xor for arm, built with clang -Os
+Disassemble cmac.o
+mtest cmac.o -d
+
+Disassemble mbedtls_xor, built with clang -Os for arm
 mtest -d mbedtls_xor -Os clang arm
 '''
 
@@ -536,9 +557,9 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     parser.add_argument('-A', '--asan', action="store_true", default=False, help="make an ASAN build")
     parser.add_argument('-W', '--no-warnings', action="store_true", default=False, help="disable warnings")
     parser.add_argument('-C', '--no-clean', action="store_true", default=False, help="don't run make clean (if building for a single target)")
-    parser.add_argument('-d', '--disassemble', metavar='function', action="store", default=None, help="disassemble specified function")
+    parser.add_argument('-d', '--disassemble', metavar='function', action="store", nargs='?', const=True, default=None, help="disassemble specified function (or everything if no function specified)")
     parser.add_argument('-s', '--size', action="store_true", default=False, help="display size of library / given build target")
-    parser.add_argument('-S', '--size-tfm', action="store_true", default=False, help=f"as --size, but use the TF-M config file and build with {SIZE_TFM_COMPILER} -Os for Cortex-M33")
+    parser.add_argument('-S', '--size-tfm', action="store_true", default=False, help=f"as --size, but use the TF-M config file and build with {SIZE_TFM_COMPILER} -Oz for Cortex-M33")
     parser.add_argument('-j', '--jobs', nargs='?', const=-1, metavar='N', action="store", type=int, help="enable parallel builds, like 'make -j'. Alternatively, set the MAKEFLAGS environment variable")
     parser.add_argument('rest', metavar='args', nargs='*', help=REST_HELP)
     # handle -MBEDTLS_OPTION style args manually because they confuse argparse w.r.t. -M for --memsan
@@ -585,18 +606,18 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     if args.size_tfm:
         config.append("tfm_mbedcrypto_config_profile_medium.h")
         config.append("crypto_config_profile_medium.h")
-    for a in args.rest:
+    for a in list(args.rest):
         if a.endswith(".h") and os.path.exists(a):
             # arbitrary .h file
             config.append(a)
             args.rest.remove(a)
-            break
+            continue
         x = a.split("/")[-1] if "configs/" in a else a
         if x in supported_configs or f"{x}.h" in supported_configs:
             # file in configs directory, or a known argument to set_config.py
             config.append(f"{x}.h" if f"{x}.h" in supported_configs else x)
             args.rest.remove(a)
-            break
+            continue
 
     # filter out non-config options, and non-flags
     args.rest = [x for x in args.rest if not x.startswith("-") and not x.startswith("MBEDTLS_") and not x.startswith("PSA_WANT_")]
