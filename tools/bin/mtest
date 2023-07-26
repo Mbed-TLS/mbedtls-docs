@@ -389,8 +389,15 @@ def configure_options(target):
                 dest = CRYPTO_CONFIG_FILE
             else:
                 dest = CONFIG_FILE
-            log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
-            shutil.copy(path, dest)
+            if config in { TFM_CONFIG, TFM_CRYPTO_CONFIG } and not os.path.exists(path):
+                # for looking at old checkouts where these configs were not in the tree, fetch from HEAD instead
+                log(f"git show origin/development:configs/{config} > {dest[len(ROOT) + 1:]}")
+                output, _ = subrun(["git", "show", "origin/development:configs/" + config], silent=True)
+                with open(dest, 'w') as f:
+                    f.write(output)
+            else:
+                log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
+                shutil.copy(path, dest)
         elif config.startswith("MBEDTLS_") or config.startswith("-MBEDTLS_") or config.startswith("PSA_") or config.startswith("-PSA_"):
             # an individual option like MBEDTLS_XYZ or -PSA_XYZ
             action = "set"
