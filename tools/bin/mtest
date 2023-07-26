@@ -67,6 +67,9 @@ WARNING_FLAGS = {
 WARNING_FLAGS["arm-none-eabi-gcc"] = WARNING_FLAGS["gcc"]
 WARNING_FLAGS["armclang"]          = WARNING_FLAGS["clang"]
 
+TFM_CONFIG = "tfm_mbedcrypto_config_profile_medium.h"
+TFM_CRYPTO_CONFIG = "crypto_config_profile_medium.h"
+
 Target = namedtuple("Target", ["compiler", "arch", "baremetal", "isa", "arch_isa", "is_native", "arm_arch", "cflags", "ldflags", "config"])
 
 
@@ -660,8 +663,8 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     supported_configs = get_supported_configs()
     config = []
     if args.size_tfm:
-        config.append("tfm_mbedcrypto_config_profile_medium.h")
-        config.append("crypto_config_profile_medium.h")
+        config.append(TFM_CONFIG)
+        config.append(TFM_CRYPTO_CONFIG)
     for a in list(args.rest):
         if a.endswith(".h") and os.path.exists(a):
             # arbitrary .h file
