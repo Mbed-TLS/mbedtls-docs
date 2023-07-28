@@ -381,6 +381,8 @@ def configure_options(target):
     # user-specified options to apply to all targets
     options += args.config_options
 
+    disable_spm = False
+
     for config in options:
         if config.endswith(".h"):
             # a config file - overwrite existing config file
@@ -390,8 +392,11 @@ def configure_options(target):
             else:
                 dest = CONFIG_FILE
             if config in { TFM_CONFIG, TFM_CRYPTO_CONFIG } and not os.path.exists(path):
-                # for looking at old checkouts where these configs were not in the tree, fetch from HEAD instead
-                log(f"git show origin/development:configs/{config} > {dest[len(ROOT) + 1:]}")
+                # for looking at old checkouts where these configs were not in the tree, fetch from
+                # date they were first created instead
+                # also disable MBEDTLS_PSA_CRYPTO_SPM is required to get it to build
+                disable_spm = True
+                log(f"git show 2f1ae5a86ebd67faa50c3983b4567656c2234674:configs/{config} > {dest[len(ROOT) + 1:]}")
                 output, _ = subrun(["git", "show", "origin/development:configs/" + config], silent=True)
                 with open(dest, 'w') as f:
                     f.write(output)
@@ -410,6 +415,10 @@ def configure_options(target):
             log(f"scripts/config.py {config}")
             subrun([f"{ROOT}/scripts/config.py", config], silent=True)
 
+    if disable_spm:
+        # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
+        # and more options again (not sure which) for 3.0.0
+        set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
 
 def flags_to_hr_str(flags):
     hrs = ""
