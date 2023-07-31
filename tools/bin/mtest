@@ -637,8 +637,9 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     parser.add_argument('-S', '--size-tfm', action="store_true", default=False, help=f"as --size, but use the TF-M config file and build with {SIZE_TFM_COMPILER} -Oz for Cortex-M33")
     parser.add_argument('-j', '--jobs', nargs='?', const=-1, metavar='N', action="store", type=int, help="enable parallel builds, like 'make -j'. Alternatively, set the MAKEFLAGS environment variable")
     parser.add_argument('rest', metavar='args', nargs='*', help=REST_HELP)
+
     # handle -MBEDTLS_OPTION style args manually because they confuse argparse w.r.t. -M for --memsan
-    raw_args = [x for x in sys.argv if not x.startswith("-MBEDTLS_")][1:]
+    raw_args = [x for x in sys.argv if not x.startswith("-MBEDTLS_") and not (len(x) > 2 and x.startswith("-W"))][1:]
     args, unknown_args = parser.parse_known_intermixed_args(raw_args)
     args.rest += unknown_args
 
@@ -658,6 +659,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     cflags  = " ".join([x[7:].strip() for x in args.rest if x.startswith("CFLAGS=")])
     # assume any unknown args, i.e. anything starting with a "-" is to be passed to the compiler via CFLAGS
     cflags += " " + " ".join([x for x in args.rest if x.startswith("-") and not x.startswith("-MBEDTLS_") and not x.startswith("-PSA_WANT_")])
+    cflags += " ".join([x for x in sys.argv if x.startswith("-W") and len(x) > 2])
 
     # extract config options
     args.config_options  = [x for x in args.rest if x.startswith("MBEDTLS_") or x.startswith("PSA_WANT_") or x.startswith("-PSA_WANT_")]
