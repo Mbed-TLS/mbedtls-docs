@@ -383,7 +383,10 @@ def configure_options(target):
 
     disable_spm = False
 
-    for config in options:
+    individual_options = [x for x in options if x.startswith("MBEDTLS_") or x.startswith("-MBEDTLS_") or x.startswith("PSA_") or x.startswith("-PSA_")]
+    bulk_options = [x for x in options if x not in individual_options]
+
+    for config in bulk_options:
         if config.endswith(".h"):
             # a config file - overwrite existing config file
             path = config if os.path.exists(config) else f"{ROOT}/configs/{config}"
@@ -403,17 +406,18 @@ def configure_options(target):
             else:
                 log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
                 shutil.copy(path, dest)
-        elif config.startswith("MBEDTLS_") or config.startswith("-MBEDTLS_") or config.startswith("PSA_") or config.startswith("-PSA_"):
-            # an individual option like MBEDTLS_XYZ or -PSA_XYZ
-            action = "set"
-            if config.startswith("-"):
-                action = "unset"
-                config = config[1:]
-            set_config_option(action, config, silent=False)
         else:
             # a configuration recognised by config.py, e.g. "baremetal"
             log(f"scripts/config.py {config}")
             subrun([f"{ROOT}/scripts/config.py", config], silent=True)
+
+    for config in individual_options:
+        # an individual option like MBEDTLS_XYZ or -PSA_XYZ
+        action = "set"
+        if config.startswith("-"):
+            action = "unset"
+            config = config[1:]
+        set_config_option(action, config, silent=False)
 
     if disable_spm:
         # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
@@ -601,7 +605,8 @@ mtest -k alignment
 
 Report library size, as built by armclang -Oz with TF-M configuration for armv8 thumb2:
 mtest -S
-mtest -S clang       # as above, but use clang instead of the default armclang
+mtest -S clang                                  # as above, but use clang instead of the default armclang
+mtest -S MBEDTLS_P256M_EXAMPLE_DRIVER_ENABLED   # as above, but modify TF-M config with given option(s)
 
 Build aes.o multiple times, with every combination of the given options:
 mtest aes.o MBEDTLS_AES_SETKEY_ENC_ALT,MBEDTLS_AES_DECRYPT_ALT,MBEDTLS_AES_ROM_TABLES,MBEDTLS_AES_ENCRYPT_ALT,MBEDTLS_AES_SETKEY_DEC_ALT,MBEDTLS_AES_FEWER_TABLES,MBEDTLS_PADLOCK_C
