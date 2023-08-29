@@ -450,26 +450,29 @@ def disassemble(target):
     objdump = toolchain(target)["OBJDUMP"]
     objfiles = ["library/libmbedcrypto.a", "library/libmbedtls.a", "library/libmbedx509.a" ] + args.build_targets
     objfiles = [f"{ROOT}/{f}" for f in objfiles if os.path.exists(f"{ROOT}/{f}")]
-    if args.disassemble == True:
-        disarg = "--disassemble"
-    else:
-        disarg = f"--disassemble={args.disassemble}"
-    output, _ = subrun([objdump] + objfiles + [disarg, "--visualize-jumps=extended-color"], silent=True)
-    if args.disassemble == True:
-        # return complete output
-        return output
-    else:
-        # extract the relevant bit of output
-        found = False
-        diss = []
-        for l in output.splitlines():
-            if l.strip().endswith(f"{args.disassemble}>:"):
-                found = True
-            if found and re.search(r"[\w_]+.o:\s+file format", l): break
-            if found and l.strip().startswith("Disassembly of section"): break
-            if found: diss.append(l)
-        while len(diss) > 0 and diss[-1] == "": diss = diss[:-1]
-        return "\n".join(diss)
+    fns = [None] if len(args.disassemble) == 0 else args.disassemble
+    result = []
+    for fn in fns:
+        if fn is None:
+            disarg = "--disassemble"
+        else:
+            disarg = f"--disassemble={fn}"
+        output, _ = subrun([objdump] + objfiles + [disarg, "--visualize-jumps=extended-color"], silent=True)
+        if fn is None:
+            result.append(output)
+        else:
+            # extract the relevant bit of output
+            found = False
+            diss = []
+            for l in output.splitlines():
+                if l.strip().endswith(f"{fn}>:"):
+                    found = True
+                if found and re.search(r"[\w_]+.o:\s+file format", l): break
+                if found and l.strip().startswith("Disassembly of section"): break
+                if found: diss.append(l)
+            while len(diss) > 0 and diss[-1] == "": diss = diss[:-1]
+            result.append("\n".join(diss))
+    return "\n\n".join(result)
 
 
 def can_build(target):
@@ -641,7 +644,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     parser.add_argument('-A', '--asan', action="store_true", default=False, help="make an ASAN build")
     parser.add_argument('-W', '--no-warnings', action="store_true", default=False, help="disable warnings")
     parser.add_argument('-C', '--no-clean', action="store_true", default=False, help="don't run make clean (if building for a single target)")
-    parser.add_argument('-d', '--disassemble', metavar='function', action="store", nargs='?', const=True, default=None, help="disassemble specified function (or everything if no function specified)")
+    parser.add_argument('-d', '--disassemble', metavar='function', nargs='*', default=None, help="disassemble specified function(s) (or everything if no function specified)")
     parser.add_argument('-s', '--size', action="store_true", default=False, help="display size of library / given build target")
     parser.add_argument('-S', '--size-tfm', action="store_true", default=False, help=f"as --size, but use the TF-M config file and build with {SIZE_TFM_COMPILER} -Oz for Cortex-M33")
     parser.add_argument('-j', '--jobs', nargs='?', const=-1, metavar='N', action="store", type=int, help="enable parallel builds, like 'make -j'. Alternatively, set the MAKEFLAGS environment variable")
@@ -861,10 +864,10 @@ def main():
                         size(target)
                     else:
                         log("skipping size: " + toolchain_exes(target)["size_error"])
-                if args.disassemble:
+                if args.disassemble is not None:
                     if can_disassemble(target):
                         d = disassemble(target)
-                        distgt = '' if args.disassemble == True else ' for ' + args.disassemble
+                        distgt = '' if len(args.disassemble) == 0 else ' for ' + ", ".join(args.disassemble)
                         log(f"Disassembly{distgt}:")
                         print(d)
                         print()
