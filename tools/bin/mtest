@@ -236,7 +236,10 @@ def toolchain(target, exit_on_failure=True):
             c_flags += " -Os"
     if "-std" not in target.cflags: c_flags += " -std=c99"
     if args.no_warnings:
-        c_flags += " -Wno-everything"
+        if "clang" in target.compiler:
+            c_flags += " -Wno-everything"
+        else:
+            c_flags += " -Wno-all -Wno-extra"
     else:
         c_flags += " " + WARNING_FLAGS.get(target.compiler, "")
     if target.cflags:
