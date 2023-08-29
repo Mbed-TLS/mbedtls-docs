@@ -427,6 +427,7 @@ def configure_options(target):
         # and more options again (not sure which) for 3.0.0
         set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
 
+
 def flags_to_hr_str(flags):
     hrs = ""
     for f in flags:
