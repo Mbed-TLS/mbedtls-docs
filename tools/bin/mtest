@@ -450,9 +450,8 @@ def disassemble(target):
     objdump = toolchain(target)["OBJDUMP"]
     objfiles = ["library/libmbedcrypto.a", "library/libmbedtls.a", "library/libmbedx509.a" ] + args.build_targets
     objfiles = [f"{ROOT}/{f}" for f in objfiles if os.path.exists(f"{ROOT}/{f}")]
-    fns = [None] if len(args.disassemble) == 0 else args.disassemble
     result = []
-    for fn in fns:
+    for fn in args.disassemble:
         if fn is None:
             disarg = "--disassemble"
         else:
@@ -470,8 +469,11 @@ def disassemble(target):
                 if found and re.search(r"[\w_]+.o:\s+file format", l): break
                 if found and l.strip().startswith("Disassembly of section"): break
                 if found: diss.append(l)
-            while len(diss) > 0 and diss[-1] == "": diss = diss[:-1]
-            result.append("\n".join(diss))
+            if not found:
+                result.append(f"<{fn}>:    function not found - maybe the function gets inlined?")
+            else:
+                while len(diss) > 0 and diss[-1] == "": diss = diss[:-1]
+                result.append("\n".join(diss))
     return "\n\n".join(result)
 
 
@@ -644,7 +646,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     parser.add_argument('-A', '--asan', action="store_true", default=False, help="make an ASAN build")
     parser.add_argument('-W', '--no-warnings', action="store_true", default=False, help="disable warnings")
     parser.add_argument('-C', '--no-clean', action="store_true", default=False, help="don't run make clean (if building for a single target)")
-    parser.add_argument('-d', '--disassemble', metavar='function', nargs='*', default=None, help="disassemble specified function(s) (or everything if no function specified)")
+    parser.add_argument('-d', '--disassemble', metavar='function', action='append', nargs='?', help="disassemble specified function(s) (or everything if no function specified)")
     parser.add_argument('-s', '--size', action="store_true", default=False, help="display size of library / given build target")
     parser.add_argument('-S', '--size-tfm', action="store_true", default=False, help=f"as --size, but use the TF-M config file and build with {SIZE_TFM_COMPILER} -Oz for Cortex-M33")
     parser.add_argument('-j', '--jobs', nargs='?', const=-1, metavar='N', action="store", type=int, help="enable parallel builds, like 'make -j'. Alternatively, set the MAKEFLAGS environment variable")
@@ -867,8 +869,7 @@ def main():
                 if args.disassemble is not None:
                     if can_disassemble(target):
                         d = disassemble(target)
-                        distgt = '' if len(args.disassemble) == 0 else ' for ' + ", ".join(args.disassemble)
-                        log(f"Disassembly{distgt}:")
+                        log(f"Disassembly:")
                         print(d)
                         print()
                     else:
