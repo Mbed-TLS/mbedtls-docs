@@ -639,7 +639,7 @@ mtest -d mbedtls_xor -Os clang arm
 
     REST_HELP = f'''Optional list of tests, compilers, flags, architectures, config options and build targets.
 Tests: e.g. test_suite_ccm ccm 'cipher*' '*aes*'
-Recognised compilers: {", ".join(ALL_COMPILERS)}
+Recognised compilers: {", ".join(ALL_COMPILERS)}, gcc-10, clang-12, ..., or specify with e.g. mtest CC=gcc
 Flags: anything starting with a '-' will get passed to CFLAGS if not recognised by mtest
     (e.g. -O0 gets passed through), or specify CFLAGS with e.g.: mtest CFLAGS="-Wunused"
 Architectures: {", ".join(ARM_ISAS)}, armv5, ..., armv8 or e.g. armv7-thumb2
@@ -656,7 +656,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     parser.add_argument('-A', '--asan', action="store_true", default=False, help="make an ASAN build")
     parser.add_argument('-W', '--no-warnings', action="store_true", default=False, help="disable warnings")
     parser.add_argument('-C', '--no-clean', action="store_true", default=False, help="don't run make clean (if building for a single target)")
-    parser.add_argument('-d', '--disassemble', metavar='function', action='append', nargs='?', help="disassemble specified function(s) (or everything if no function specified)")
+    parser.add_argument('-d', '--disassemble', metavar='function', action='append', nargs='?', help="disassemble specified function(s) or file(s) (or everything if no function/file specified)")
     parser.add_argument('-s', '--size', action="store_true", default=False, help="display size of library / given build target")
     parser.add_argument('-S', '--size-tfm', action="store_true", default=False, help=f"as --size, but use the TF-M config file and build with {SIZE_TFM_COMPILER} -Oz for Cortex-M33")
     parser.add_argument('-j', '--jobs', nargs='?', const=-1, metavar='N', action="store", type=int, help="enable parallel builds, like 'make -j'. Alternatively, set the MAKEFLAGS environment variable")
