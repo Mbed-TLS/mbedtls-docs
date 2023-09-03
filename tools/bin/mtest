@@ -70,7 +70,7 @@ WARNING_FLAGS["armclang"]          = WARNING_FLAGS["clang"]
 TFM_CONFIG = "tfm_mbedcrypto_config_profile_medium.h"
 TFM_CRYPTO_CONFIG = "crypto_config_profile_medium.h"
 
-Target = namedtuple("Target", ["compiler", "arch", "baremetal", "isa", "arch_isa", "is_native", "arm_arch", "cflags", "ldflags", "config"])
+Target = namedtuple("Target", ["compiler", "compiler_family", "arch", "baremetal", "isa", "arch_isa", "is_native", "arm_arch", "cflags", "ldflags", "config"])
 
 
 gitresult = subprocess.run(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -150,7 +150,7 @@ def toolchain_exes(target):
         triple_abi = "gnuabi64"
     triple = f"{triple_arch}-linux-{triple_abi}"
 
-    if target.compiler == "gcc":
+    if target.compiler_family == "gcc":
         if not target.is_native:
             # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
             if "-march" in target.cflags or "-mcpu" in target.cflags:
@@ -166,15 +166,25 @@ def toolchain_exes(target):
                     if (v[0] == 'm'): triple = "arm-linux-gnueabi"
                 if "-mcpu=arm" in target.cflags: triple = "arm-linux-gnueabi"
 
-        compiler_exe = f"{triple}-gcc"
-        for i in range(25, 1, -1):
-            if shutil.which(compiler_exe) is not None: break
-            compiler_exe = f"{triple}-gcc-{i}"
+            compiler_exe = f"{triple}-{target.compiler}"
+        else:
+            compiler_exe = target.compiler
+
+        if "-" not in target.compiler:
+            # search for versioned compiler, e.g. "gcc-10", if version not already specified by user
+            if shutil.which(compiler_exe) is None:
+                for i in range(25, 1, -1):
+                    c = f"{compiler_exe}-{i}"
+                    if shutil.which(c) is not None:
+                        compiler_exe = c
+                        break
 
     if shutil.which(compiler_exe) is None:
         compiler_exe = None
     if target.compiler == "gcc":
-        compiler_error = f"could not locate gcc executable {triple}-gcc or {triple}-gcc-<majorversion>"
+        compiler_error = f"could not locate gcc executable {compiler_exe} or {compiler_exe}-<majorversion>"
+    elif target.compiler_family == "gcc":
+        compiler_error = f"could not locate gcc executable {compiler_exe}"
     else:
         compiler_error = f"could not locate {target.compiler} executable"
 
@@ -230,18 +240,18 @@ def toolchain(target, exit_on_failure=True):
     # basic CFLAGS setup
     c_flags = f"-I{ROOT}/include"
     if "-O" not in target.cflags:
-        if args.size_tfm and target.compiler in { "clang", "armclang" }:
+        if args.size_tfm and "clang" in target.compiler:
             c_flags += " -Oz"
         else:
             c_flags += " -Os"
     if "-std" not in target.cflags: c_flags += " -std=c99"
     if args.no_warnings:
-        if "clang" in target.compiler:
+        if target.compiler_family == "clang":
             c_flags += " -Wno-everything"
         else:
             c_flags += " -Wno-all -Wno-extra"
     else:
-        c_flags += " " + WARNING_FLAGS.get(target.compiler, "")
+        c_flags += " " + WARNING_FLAGS.get(target.compiler_family, "")
     if target.cflags:
         c_flags += " " + target.cflags.strip()
     c_flags = c_flags.strip()
@@ -264,7 +274,7 @@ def toolchain(target, exit_on_failure=True):
         else:
             if exit_on_failure: error(f"unsupported ISA {target.isa} for armclang")
 
-    elif target.compiler == "gcc":
+    elif target.compiler_family == "gcc":
         if not target.is_native:
             # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
             if not ("-march" in c_flags or "-mcpu" in c_flags):
@@ -295,7 +305,7 @@ def toolchain(target, exit_on_failure=True):
                 # Support AESNI intrinsics
                 c_flags += " -mpclmul -msse2 -maes"
 
-    elif target.compiler == "clang":
+    elif target.compiler_family == "clang":
         if not target.is_native:
             # non-native clang build
             if target.arch == "armv5" and target.isa == "thumb1":
@@ -665,7 +675,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     # extract compilers
     args.compilers = [x[3:].strip() for x in args.rest if x.startswith("CC=")]
     for x in list(args.rest):
-        if x in ALL_COMPILERS:
+        if x in ALL_COMPILERS or x.startswith("clang-") or x.startswith("gcc-"):
             args.compilers.append(x)
             args.rest.remove(x)
 
@@ -793,8 +803,9 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                 else:
                     target_config = config[:]
                 target_config += config_xprod
-                t = Target(compiler=c, arch=a, baremetal=baremetal, isa=i, arch_isa=arch, is_native=arch == NATIVE_TARGET,
-                        arm_arch=arm_arch_v, cflags=cf, ldflags=ldflags, config=target_config)
+                t = Target(compiler=c, compiler_family=c, arch=a, baremetal=baremetal, isa=i,
+                           arch_isa=arch, is_native=arch == NATIVE_TARGET,
+                            arm_arch=arm_arch_v, cflags=cf, ldflags=ldflags, config=target_config)
                 args.targets.append(t)
         else:
             for c, arch in itertools.product(args.compilers, args.archs):
@@ -804,9 +815,14 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                     a, i = arch, None
 
                 # determine if combo is valid for non-native compilers
-                # TODO handle e.g. CC=clang-15
+                if c.startswith("clang-"):
+                    compiler_family = "clang"
+                elif c.startswith("gcc-"):
+                    compiler_family = "gcc"
+                else:
+                    compiler_family = c
                 if arch != NATIVE_TARGET:
-                    for x in NON_NATIVE_SUPPORT.get(c, []):
+                    for x in NON_NATIVE_SUPPORT.get(compiler_family, []):
                         if "-" in x:
                             sa, si = x.split("-")
                             if (a == "" or a == sa) and (i == "" or i == si):
@@ -830,8 +846,9 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                 else:
                     target_config = config[:]
                 target_config += config_xprod
-                t = Target(compiler=c, arch=a, baremetal=baremetal, isa=i, arch_isa=arch, is_native=arch == NATIVE_TARGET,
-                        arm_arch=arm_arch_v, cflags=cflags, ldflags=ldflags, config=target_config)
+                t = Target(compiler=c, compiler_family=compiler_family, arch=a, baremetal=baremetal,
+                           isa=i, arch_isa=arch, is_native=arch == NATIVE_TARGET,
+                           arm_arch=arm_arch_v, cflags=cflags, ldflags=ldflags, config=target_config)
                 args.targets.append(t)
     if not args.targets:
         error("no valid targets specified")
