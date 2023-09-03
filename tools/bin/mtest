@@ -301,7 +301,7 @@ def toolchain(target, exit_on_failure=True):
                     c_flags += " -mcpu=cortex-a78 -march=armv8.2-a+simd+crypto"
                 elif target.arch.startswith("armv"):
                     c_flags += " -march=" + target.arch
-            if target.arch == "x86_64":
+            if target.arch in {"x86", "x86_64"}:
                 # Support AESNI intrinsics
                 c_flags += " -mpclmul -msse2 -maes"
 
@@ -330,8 +330,8 @@ def toolchain(target, exit_on_failure=True):
                 c_flags += " --target=arm-linux-gnueabihf -march=armv8-a -maarch64"
             elif target.arch.startswith("mips") and "64" in target.arch:
                 c_flags += f" --target={target.arch}-linux-gnuabi64"
-            elif target.arch == "x86":
-                c_flags += " --target=i686-linux-gnu"
+            elif target.arch in {"x86", "x86_64"}:
+                c_flags += " --target=i686-linux-gnu -mpclmul -msse2 -maes"
             elif target.arch in ["mips", "mipsel", "x86_64", "powerpc64le", "s390x", "riscv64"]:
                 c_flags += f" --target={target.arch}-linux-gnu"
             else:
