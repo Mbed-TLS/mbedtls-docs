@@ -372,8 +372,11 @@ def set_config_option(action, option, silent=True):
     force = [ "--force" ] if action == "set" else []
     if option.startswith("PSA_WANT"):
         if not silent:
-            log(f"scripts/config.py -f {CRYPTO_CONFIG_FILE} {action} {option}")
-        output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", CRYPTO_CONFIG_FILE, action, option], silent=True, ignore_failure=True)
+            log(f"scripts/config.py -f {CRYPTO_CONFIG_FILE} {action} {option} {'1' if action == 'set' else ''}")
+        if action == "set":
+            output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", CRYPTO_CONFIG_FILE, action, option, "1"], silent=True, ignore_failure=True)
+        else:
+            output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", CRYPTO_CONFIG_FILE, action, option], silent=True, ignore_failure=True)
     else:
         if not silent:
             log(f"scripts/config.py {action} {option}")
