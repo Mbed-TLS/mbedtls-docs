@@ -61,7 +61,7 @@ ASAN_CFLAGS   = "-fsanitize=address -fno-common -fsanitize=undefined -fno-saniti
 ASAN_LDFLAGS  = ASAN_CFLAGS
 
 WARNING_FLAGS = {
-    "clang": "-Werror -Wall -Wextra -Wwrite-strings -Wpointer-arith -Wimplicit-fallthrough -Wshadow -Wvla -Wformat=2 -Wno-format-nonliteral -Wshadow -Wasm-operand-widths",
+    "clang": "-Werror -Wall -Wextra -Wwrite-strings -Wpointer-arith -Wimplicit-fallthrough -Wshadow -Wvla -Wformat=2 -Wno-format-nonliteral -Wshadow -Wasm-operand-widths -Wunreachable-code",
     "gcc"  : "-Werror -Wall -Wextra -Wwrite-strings -Wpointer-arith -Wimplicit-fallthrough -Wshadow -Wvla -Wformat=2 -Wno-format-nonliteral -Wshadow -Wformat-signedness -Wformat-overflow=2 -Wformat-truncation -Wlogical-op"
 }
 WARNING_FLAGS["arm-none-eabi-gcc"] = WARNING_FLAGS["gcc"]
