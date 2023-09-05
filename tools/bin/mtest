@@ -67,7 +67,10 @@ WARNING_FLAGS = {
 WARNING_FLAGS["arm-none-eabi-gcc"] = WARNING_FLAGS["gcc"]
 WARNING_FLAGS["armclang"]          = WARNING_FLAGS["clang"]
 
-Target = namedtuple("Target", ["compiler", "arch", "baremetal", "isa", "arch_isa", "is_native", "arm_arch", "cflags", "ldflags", "config"])
+TFM_CONFIG = "tfm_mbedcrypto_config_profile_medium.h"
+TFM_CRYPTO_CONFIG = "crypto_config_profile_medium.h"
+
+Target = namedtuple("Target", ["compiler", "compiler_family", "arch", "baremetal", "isa", "arch_isa", "is_native", "arm_arch", "cflags", "ldflags", "config"])
 
 
 gitresult = subprocess.run(["git", "rev-parse", "--show-toplevel"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -130,23 +133,7 @@ def clean():
     subrun(["make", "clean"], silent=True)
 
 
-def toolchain(target):
-    # basic CFLAGS setup
-    c_flags = f"-I{ROOT}/include"
-    if "-O" not in target.cflags:
-        if args.size_tfm and target.compiler in { "clang", "armclang" }:
-            c_flags += " -Oz"
-        else:
-            c_flags += " -Os"
-    if "-std" not in target.cflags: c_flags += " -std=c99"
-    if args.no_warnings:
-        c_flags += " -Wno-everything"
-    else:
-        c_flags += " " + WARNING_FLAGS.get(target.compiler, "")
-    if target.cflags:
-        c_flags += " " + target.cflags.strip()
-    c_flags = c_flags.strip()
-
+def toolchain_exes(target):
     compiler_exe = target.compiler
 
     # construct triple needed in gcc and objdump executable name
@@ -163,6 +150,117 @@ def toolchain(target):
         triple_abi = "gnuabi64"
     triple = f"{triple_arch}-linux-{triple_abi}"
 
+    if target.compiler_family == "gcc":
+        if not target.is_native:
+            # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
+            if "-march" in target.cflags or "-mcpu" in target.cflags:
+                # user-specified arch/isa/cpu
+                triple = "aarch64-linux-gnu"
+                for v in range(1,7):
+                    if f"-march=armv{v}" in target.cflags: triple = "arm-linux-gnueabi"
+                if "-mthumb" in target.cflags: triple = "arm-linux-gnueabi"
+                m = re.search(r"-mcpu=cortex-(\S+)", target.cflags)
+                if m:
+                    v = m.group(1)
+                    if (v[0] == 'a' and int(v[1:]) < 34): triple = "arm-linux-gnueabi"
+                    if (v[0] == 'm'): triple = "arm-linux-gnueabi"
+                if "-mcpu=arm" in target.cflags: triple = "arm-linux-gnueabi"
+
+            compiler_exe = f"{triple}-{target.compiler}"
+        else:
+            compiler_exe = target.compiler
+
+        if "-" not in target.compiler:
+            # search for versioned compiler, e.g. "gcc-10", if version not already specified by user
+            if shutil.which(compiler_exe) is None:
+                for i in range(25, 1, -1):
+                    c = f"{compiler_exe}-{i}"
+                    if shutil.which(c) is not None:
+                        compiler_exe = c
+                        break
+
+    if shutil.which(compiler_exe) is None:
+        compiler_exe = None
+    if target.compiler == "gcc":
+        compiler_error = f"could not locate gcc executable {compiler_exe} or {compiler_exe}-<majorversion>"
+    elif target.compiler_family == "gcc":
+        compiler_error = f"could not locate gcc executable {compiler_exe}"
+    else:
+        compiler_error = f"could not locate {target.compiler} executable"
+
+    # non-arch-specific size should work in all cases, but may as well prefer <triple>-size
+    if args.size:
+        size_exe = triple + "-size"
+        if shutil.which(size_exe) is None:
+            size_exe = "size"
+        if shutil.which(size_exe) is None:
+            size_exe = None
+    else:
+        size_exe = None
+    size_error = f"could not locate size executable {triple}-size or size"
+
+    # we need an architecture-specific obj-dump for disassembly (unless it's a native build)
+    if args.disassemble:
+        objdump_exe = triple + "-objdump"
+        if shutil.which(objdump_exe) is None:
+            if target.is_native:
+                objdump_exe = "objdump"
+            if shutil.which(objdump_exe) is None:
+                objdump_exe = None
+    else:
+        objdump_exe = None
+    if target.is_native:
+        objdump_error = f"could not locate size executable {triple}-objdump or objdump"
+    else:
+        objdump_error = f"could not locate size executable {triple}-objdump"
+
+    if target.arch.startswith("armv"):
+        qemu_arch = "arm"
+    else:
+        qemu_arch = QEMU_NAME_MAP.get(target.arch, target.arch)
+    qemu_exe = f"qemu-{qemu_arch}-static"
+    qemu_error = f"could not locate qemu executable {qemu_exe}"
+    if shutil.which(qemu_exe) is None:
+        qemu_exe = None
+
+    return {
+        "compiler": compiler_exe,
+        "objdump": objdump_exe,
+        "size": size_exe,
+        "triple": triple,
+        "qemu": qemu_exe,
+        "compiler_error": compiler_error,
+        "size_error": size_error,
+        "objdump_error": objdump_error,
+        "qemu_error": qemu_error
+    }
+
+
+def toolchain(target, exit_on_failure=True):
+    # basic CFLAGS setup
+    c_flags = f"-I{ROOT}/include"
+    if "-O" not in target.cflags:
+        if args.size_tfm and "clang" in target.compiler:
+            c_flags += " -Oz"
+        else:
+            c_flags += " -Os"
+    if "-std" not in target.cflags: c_flags += " -std=c99"
+    if args.no_warnings:
+        if target.compiler_family == "clang":
+            c_flags += " -Wno-everything"
+        else:
+            c_flags += " -Wno-all -Wno-extra"
+    else:
+        c_flags += " " + WARNING_FLAGS.get(target.compiler_family, "")
+    if target.cflags:
+        c_flags += " " + target.cflags.strip()
+    c_flags = c_flags.strip()
+
+    if args.memsan:
+        c_flags  += " " + MEMSAN_CFLAGS
+    elif args.asan:
+        c_flags  += " " + ASAN_CFLAGS
+
     if target.compiler == "armclang":
         if target.isa == "thumb1":
             # strictly speaking, includes "some 32-bit Thumb2 instructions" but this is the oldest ISA armclang supports
@@ -174,24 +272,13 @@ def toolchain(target):
         elif target.isa == "aarch64":
             c_flags += " --target=aarch64-arm-none-eabi -mcpu=cortex-a78"
         else:
-            error(f"unsupported ISA {target.isa} for armclang")
+            if exit_on_failure: error(f"unsupported ISA {target.isa} for armclang")
 
-    elif target.compiler == "gcc":
+    elif target.compiler_family == "gcc":
         if not target.is_native:
             # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
-            if "-march" in c_flags or "-mcpu" in c_flags:
-                # user-specified arch/isa/cpu
-                triple = "aarch64-linux-gnu"
-                for v in range(1,7):
-                    if f"-march=armv{v}" in c_flags: triple = "arm-linux-gnueabi"
-                if "-mthumb" in c_flags: triple = "arm-linux-gnueabi"
-                m = re.search(r"-mcpu=cortex-(\S+)", c_flags)
-                if m:
-                    v = m.group(1)
-                    if (v[0] == 'a' and int(v[1:]) < 34): triple = "arm-linux-gnueabi"
-                    if (v[0] == 'm'): triple = "arm-linux-gnueabi"
-                if "-mcpu=arm" in c_flags: triple = "arm-linux-gnueabi"
-            else:
+            if not ("-march" in c_flags or "-mcpu" in c_flags):
+                # not user-specified arch/isa/cpu
                 if target.arch == "armv5" and target.isa == "thumb1":
                     c_flags += " -mcpu=arm926ej-s -mthumb"
                 elif target.arch == "armv5" and target.isa == "arm":
@@ -214,18 +301,11 @@ def toolchain(target):
                     c_flags += " -mcpu=cortex-a78 -march=armv8.2-a+simd+crypto"
                 elif target.arch.startswith("armv"):
                     c_flags += " -march=" + target.arch
-            if target.arch == "x86_64":
+            if target.arch in {"x86", "x86_64"}:
                 # Support AESNI intrinsics
                 c_flags += " -mpclmul -msse2 -maes"
-            # search for compiler exe (highest version available)
-            compiler_exe = f"{triple}-gcc"
-            for i in range(25, 1, -1):
-                if shutil.which(compiler_exe) is not None: break
-                compiler_exe = f"{triple}-gcc-{i}"
-            else:
-                error(f"could not locate gcc executable {triple}-gcc or {triple}-gcc-<majorversion>")
 
-    elif target.compiler == "clang":
+    elif target.compiler_family == "clang":
         if not target.is_native:
             # non-native clang build
             if target.arch == "armv5" and target.isa == "thumb1":
@@ -250,51 +330,27 @@ def toolchain(target):
                 c_flags += " --target=arm-linux-gnueabihf -march=armv8-a -maarch64"
             elif target.arch.startswith("mips") and "64" in target.arch:
                 c_flags += f" --target={target.arch}-linux-gnuabi64"
-            elif target.arch == "x86":
-                c_flags += " --target=i686-linux-gnu"
+            elif target.arch in {"x86", "x86_64"}:
+                c_flags += " --target=i686-linux-gnu -mpclmul -msse2 -maes"
             elif target.arch in ["mips", "mipsel", "x86_64", "powerpc64le", "s390x", "riscv64"]:
                 c_flags += f" --target={target.arch}-linux-gnu"
             else:
                 error(f"unsupported target {target.arch} {target.isa} for clang")
 
-    if args.memsan:
-        c_flags += " " + MEMSAN_CFLAGS
-        ld_flags = target.ldflags
-    elif args.asan:
-        c_flags += " " + ASAN_CFLAGS
-        ld_flags = target.ldflags + " " + ASAN_LDFLAGS
-    else:
-        ld_flags = target.ldflags
-
+    ld_flags = target.ldflags
+    if args.asan:
+        ld_flags += " " + ASAN_LDFLAGS
     if not target.is_native:
         ld_flags += " --static"
 
-    # non-arch-specific size should work in all cases, but may as well prefer <triple>-size
-    size_exe = triple + "-size"
-    if args.size:
-        if shutil.which(size_exe) is None:
-            size_exe = "size"
-        if shutil.which(size_exe) is None:
-            error(f"could not locate size executable {triple}-size or size")
-
-    # we need an architecture-specific obj-dump for disassembly (unless it's a native build)
-    objdump_exe = triple + "-objdump"
-    if args.disassemble and shutil.which(objdump_exe) is None:
-        if target.is_native:
-            objdump_exe = "objdump"
-        if shutil.which(objdump_exe) is None:
-            error(f"could not locate objdump executable {objdump_exe}")
-
-    # check for compiler exe
-    if shutil.which(compiler_exe) is None:
-        error(f"could not locate compiler executable {compiler_exe}")
+    exes = toolchain_exes(target)
 
     return {
         "CFLAGS": c_flags.strip(),
         "LDFLAGS": ld_flags.strip(),
-        "CC": compiler_exe,
-        "OBJDUMP": objdump_exe,
-        "SIZE": size_exe
+        "CC": exes["compiler"],
+        "OBJDUMP": exes["objdump"],
+        "SIZE": exes["size"]
     }
 
 
@@ -316,8 +372,11 @@ def set_config_option(action, option, silent=True):
     force = [ "--force" ] if action == "set" else []
     if option.startswith("PSA_WANT"):
         if not silent:
-            log(f"scripts/config.py -f {CRYPTO_CONFIG_FILE} {action} {option}")
-        output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", CRYPTO_CONFIG_FILE, action, option], silent=True, ignore_failure=True)
+            log(f"scripts/config.py -f {CRYPTO_CONFIG_FILE} {action} {option} {'1' if action == 'set' else ''}")
+        if action == "set":
+            output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", CRYPTO_CONFIG_FILE, action, option, "1"], silent=True, ignore_failure=True)
+        else:
+            output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", CRYPTO_CONFIG_FILE, action, option], silent=True, ignore_failure=True)
     else:
         if not silent:
             log(f"scripts/config.py {action} {option}")
@@ -338,7 +397,12 @@ def configure_options(target):
     # user-specified options to apply to all targets
     options += args.config_options
 
-    for config in options:
+    disable_spm = False
+
+    individual_options = [x for x in options if x.startswith("MBEDTLS_") or x.startswith("-MBEDTLS_") or x.startswith("PSA_") or x.startswith("-PSA_")]
+    bulk_options = [x for x in options if x not in individual_options]
+
+    for config in bulk_options:
         if config.endswith(".h"):
             # a config file - overwrite existing config file
             path = config if os.path.exists(config) else f"{ROOT}/configs/{config}"
@@ -346,19 +410,35 @@ def configure_options(target):
                 dest = CRYPTO_CONFIG_FILE
             else:
                 dest = CONFIG_FILE
-            log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
-            shutil.copy(path, dest)
-        elif config.startswith("MBEDTLS_") or config.startswith("-MBEDTLS_") or config.startswith("PSA_") or config.startswith("-PSA_"):
-            # an individual option like MBEDTLS_XYZ or -PSA_XYZ
-            action = "set"
-            if config.startswith("-"):
-                action = "unset"
-                config = config[1:]
-            set_config_option(action, config, silent=False)
+            if config in { TFM_CONFIG, TFM_CRYPTO_CONFIG } and not os.path.exists(path):
+                # for looking at old checkouts where these configs were not in the tree, fetch from
+                # date they were first created instead
+                # also disable MBEDTLS_PSA_CRYPTO_SPM is required to get it to build
+                disable_spm = True
+                log(f"git show 2f1ae5a86ebd67faa50c3983b4567656c2234674:configs/{config} > {dest[len(ROOT) + 1:]}")
+                output, _ = subrun(["git", "show", "origin/development:configs/" + config], silent=True)
+                with open(dest, 'w') as f:
+                    f.write(output)
+            else:
+                log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
+                shutil.copy(path, dest)
         else:
             # a configuration recognised by config.py, e.g. "baremetal"
             log(f"scripts/config.py {config}")
             subrun([f"{ROOT}/scripts/config.py", config], silent=True)
+
+    for config in individual_options:
+        # an individual option like MBEDTLS_XYZ or -PSA_XYZ
+        action = "set"
+        if config.startswith("-"):
+            action = "unset"
+            config = config[1:]
+        set_config_option(action, config, silent=False)
+
+    if disable_spm:
+        # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
+        # and more options again (not sure which) for 3.0.0
+        set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
 
 
 def flags_to_hr_str(flags):
@@ -373,32 +453,45 @@ def flags_to_hr_str(flags):
     return hrs.strip()
 
 
+def can_disassemble(target):
+    return toolchain_exes(target)["objdump"] is not None
+
+
 def disassemble(target):
     # note: clang seems to want "-gdwarf-4" passed to CFLAGS to show source with --source properly
     # run objdump -d to disassemble
     objdump = toolchain(target)["OBJDUMP"]
     objfiles = ["library/libmbedcrypto.a", "library/libmbedtls.a", "library/libmbedx509.a" ] + args.build_targets
     objfiles = [f"{ROOT}/{f}" for f in objfiles if os.path.exists(f"{ROOT}/{f}")]
-    if args.disassemble == True:
-        disarg = "--disassemble"
-    else:
-        disarg = f"--disassemble={args.disassemble}"
-    output, _ = subrun([objdump] + objfiles + [disarg, "--visualize-jumps=extended-color"], silent=True)
-    if args.disassemble == True:
-        # return complete output
-        return output
-    else:
-        # extract the relevant bit of output
-        found = False
-        diss = []
-        for l in output.splitlines():
-            if l.strip().endswith(f"{args.disassemble}>:"):
-                found = True
-            if found and re.search(r"[\w_]+.o:\s+file format", l): break
-            if found and l.strip().startswith("Disassembly of section"): break
-            if found: diss.append(l)
-        while len(diss) > 0 and diss[-1] == "": diss = diss[:-1]
-        return "\n".join(diss)
+    result = []
+    for fn in args.disassemble:
+        if fn is None:
+            disarg = "--disassemble"
+        else:
+            disarg = f"--disassemble={fn}"
+        output, _ = subrun([objdump] + objfiles + [disarg, "--visualize-jumps=extended-color"], silent=True)
+        if fn is None:
+            result.append(output)
+        else:
+            # extract the relevant bit of output
+            found = False
+            diss = []
+            for l in output.splitlines():
+                if l.strip().endswith(f"{fn}>:"):
+                    found = True
+                if found and re.search(r"[\w_]+.o:\s+file format", l): break
+                if found and l.strip().startswith("Disassembly of section"): break
+                if found: diss.append(l)
+            if not found:
+                result.append(f"<{fn}>:    function not found - maybe the function gets inlined?")
+            else:
+                while len(diss) > 0 and diss[-1] == "": diss = diss[:-1]
+                result.append("\n".join(diss))
+    return "\n\n".join(result)
+
+
+def can_build(target):
+    return toolchain_exes(target)["compiler"] is not None
 
 
 def build(target, tests):
@@ -438,6 +531,10 @@ def build(target, tests):
         log(indent_adjust=-4)
 
 
+def can_size(target):
+    return toolchain_exes(target)["size"] is not None
+
+
 def size(target):
     log("size")
     try:
@@ -458,11 +555,18 @@ def size(target):
         size_data = [x.split()[0:3] for x in size.splitlines()[1:]]
         text_sum = sum(int(x[0]) for x in size_data)
         data_sum = sum(int(x[1]) for x in size_data)
-        bss_sum  = sum(int(x[2]) for x in size_data)
-        log(f"total text = {text_sum}\ntotal data = {data_sum}\ntotal bss  = {bss_sum}")
+        log(f"total text = {text_sum}")
+        log(f"total data = {data_sum}")
         log(f"total text + data (i.e., binary size) = {text_sum + data_sum}")
     finally:
         log(indent_adjust=-4)
+
+
+def can_run(target):
+    if target.is_native:
+        return True
+    else:
+        return toolchain_exes(target)["qemu"] is not None
 
 
 def run(target, tests, quiet=False):
@@ -476,11 +580,8 @@ def run(target, tests, quiet=False):
             if target.is_native:
                 output, _ = subrun(f"{TEST_DIR}/" + t, test_dir=True, silent=quiet)
             else:
-                if target.arch.startswith("armv"):
-                    qemu_arch = "arm"
-                else:
-                    qemu_arch = QEMU_NAME_MAP.get(target.arch, target.arch)
-                output, _ = subrun([f"qemu-{qemu_arch}-static", t], test_dir=True, silent=quiet)
+                qemu_exe = toolchain_exes(target)["qemu"]
+                output, _ = subrun([qemu_exe, t], test_dir=True, silent=quiet)
             if quiet and output:
                 log(output.splitlines()[-1])
     finally:
@@ -526,7 +627,8 @@ mtest -k alignment
 
 Report library size, as built by armclang -Oz with TF-M configuration for armv8 thumb2:
 mtest -S
-mtest -S clang # as above, but use clang instead of the default armclang
+mtest -S clang                                  # as above, but use clang instead of the default armclang
+mtest -S MBEDTLS_P256M_EXAMPLE_DRIVER_ENABLED   # as above, but modify TF-M config with given option(s)
 
 Build aes.o multiple times, with every combination of the given options:
 mtest aes.o MBEDTLS_AES_SETKEY_ENC_ALT,MBEDTLS_AES_DECRYPT_ALT,MBEDTLS_AES_ROM_TABLES,MBEDTLS_AES_ENCRYPT_ALT,MBEDTLS_AES_SETKEY_DEC_ALT,MBEDTLS_AES_FEWER_TABLES,MBEDTLS_PADLOCK_C
@@ -534,13 +636,13 @@ mtest aes.o MBEDTLS_AES_SETKEY_ENC_ALT,MBEDTLS_AES_DECRYPT_ALT,MBEDTLS_AES_ROM_T
 Disassemble cmac.o
 mtest cmac.o -d
 
-Disassemble mbedtls_xor, built with clang -Os for arm
+Disassemble mbedtls_xor for arm, built with clang -Os
 mtest -d mbedtls_xor -Os clang arm
 '''
 
     REST_HELP = f'''Optional list of tests, compilers, flags, architectures, config options and build targets.
 Tests: e.g. test_suite_ccm ccm 'cipher*' '*aes*'
-Recognised compilers: {", ".join(ALL_COMPILERS)}
+Recognised compilers: {", ".join(ALL_COMPILERS)}, gcc-10, clang-12, ..., or specify with e.g. mtest CC=gcc
 Flags: anything starting with a '-' will get passed to CFLAGS if not recognised by mtest
     (e.g. -O0 gets passed through), or specify CFLAGS with e.g.: mtest CFLAGS="-Wunused"
 Architectures: {", ".join(ARM_ISAS)}, armv5, ..., armv8 or e.g. armv7-thumb2
@@ -557,13 +659,14 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     parser.add_argument('-A', '--asan', action="store_true", default=False, help="make an ASAN build")
     parser.add_argument('-W', '--no-warnings', action="store_true", default=False, help="disable warnings")
     parser.add_argument('-C', '--no-clean', action="store_true", default=False, help="don't run make clean (if building for a single target)")
-    parser.add_argument('-d', '--disassemble', metavar='function', action="store", nargs='?', const=True, default=None, help="disassemble specified function (or everything if no function specified)")
+    parser.add_argument('-d', '--disassemble', metavar='function', action='append', nargs='?', help="disassemble specified function(s) or file(s) (or everything if no function/file specified)")
     parser.add_argument('-s', '--size', action="store_true", default=False, help="display size of library / given build target")
     parser.add_argument('-S', '--size-tfm', action="store_true", default=False, help=f"as --size, but use the TF-M config file and build with {SIZE_TFM_COMPILER} -Oz for Cortex-M33")
     parser.add_argument('-j', '--jobs', nargs='?', const=-1, metavar='N', action="store", type=int, help="enable parallel builds, like 'make -j'. Alternatively, set the MAKEFLAGS environment variable")
     parser.add_argument('rest', metavar='args', nargs='*', help=REST_HELP)
+
     # handle -MBEDTLS_OPTION style args manually because they confuse argparse w.r.t. -M for --memsan
-    raw_args = [x for x in sys.argv if not x.startswith("-MBEDTLS_")][1:]
+    raw_args = [x for x in sys.argv if not x.startswith("-MBEDTLS_") and not (len(x) > 2 and x.startswith("-W"))][1:]
     args, unknown_args = parser.parse_known_intermixed_args(raw_args)
     args.rest += unknown_args
 
@@ -575,7 +678,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     # extract compilers
     args.compilers = [x[3:].strip() for x in args.rest if x.startswith("CC=")]
     for x in list(args.rest):
-        if x in ALL_COMPILERS:
+        if x in ALL_COMPILERS or x.startswith("clang-") or x.startswith("gcc-"):
             args.compilers.append(x)
             args.rest.remove(x)
 
@@ -583,6 +686,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     cflags  = " ".join([x[7:].strip() for x in args.rest if x.startswith("CFLAGS=")])
     # assume any unknown args, i.e. anything starting with a "-" is to be passed to the compiler via CFLAGS
     cflags += " " + " ".join([x for x in args.rest if x.startswith("-") and not x.startswith("-MBEDTLS_") and not x.startswith("-PSA_WANT_")])
+    cflags += " ".join([x for x in sys.argv if x.startswith("-W") and len(x) > 2])
 
     # extract config options
     args.config_options  = [x for x in args.rest if x.startswith("MBEDTLS_") or x.startswith("PSA_WANT_") or x.startswith("-PSA_WANT_")]
@@ -604,8 +708,8 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     supported_configs = get_supported_configs()
     config = []
     if args.size_tfm:
-        config.append("tfm_mbedcrypto_config_profile_medium.h")
-        config.append("crypto_config_profile_medium.h")
+        config.append(TFM_CONFIG)
+        config.append(TFM_CRYPTO_CONFIG)
     for a in list(args.rest):
         if a.endswith(".h") and os.path.exists(a):
             # arbitrary .h file
@@ -702,8 +806,9 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                 else:
                     target_config = config[:]
                 target_config += config_xprod
-                t = Target(compiler=c, arch=a, baremetal=baremetal, isa=i, arch_isa=arch, is_native=arch == NATIVE_TARGET,
-                        arm_arch=arm_arch_v, cflags=cf, ldflags=ldflags, config=target_config)
+                t = Target(compiler=c, compiler_family=c, arch=a, baremetal=baremetal, isa=i,
+                           arch_isa=arch, is_native=arch == NATIVE_TARGET,
+                            arm_arch=arm_arch_v, cflags=cf, ldflags=ldflags, config=target_config)
                 args.targets.append(t)
         else:
             for c, arch in itertools.product(args.compilers, args.archs):
@@ -713,9 +818,14 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                     a, i = arch, None
 
                 # determine if combo is valid for non-native compilers
-                # TODO handle e.g. CC=clang-15
+                if c.startswith("clang-"):
+                    compiler_family = "clang"
+                elif c.startswith("gcc-"):
+                    compiler_family = "gcc"
+                else:
+                    compiler_family = c
                 if arch != NATIVE_TARGET:
-                    for x in NON_NATIVE_SUPPORT.get(c, []):
+                    for x in NON_NATIVE_SUPPORT.get(compiler_family, []):
                         if "-" in x:
                             sa, si = x.split("-")
                             if (a == "" or a == sa) and (i == "" or i == si):
@@ -739,8 +849,9 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                 else:
                     target_config = config[:]
                 target_config += config_xprod
-                t = Target(compiler=c, arch=a, baremetal=baremetal, isa=i, arch_isa=arch, is_native=arch == NATIVE_TARGET,
-                        arm_arch=arm_arch_v, cflags=cflags, ldflags=ldflags, config=target_config)
+                t = Target(compiler=c, compiler_family=compiler_family, arch=a, baremetal=baremetal,
+                           isa=i, arch_isa=arch, is_native=arch == NATIVE_TARGET,
+                           arm_arch=arm_arch_v, cflags=cflags, ldflags=ldflags, config=target_config)
                 args.targets.append(t)
     if not args.targets:
         error("no valid targets specified")
@@ -757,12 +868,7 @@ def main():
     backup_config_options(restore=False, delete_backup=False)
 
     try:
-        first = True
         for target in args.targets:
-            if first:
-                first = False
-            else:
-                log("\n", indent=0)
             if target.compiler in ALL_COMPILERS:
                 log(f"{target.arch_isa} {target.compiler} {target.cflags}", indent=0)
             else:
@@ -770,17 +876,31 @@ def main():
             try:
                 log(indent_adjust=4)
                 backup_config_options(restore=True, delete_backup=False)
-                build(target, args.tests)
+                if can_build(target):
+                    build(target, args.tests)
+                else:
+                    log("skipping target: " + toolchain_exes(target)["compiler_error"])
+                    continue
                 if args.size:
-                    size(target)
-                if (args.disassemble):
-                    d = disassemble(target)
-                    log(f"Disassembly for {args.disassemble}:")
-                    print(d)
-                    print()
-                run(target, args.tests, quiet=quiet)
-                first = False
+                    if can_size(target):
+                        size(target)
+                    else:
+                        log("skipping size: " + toolchain_exes(target)["size_error"])
+                if args.disassemble is not None:
+                    if can_disassemble(target):
+                        d = disassemble(target)
+                        log(f"Disassembly:")
+                        print(d)
+                        print()
+                    else:
+                        log("skipping disassemble: " + toolchain_exes(target)["objdump_error"])
+                if args.tests:
+                    if can_run(target):
+                        run(target, args.tests, quiet=quiet)
+                    else:
+                        log("skipping running tests: " + toolchain_exes(target)["qemu_error"])
             finally:
+                log("\n", indent=0)
                 log(indent_adjust=-4)
     finally:
         backup_config_options(restore=True, delete_backup=True)
