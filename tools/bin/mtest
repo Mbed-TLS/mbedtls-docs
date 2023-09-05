@@ -764,7 +764,12 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
         args.compilers = [ MEMSAN_CC ]
 
     if args.size_tfm:
-        if not args.compilers: args.compilers = [ SIZE_TFM_COMPILER ]
+        if not args.compilers:
+            if shutil.which(SIZE_TFM_COMPILER) is not None:
+                args.compilers = [ SIZE_TFM_COMPILER ]
+            else:
+                print("warning: could not find armclang, falling back to clang")
+                args.compilers = [ "clang" ]
         args.size = True
 
     if not args.compilers:
