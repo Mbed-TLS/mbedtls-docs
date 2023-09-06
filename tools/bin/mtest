@@ -875,9 +875,9 @@ def main():
     try:
         for target in args.targets:
             if target.compiler in ALL_COMPILERS:
-                log(f"{target.arch_isa} {target.compiler} {target.cflags}", indent=0)
+                log(f"{target.arch_isa} {target.compiler}", indent=0)
             else:
-                log(f"{target.compiler} {target.cflags}", indent=0)
+                log(f"{target.compiler}", indent=0)
             try:
                 log(indent_adjust=4)
                 backup_config_options(restore=True, delete_backup=False)
