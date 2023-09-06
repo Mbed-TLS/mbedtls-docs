@@ -179,14 +179,14 @@ def toolchain_exes(target):
                         compiler_exe = c
                         break
 
-    if shutil.which(compiler_exe) is None:
-        compiler_exe = None
     if target.compiler == "gcc":
         compiler_error = f"could not locate gcc executable {compiler_exe} or {compiler_exe}-<majorversion>"
     elif target.compiler_family == "gcc":
         compiler_error = f"could not locate gcc executable {compiler_exe}"
     else:
         compiler_error = f"could not locate {target.compiler} executable"
+    if shutil.which(compiler_exe) is None:
+        compiler_exe = None
 
     # non-arch-specific size should work in all cases, but may as well prefer <triple>-size
     if args.size:
