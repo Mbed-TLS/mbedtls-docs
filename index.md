@@ -15,8 +15,8 @@ gaps, etc. We welcome contributions!
 
 For more information, see the following:
 
-* [GitHub repository](https://github.com/ARMmbed/mbedtls)
-* [Documentation GitHub repository](https://github.com/ARMmbed/mbedtls-docs)
+* [GitHub repository](https://github.com/Mbed-TLS/mbedtls)
+* [Documentation GitHub repository](https://github.com/Mbed-TLS/mbedtls-docs)
 * [Mbed TLS website](https://www.trustedfirmware.org/projects/mbed-tls/)
 * [PSA Crypto API specification](https://arm-software.github.io/psa-api/crypto/)
 

@@ -14,6 +14,6 @@ For quick merging, the contribution should be short, and concentrated on a singl
 
 All contributions are made under the [Apache License 2.0](LICENSE).
 
-1. Fork the [Mbed TLS documentation repository on GitHub](https://github.com/ARMmbed/mbedtls-docs) to start making your changes.
+1. Fork the [Mbed TLS documentation repository on GitHub](https://github.com/Mbed-TLS/mbedtls-docs) to start making your changes.
 1. Ensure that each commit has at least one `Signed-off-by:` line from the committer. If anyone else contributes to the commit, they should also add their own `Signed-off-by:` line. By adding this line, contributor(s) certify that the contribution is made under the terms of the [Developer Certificate of Origin](dco.txt).
 1. Send a pull request (PR) and work with us until it gets merged and published.

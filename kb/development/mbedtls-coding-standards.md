@@ -236,7 +236,7 @@ Length parameters:
 
 ## API conventions
 
-This section applies fully to classic `mbedtls_xxx()` APIs and mostly to the newer `psa_xxx()` APIs. PSA have their own [conventions described in the PSA Crypto API specification](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html) which take precedence in case of conflicts.
+This section applies fully to classic `mbedtls_xxx()` APIs and mostly to the newer `psa_xxx()` APIs. PSA have their own [conventions described in the PSA Crypto API specification](https://arm-software.github.io/psa-api/crypto/1.1/overview/conventions.html) which take precedence in case of conflicts.
 
 ### Module contexts
 
@@ -258,7 +258,7 @@ Most functions should return `int`, more specifically `0` on success (the operat
 
 * Functions that can never fail should either return `void` (such as `mbedtls_cipher_init()`) or directly the information requested (such as `mbedtls_mpi_get_bit()`).
 * Functions that look up some information should return either a pointer to this information or `NULL` if it wasn't found.
-* PSA functions that can fail return a [`psa_status_t` value](https://armmbed.github.io/mbed-crypto/html/overview/conventions.html#return-status).
+* PSA functions that can fail return a [`psa_status_t` value](https://arm-software.github.io/psa-api/crypto/1.1/overview/conventions.html#return-status).
 * Some functions may multiplex the return value, such as `mbedtls_asn1_write_len()` returns the length written on success or a negative error code. This mimics the behavior of some standard functions such as `write()` and `read()`, except there is no equivalent to `errno`: the return code should be specific enough.
 * Some internal functions may return `-1` on errors rather than a specific error code; it is then up to the calling function to pick a more appropriate error code if the error is to be propagated back to the user.
 * Functions whose name clearly indicates a boolean (such as, the name contains "has", "is" or "can") should return `0` for false and `1` for true. The name must be clear: for example, `mbdtls_has_foobar_support()` will return `1` if support for foobar is present; by contrast, `mbedtls_check_foobar_support()` will return `0` if support for foobar is present (success) and `-1` or a more specific error code if not. All functions named `check` must follow this rule and return `0` to indicate acceptable/valid/present/etc. Preference should generally be given to `check` names in order to avoid a mixture of `== 0` and `!= 0` tests.
