@@ -664,7 +664,13 @@ EXAMPLE USAGE
 Build the library:
 mtest
 
-Test sha functions under ASAN
+Build with modified configuration:
+mtest MBEDTLS_CIPHER_MODE_XTS -MBEDTLS_CIPHER_MODE_CTR   # enable XTS, and disable CTR
+mtest config-thread                                      # use "configs/config-thread.h"
+mtest baremetal                                          # use baremetal preset from config.py
+mtest baremetal -MBEDTLS_CIPHER_MODE_CBC                 # baremetal, with CBC disabled
+
+Test sha functions under ASAN:
 mtest shax -A
 
 Build and run all the aes tests, with clang and gcc, with MBEDTLS_AESCE_C set and MBEDTLS_AESNI_C unset:
@@ -678,17 +684,17 @@ mtest -k alignment
 
 Report library size, as built by armclang -Oz with TF-M configuration for armv8 thumb2:
 mtest -S
-mtest -S clang                                  # as above, but use clang instead of the default armclang
-mtest -S MBEDTLS_P256M_EXAMPLE_DRIVER_ENABLED   # as above, but modify TF-M config with given option(s)
+mtest -S clang-16                             # as above, but use clang-16 instead of the default armclang
+mtest -S MBEDTLS_P256M_EXAMPLE_DRIVER_ENABLED # as above, but modify TF-M config with given option(s)
 
 Build aes.o multiple times, with every combination of the given options:
 mtest aes.o MBEDTLS_AES_SETKEY_ENC_ALT,MBEDTLS_AES_DECRYPT_ALT,MBEDTLS_AES_ROM_TABLES,MBEDTLS_AES_ENCRYPT_ALT,MBEDTLS_AES_SETKEY_DEC_ALT,MBEDTLS_AES_FEWER_TABLES,MBEDTLS_PADLOCK_C
 
-Disassemble cmac.o
+Disassemble cmac.o:
 mtest cmac.o -d
 
-Disassemble mbedtls_xor for arm, built with clang -Os
-mtest -d mbedtls_xor -Os clang arm
+Disassemble mbedtls_xor for arm, built with gcc-12 -Os:
+mtest -d mbedtls_xor -Os gcc-12 arm
 '''
 
     REST_HELP = f'''Optional list of tests, compilers, flags, architectures, config options and build targets.
@@ -699,7 +705,8 @@ Flags: anything starting with a '-' will get passed to CFLAGS if not recognised 
 Architectures: {", ".join(ARM_ISAS)}, armv5, ..., armv8 or e.g. armv7-thumb2
     {", ".join(ARCHS)}
 Config options: individual options are set with e.g. MBEDTLS_AESCE_C, or unset with e.g. -PSA_WANT_ALG_MD5.
-    Options recognised by scripts/config.py are permitted (e.g. "baremetal"), or any ".h" file.
+    Options recognised by scripts/config.py are permitted (e.g. "baremetal").
+    Passing a file from configs/ (e.g. "config-tfm") or any ".h" file will replace the existing config file.
     Iterate over the cross-product of options X,Y,Z by specifying a comma-separated list of config options.
     The original config files will be restored when mtest exits.
 Build targets: build the library by default, or files (e.g. aes.o), programs (e.g. selftest) or tests (as above)'''
