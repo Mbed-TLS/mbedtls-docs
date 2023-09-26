@@ -50,23 +50,24 @@ QEMU_NAME_MAP = {
 }
 
 MEMSAN_OPTIONS = [ "MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN", "-MBEDTLS_USE_PSA_CRYPTO", "-MBEDTLS_AESNI_C", "-MBEDTLS_AESCE_C" ]
-MEMSAN_CFLAGS  = "-fsanitize=memory -O1 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2"
+MEMSAN_CFLAGS  = ['-fsanitize=memory', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls', '-fsanitize-memory-track-origins=2']
 MEMSAN_CC      = "clang"
 
 COMPILER_CONFIGS = {
 #    "armclang": [ "MBEDTLS_NO_UDBL_DIVISION" ]
 }
 
-ASAN_CFLAGS   = "-fsanitize=address -fno-common -fsanitize=undefined -fno-sanitize-recover=all -O1 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+ASAN_CFLAGS   = ['-fsanitize=address', '-fno-common', '-fsanitize=undefined', '-fno-sanitize-recover=all', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
 ASAN_LDFLAGS  = ASAN_CFLAGS
 
 WARNING_FLAGS = {
-    "clang": "-Werror -Wall -Wextra -Wwrite-strings -Wpointer-arith -Wimplicit-fallthrough -Wshadow -Wvla -Wformat=2 -Wno-format-nonliteral -Wshadow -Wasm-operand-widths -Wunreachable-code",
-    "gcc"  : "-Werror -Wall -Wextra -Wwrite-strings -Wpointer-arith -Wimplicit-fallthrough -Wshadow -Wvla -Wformat=2 -Wno-format-nonliteral -Wshadow -Wformat-signedness -Wformat-overflow=2 -Wformat-truncation -Wlogical-op"
+    "clang": ['-Werror', '-Wall', '-Wextra', '-Wwrite-strings', '-Wpointer-arith', '-Wimplicit-fallthrough', '-Wshadow', '-Wvla', '-Wformat=2', '-Wno-format-nonliteral', '-Wshadow', '-Wasm-operand-widths', '-Wunreachable-code'],
+    "gcc"  : ['-Werror', '-Wall', '-Wextra', '-Wwrite-strings', '-Wpointer-arith', '-Wimplicit-fallthrough', '-Wshadow', '-Wvla', '-Wformat=2', '-Wno-format-nonliteral', '-Wshadow', '-Wformat-signedness', '-Wformat-overflow=2', '-Wformat-truncation', '-Wlogical-op']
 }
 WARNING_FLAGS["arm-none-eabi-gcc"] = WARNING_FLAGS["gcc"]
 WARNING_FLAGS["armclang"]          = WARNING_FLAGS["clang"]
 
+TFM_ARMCLANG_TARGET_FLAGS = ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33", "-mthumb"]
 TFM_CONFIG = "tfm_mbedcrypto_config_profile_medium.h"
 TFM_CRYPTO_CONFIG = "crypto_config_profile_medium.h"
 
@@ -241,122 +242,125 @@ def toolchain(target, exit_on_failure=True):
     # target_c_flags may get overridden by the user (and dropped from the resulting set of flags);
     # c_flags is always applied
 
-    target_c_flags = "-std=c99"
-    c_flags = f"-I{ROOT}/include"
+    target_c_flags = ["-std=c99", f"-I{ROOT}/include"]
 
     if args.size_tfm and "clang" in target.compiler:
-        target_c_flags += " -Oz"
+        target_c_flags += ["-Oz"]
     else:
-        target_c_flags += " -Os"
+        target_c_flags += ["-Os"]
 
     if args.no_warnings:
         if target.compiler_family == "clang":
-            c_flags += " -Wno-everything"
+            target_c_flags += ["-Wno-everything"]
         else:
-            c_flags += " -Wno-all -Wno-extra"
+            target_c_flags += ["-Wno-all", "-Wno-extra"]
     else:
-        target_c_flags += " " + WARNING_FLAGS.get(target.compiler_family, "")
-
-    # add user-specified flags
-    if target.cflags:
-        c_flags += " " + target.cflags.strip()
-    c_flags = c_flags.strip()
+        if target.compiler_family in WARNING_FLAGS:
+            target_c_flags += WARNING_FLAGS[target.compiler_family]
 
     if args.memsan:
-        c_flags  += " " + MEMSAN_CFLAGS
+        target_c_flags += MEMSAN_CFLAGS
     elif args.asan:
-        c_flags  += " " + ASAN_CFLAGS
+        target_c_flags += ASAN_CFLAGS
 
     if target.compiler == "armclang":
         if target.isa == "thumb1":
             # strictly speaking, includes "some 32-bit Thumb2 instructions" but this is the oldest ISA armclang supports
-            target_c_flags += " --target=arm-arm-none-eabi -mcpu=cortex-m0 -mthumb"
+            target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m0", "-mthumb"]
         elif target.isa == "thumb2":
-            target_c_flags += " --target=arm-arm-none-eabi -mcpu=cortex-m33+dsp -mthumb"
+            if args.size_tfm:
+                target_c_flags += TFM_ARMCLANG_TARGET_FLAGS
+            else:
+                target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33+dsp", "-mthumb"]
         elif target.isa == "arm":
-            target_c_flags += " --target=arm-arm-none-eabi -mcpu=cortex-a17 -marm"
+            target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-a17", "-marm"]
         elif target.isa == "aarch64":
-            target_c_flags += " --target=aarch64-arm-none-eabi -mcpu=cortex-a78"
+            target_c_flags += ["--target=aarch64-arm-none-eabi", "-mcpu=cortex-a78"]
         else:
             if exit_on_failure: error(f"unsupported ISA {target.isa} for armclang")
 
     elif target.compiler_family == "gcc":
         if not target.is_native:
             # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
-            if not ("-march" in c_flags or "-mcpu" in c_flags):
+            if True or not ("-march" in c_flags or "-mcpu" in c_flags):
                 # not user-specified arch/isa/cpu
                 if target.arch == "armv5" and target.isa == "thumb1":
-                    target_c_flags += " -mcpu=arm926ej-s -mthumb"
+                    target_c_flags += ["-mcpu=arm926ej-s", "-mthumb"]
                 elif target.arch == "armv5" and target.isa == "arm":
-                    target_c_flags += " -march=armv5te -marm"
+                    target_c_flags += ["-march=armv5te", "-marm"]
                 elif target.arch == "armv6" and target.isa == "thumb1":
-                    target_c_flags += " -mcpu=arm1136jf-s -mthumb"
+                    target_c_flags += ["-mcpu=arm1136jf-s", "-mthumb"]
                 elif target.arch == "armv6" and target.isa == "thumb2":
-                    target_c_flags += " -mcpu=arm1156t2-s -mthumb"
+                    target_c_flags += ["-mcpu=arm1156t2-s", "-mthumb"]
                 elif target.arch == "armv6" and target.isa == "arm":
-                    target_c_flags += " -mcpu=arm1136jf-s -marm"
+                    target_c_flags += ["-mcpu=arm1136jf-s", "-marm"]
                 elif target.arch == "armv7" and target.isa == "thumb2":
-                    target_c_flags += " -mcpu=cortex-a17 -mthumb"
+                    target_c_flags += ["-mcpu=cortex-a17", "-mthumb"]
                 elif target.arch == "armv7" and target.isa == "arm":
-                    target_c_flags += " -march=armv7-a+simd -marm"
+                    target_c_flags += ["-march=armv7-a+simd", "-marm"]
                 elif target.arch == "armv8" and target.isa == "thumb2":
-                    target_c_flags += " -mcpu=cortex-a32 -mthumb"
+                    target_c_flags += ["-mcpu=cortex-a32", "-mthumb"]
                 elif target.arch == "armv8" and target.isa == "arm":
-                    target_c_flags += " -mcpu=cortex-a32 -marm"
+                    target_c_flags += ["-mcpu=cortex-a32", "-marm"]
                 elif target.arch == "armv8" and target.isa == "aarch64":
-                    target_c_flags += " -mcpu=cortex-a78 -march=armv8.2-a+simd+crypto"
+                    target_c_flags += ["-mcpu=cortex-a78", "-march=armv8.2-a+simd+crypto"]
                 elif target.arch.startswith("armv"):
-                    target_c_flags += " -march=" + target.arch
+                    target_c_flags += ["-march=" + target.arch]
             if target.arch in {"x86", "x86_64"}:
                 # Support AESNI intrinsics
-                target_c_flags += " -mpclmul -msse2 -maes"
+                target_c_flags += ["-mpclmul", "-msse2", "-maes"]
 
     elif target.compiler_family == "clang":
         if not target.is_native:
             # non-native clang build
             if target.arch == "armv5" and target.isa == "thumb1":
-                target_c_flags += " --target=arm-linux-gnueabihf -mcpu=arm926ej-s -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=arm926ej-s", "-mthumb"]
             elif target.arch == "armv5" and target.isa == "arm":
-                target_c_flags += " --target=arm-linux-gnueabihf -march=armv5te -marm"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv5te", "-marm"]
             elif target.arch == "armv6" and target.isa == "thumb1":
-                target_c_flags += " --target=arm-linux-gnueabihf -mcpu=arm1136j-s -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=arm1136j-s", "-mthumb"]
             elif target.arch == "armv6" and target.isa == "thumb2":
-                target_c_flags += " --target=arm-linux-gnueabihf -mcpu=arm1156t2-s -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=arm1156t2-s", "-mthumb"]
             elif target.arch == "armv6" and target.isa == "arm":
-                target_c_flags += " --target=arm-linux-gnueabihf -march=armv6 -marm"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv6", "-marm"]
             elif target.arch == "armv7" and target.isa == "thumb2":
-                target_c_flags += " --target=arm-linux-gnueabihf -mcpu=cortex-a17 -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=cortex-a17", "-mthumb"]
             elif target.arch == "armv7" and target.isa == "arm":
-                target_c_flags += " --target=arm-linux-gnueabihf -march=armv7-a -marm"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv7-a", "-marm"]
             elif target.arch == "armv8" and target.isa == "thumb2":
-                target_c_flags += " --target=arm-linux-gnueabihf -mcpu=cortex-a32 -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=cortex-a32", "-mthumb"]
             elif target.arch == "armv8" and target.isa == "arm":
-                target_c_flags += " --target=arm-linux-gnueabihf -march=armv8-a -marm"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv8-a", "-marm"]
             elif target.arch == "armv8" and target.isa == "aarch64":
-                target_c_flags += " --target=arm-linux-gnueabihf -march=armv8-a -maarch64"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv8-a", "-maarch64"]
             elif target.arch.startswith("mips") and "64" in target.arch:
-                target_c_flags += f"--target={target.arch}-linux-gnuabi64"
-            elif target.arch in {"x86", "x86_64"}:
-                target_c_flags += " --target=i686-linux-gnu -mpclmul -msse2 -maes"
-            elif target.arch in ["mips", "mipsel", "x86_64", "powerpc64le", "s390x", "riscv64"]:
-                target_c_flags += f"--target={target.arch}-linux-gnu"
+                target_c_flags += [f"--target={target.arch}-linux-gnuabi64"]
+            elif target.arch == "x86":
+                target_c_flags += ["--target=i686-linux-gnu", "-mpclmul", "-msse2", "-maes"]
+            elif target.arch == "x86_64":
+                target_c_flags += ["--target=x86_64-linux-gnu", "-mpclmul", "-msse2", "-maes"]
+            elif target.arch in ["mips", "mipsel", "powerpc64le", "s390x", "riscv64"]:
+                target_c_flags += [f"--target={target.arch}-linux-gnu"]
             else:
                 error(f"unsupported target {target.arch} {target.isa} for clang")
 
+    # unconditionally add user-specified flags
+    c_flags = target.cflags.split(" ")
+
     # add each CFLAG for target only if not user-specified
-    for f in reversed(target_c_flags.split(" ")):
+    for f in reversed(target_c_flags):
         if '=' in f:
             # option like -mstd=c99
             o, v = f.split("=")
-            if f" {o}=" in " " + c_flags:
+            if any(x.startswith(f"{o}=") for x in c_flags):
                 continue
         elif f.startswith("-O"):
             # special case for -Os, -Oz, etc
-            if any([x.startswith("-O") for x in c_flags.split(" ")]):
+            if any([x.startswith("-O") for x in c_flags]):
                 continue
         elif f in ["-mthumb", "-marm"]:
             # special case for Arm ISA selection
-            if not {"-mthumb", "-marm"}.isdisjoint(c_flags.split(" ")):
+            if not {"-mthumb", "-marm"}.isdisjoint(c_flags):
                 continue
         else:
             # binary options like e.g. "-maes", "-fno-lto", "-Wxyz"
@@ -365,20 +369,19 @@ def toolchain(target, exit_on_failure=True):
                 o = {f[:2] + f[5:], f}
             else:
                 o = {f, f[:2] + "no-" + f[2:]}
-            if not o.isdisjoint(c_flags.split(" ")): continue
+            if not o.isdisjoint(c_flags): continue
         # not already present: put at start so it should be over-ridden if the above missed something
-        c_flags = f + " " + c_flags
+        c_flags = [f] + c_flags
 
     ld_flags = target.ldflags
     if args.asan:
-        ld_flags += " " + ASAN_LDFLAGS
+        ld_flags = ld_flags + " " + " ".join(ASAN_LDFLAGS)
     if not target.is_native:
         ld_flags += " --static"
 
     exes = toolchain_exes(target)
-
     return {
-        "CFLAGS": c_flags.strip(),
+        "CFLAGS": " ".join(x for x in c_flags if x != "").strip(),
         "LDFLAGS": ld_flags.strip(),
         "CC": exes["compiler"],
         "OBJDUMP": exes["objdump"],
