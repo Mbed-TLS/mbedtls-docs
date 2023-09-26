@@ -67,7 +67,7 @@ WARNING_FLAGS = {
 WARNING_FLAGS["arm-none-eabi-gcc"] = WARNING_FLAGS["gcc"]
 WARNING_FLAGS["armclang"]          = WARNING_FLAGS["clang"]
 
-TFM_ARMCLANG_TARGET_FLAGS = ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33", "-mthumb"]
+TFM_ARMCLANG_TARGET_FLAGS = ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33+nodsp+nofp", "-mthumb"]
 TFM_CONFIG = "tfm_mbedcrypto_config_profile_medium.h"
 TFM_CRYPTO_CONFIG = "crypto_config_profile_medium.h"
 
