@@ -68,8 +68,8 @@ WARNING_FLAGS["arm-none-eabi-gcc"] = WARNING_FLAGS["gcc"]
 WARNING_FLAGS["armclang"]          = WARNING_FLAGS["clang"]
 
 TFM_ARMCLANG_TARGET_FLAGS = ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33+nodsp+nofp", "-mthumb"]
-TFM_CONFIG = "tfm_mbedcrypto_config_profile_medium.h"
-TFM_CRYPTO_CONFIG = "crypto_config_profile_medium.h"
+TFM_CONFIG_FILES = [("config-tfm.h", None), ("tfm_mbedcrypto_config_profile_medium.h", "crypto_config_profile_medium.h")]
+COPY_TFM_CONFIG = "//TFM-CONFIG//"
 
 Target = namedtuple("Target", ["compiler", "compiler_family", "arch", "baremetal", "isa", "arch_isa", "is_native", "arm_arch", "cflags", "ldflags", "config"])
 
@@ -432,35 +432,56 @@ def configure_options(target):
     # user-specified options to apply to all targets
     options += args.config_options
 
+    set_no_platform_entropy = False
     disable_spm = False
 
     individual_options = [x for x in options if x.startswith("MBEDTLS_") or x.startswith("-MBEDTLS_") or x.startswith("PSA_") or x.startswith("-PSA_")]
     bulk_options = [x for x in options if x not in individual_options]
 
     for config in bulk_options:
-        if config.endswith(".h"):
+        if config == COPY_TFM_CONFIG:
+            # special flag to copy both TF-M config files - these have a couple of possible locations
+            for mc, cc in TFM_CONFIG_FILES:
+                if os.path.exists(f"{ROOT}/configs/{mc}") and (cc is None or os.path.exists(f"{ROOT}/configs/{cc}")):
+                    if mc == TFM_CONFIG_FILES[0][0]:
+                        # latest TF-M config file unsets this, so set it again
+                        set_no_platform_entropy = True
+                    for c, dest in zip([mc, cc], [CONFIG_FILE, CRYPTO_CONFIG_FILE]):
+                        if c is not None:
+                            log(f"cp configs/{c} {dest[len(ROOT) + 1:]}")
+                            shutil.copy(f"{ROOT}/configs/{c}", dest)
+                    break
+            else:
+                # for looking at old checkouts where these configs were not in the tree, fetch from
+                # date they were first created instead
+                # also disable MBEDTLS_PSA_CRYPTO_SPM is required to get it to build
+                disable_spm = True
+                for config, dest in zip(TFM_CONFIG_FILES[-1], [CONFIG_FILE, CRYPTO_CONFIG_FILE]):
+                    log(f"git show 2f1ae5a86ebd67faa50c3983b4567656c2234674:configs/{config} > {dest[len(ROOT) + 1:]}")
+                    output, _ = subrun(["git", "show", "origin/development:configs/" + config], silent=True)
+                    with open(dest, 'w') as f:
+                        f.write(output)
+        elif config.endswith(".h"):
             # a config file - overwrite existing config file
             path = config if os.path.exists(config) else f"{ROOT}/configs/{config}"
             if path.split("/")[-1].startswith("crypto_config_"):
                 dest = CRYPTO_CONFIG_FILE
             else:
                 dest = CONFIG_FILE
-            if config in { TFM_CONFIG, TFM_CRYPTO_CONFIG } and not os.path.exists(path):
-                # for looking at old checkouts where these configs were not in the tree, fetch from
-                # date they were first created instead
-                # also disable MBEDTLS_PSA_CRYPTO_SPM is required to get it to build
-                disable_spm = True
-                log(f"git show 2f1ae5a86ebd67faa50c3983b4567656c2234674:configs/{config} > {dest[len(ROOT) + 1:]}")
-                output, _ = subrun(["git", "show", "origin/development:configs/" + config], silent=True)
-                with open(dest, 'w') as f:
-                    f.write(output)
-            else:
-                log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
-                shutil.copy(path, dest)
+            log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
+            shutil.copy(path, dest)
         else:
             # a configuration recognised by config.py, e.g. "baremetal"
             log(f"scripts/config.py {config}")
             subrun([f"{ROOT}/scripts/config.py", config], silent=True)
+
+    if disable_spm:
+        # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
+        # and more options again (not sure which) for 3.0.0
+        set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
+    if set_no_platform_entropy:
+        # this gets disabled by #8164 - ensure it is set
+        set_config_option("set", "MBEDTLS_NO_PLATFORM_ENTROPY", silent=False)
 
     for config in individual_options:
         # an individual option like MBEDTLS_XYZ or -PSA_XYZ
@@ -469,11 +490,6 @@ def configure_options(target):
             action = "unset"
             config = config[1:]
         set_config_option(action, config, silent=False)
-
-    if disable_spm:
-        # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
-        # and more options again (not sure which) for 3.0.0
-        set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
 
 
 def flags_to_hr_str(flags):
@@ -743,8 +759,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     supported_configs = get_supported_configs()
     config = []
     if args.size_tfm:
-        config.append(TFM_CONFIG)
-        config.append(TFM_CRYPTO_CONFIG)
+        config.append(COPY_TFM_CONFIG)
     for a in list(args.rest):
         if a.endswith(".h") and os.path.exists(a):
             # arbitrary .h file
