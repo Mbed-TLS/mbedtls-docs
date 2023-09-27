@@ -272,7 +272,7 @@ def toolchain(target, exit_on_failure=True):
         target_c_flags += ["-Os"]
 
     if args.no_warnings:
-        if target.compiler_family == "clang":
+        if "clang" in target.compiler_family:
             target_c_flags += ["-Wno-everything"]
         elif target.compiler_family == "iar":
             target_c_flags += ["--no_warnings"]
