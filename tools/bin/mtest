@@ -50,25 +50,26 @@ QEMU_NAME_MAP = {
 }
 
 MEMSAN_OPTIONS = [ "MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN", "-MBEDTLS_USE_PSA_CRYPTO", "-MBEDTLS_AESNI_C", "-MBEDTLS_AESCE_C" ]
-MEMSAN_CFLAGS  = "-fsanitize=memory -O1 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize-memory-track-origins=2"
+MEMSAN_CFLAGS  = ['-fsanitize=memory', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls', '-fsanitize-memory-track-origins=2']
 MEMSAN_CC      = "clang"
 
 COMPILER_CONFIGS = {
 #    "armclang": [ "MBEDTLS_NO_UDBL_DIVISION" ]
 }
 
-ASAN_CFLAGS   = "-fsanitize=address -fno-common -fsanitize=undefined -fno-sanitize-recover=all -O1 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls"
+ASAN_CFLAGS   = ['-fsanitize=address', '-fno-common', '-fsanitize=undefined', '-fno-sanitize-recover=all', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
 ASAN_LDFLAGS  = ASAN_CFLAGS
 
 WARNING_FLAGS = {
-    "clang": "-Werror -Wall -Wextra -Wwrite-strings -Wpointer-arith -Wimplicit-fallthrough -Wshadow -Wvla -Wformat=2 -Wno-format-nonliteral -Wshadow -Wasm-operand-widths -Wunreachable-code",
-    "gcc"  : "-Werror -Wall -Wextra -Wwrite-strings -Wpointer-arith -Wimplicit-fallthrough -Wshadow -Wvla -Wformat=2 -Wno-format-nonliteral -Wshadow -Wformat-signedness -Wformat-overflow=2 -Wformat-truncation -Wlogical-op"
+    "clang": ['-Werror', '-Wall', '-Wextra', '-Wwrite-strings', '-Wpointer-arith', '-Wimplicit-fallthrough', '-Wshadow', '-Wvla', '-Wformat=2', '-Wno-format-nonliteral', '-Wshadow', '-Wasm-operand-widths', '-Wunreachable-code'],
+    "gcc"  : ['-Werror', '-Wall', '-Wextra', '-Wwrite-strings', '-Wpointer-arith', '-Wimplicit-fallthrough', '-Wshadow', '-Wvla', '-Wformat=2', '-Wno-format-nonliteral', '-Wshadow', '-Wformat-signedness', '-Wformat-overflow=2', '-Wformat-truncation', '-Wlogical-op']
 }
 WARNING_FLAGS["arm-none-eabi-gcc"] = WARNING_FLAGS["gcc"]
 WARNING_FLAGS["armclang"]          = WARNING_FLAGS["clang"]
 
-TFM_CONFIG = "tfm_mbedcrypto_config_profile_medium.h"
-TFM_CRYPTO_CONFIG = "crypto_config_profile_medium.h"
+TFM_ARMCLANG_TARGET_FLAGS = ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33+nodsp+nofp", "-mthumb"]
+TFM_CONFIG_FILES = [("config-tfm.h", None), ("tfm_mbedcrypto_config_profile_medium.h", "crypto_config_profile_medium.h")]
+COPY_TFM_CONFIG = "//TFM-CONFIG//"
 
 Target = namedtuple("Target", ["compiler", "compiler_family", "arch", "baremetal", "isa", "arch_isa", "is_native", "arm_arch", "cflags", "ldflags", "config"])
 
@@ -179,14 +180,14 @@ def toolchain_exes(target):
                         compiler_exe = c
                         break
 
-    if shutil.which(compiler_exe) is None:
-        compiler_exe = None
     if target.compiler == "gcc":
         compiler_error = f"could not locate gcc executable {compiler_exe} or {compiler_exe}-<majorversion>"
     elif target.compiler_family == "gcc":
         compiler_error = f"could not locate gcc executable {compiler_exe}"
     else:
         compiler_error = f"could not locate {target.compiler} executable"
+    if shutil.which(compiler_exe) is None:
+        compiler_exe = None
 
     # non-arch-specific size should work in all cases, but may as well prefer <triple>-size
     if args.size:
@@ -238,115 +239,149 @@ def toolchain_exes(target):
 
 def toolchain(target, exit_on_failure=True):
     # basic CFLAGS setup
-    c_flags = f"-I{ROOT}/include"
-    if "-O" not in target.cflags:
-        if args.size_tfm and "clang" in target.compiler:
-            c_flags += " -Oz"
-        else:
-            c_flags += " -Os"
-    if "-std" not in target.cflags: c_flags += " -std=c99"
+    # target_c_flags may get overridden by the user (and dropped from the resulting set of flags);
+    # c_flags is always applied
+
+    target_c_flags = ["-std=c99", f"-I{ROOT}/include"]
+
+    if args.size_tfm and "clang" in target.compiler:
+        target_c_flags += ["-Oz"]
+    else:
+        target_c_flags += ["-Os"]
+
     if args.no_warnings:
         if target.compiler_family == "clang":
-            c_flags += " -Wno-everything"
+            target_c_flags += ["-Wno-everything"]
         else:
-            c_flags += " -Wno-all -Wno-extra"
+            target_c_flags += ["-Wno-all", "-Wno-extra"]
     else:
-        c_flags += " " + WARNING_FLAGS.get(target.compiler_family, "")
-    if target.cflags:
-        c_flags += " " + target.cflags.strip()
-    c_flags = c_flags.strip()
+        if target.compiler_family in WARNING_FLAGS:
+            target_c_flags += WARNING_FLAGS[target.compiler_family]
 
     if args.memsan:
-        c_flags  += " " + MEMSAN_CFLAGS
+        target_c_flags += MEMSAN_CFLAGS
     elif args.asan:
-        c_flags  += " " + ASAN_CFLAGS
+        target_c_flags += ASAN_CFLAGS
 
     if target.compiler == "armclang":
         if target.isa == "thumb1":
             # strictly speaking, includes "some 32-bit Thumb2 instructions" but this is the oldest ISA armclang supports
-            c_flags += " --target=arm-arm-none-eabi -mcpu=cortex-m0 -mthumb"
+            target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m0", "-mthumb"]
         elif target.isa == "thumb2":
-            c_flags += " --target=arm-arm-none-eabi -mcpu=cortex-m33+dsp -mthumb"
+            if args.size_tfm:
+                target_c_flags += TFM_ARMCLANG_TARGET_FLAGS
+            else:
+                target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33+dsp", "-mthumb"]
         elif target.isa == "arm":
-            c_flags += " --target=arm-arm-none-eabi -mcpu=cortex-a17 -marm"
+            target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-a17", "-marm"]
         elif target.isa == "aarch64":
-            c_flags += " --target=aarch64-arm-none-eabi -mcpu=cortex-a78"
+            target_c_flags += ["--target=aarch64-arm-none-eabi", "-mcpu=cortex-a78"]
         else:
             if exit_on_failure: error(f"unsupported ISA {target.isa} for armclang")
 
     elif target.compiler_family == "gcc":
         if not target.is_native:
             # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
-            if not ("-march" in c_flags or "-mcpu" in c_flags):
+            if True or not ("-march" in c_flags or "-mcpu" in c_flags):
                 # not user-specified arch/isa/cpu
                 if target.arch == "armv5" and target.isa == "thumb1":
-                    c_flags += " -mcpu=arm926ej-s -mthumb"
+                    target_c_flags += ["-mcpu=arm926ej-s", "-mthumb"]
                 elif target.arch == "armv5" and target.isa == "arm":
-                    c_flags += " -march=armv5te -marm"
+                    target_c_flags += ["-march=armv5te", "-marm"]
                 elif target.arch == "armv6" and target.isa == "thumb1":
-                    c_flags += " -mcpu=arm1136jf-s -mthumb"
+                    target_c_flags += ["-mcpu=arm1136jf-s", "-mthumb"]
                 elif target.arch == "armv6" and target.isa == "thumb2":
-                    c_flags += " -mcpu=arm1156t2-s -mthumb"
+                    target_c_flags += ["-mcpu=arm1156t2-s", "-mthumb"]
                 elif target.arch == "armv6" and target.isa == "arm":
-                    c_flags += " -mcpu=arm1136jf-s -marm"
+                    target_c_flags += ["-mcpu=arm1136jf-s", "-marm"]
                 elif target.arch == "armv7" and target.isa == "thumb2":
-                    c_flags += " -mcpu=cortex-a17 -mthumb"
+                    target_c_flags += ["-mcpu=cortex-a17", "-mthumb"]
                 elif target.arch == "armv7" and target.isa == "arm":
-                    c_flags += " -march=armv7-a+simd -marm"
+                    target_c_flags += ["-march=armv7-a+simd", "-marm"]
                 elif target.arch == "armv8" and target.isa == "thumb2":
-                    c_flags += " -mcpu=cortex-a32 -mthumb"
+                    target_c_flags += ["-mcpu=cortex-a32", "-mthumb"]
                 elif target.arch == "armv8" and target.isa == "arm":
-                    c_flags += " -mcpu=cortex-a32 -marm"
+                    target_c_flags += ["-mcpu=cortex-a32", "-marm"]
                 elif target.arch == "armv8" and target.isa == "aarch64":
-                    c_flags += " -mcpu=cortex-a78 -march=armv8.2-a+simd+crypto"
+                    target_c_flags += ["-mcpu=cortex-a78", "-march=armv8.2-a+simd+crypto"]
                 elif target.arch.startswith("armv"):
-                    c_flags += " -march=" + target.arch
+                    target_c_flags += ["-march=" + target.arch]
             if target.arch in {"x86", "x86_64"}:
                 # Support AESNI intrinsics
-                c_flags += " -mpclmul -msse2 -maes"
+                target_c_flags += ["-mpclmul", "-msse2", "-maes"]
 
     elif target.compiler_family == "clang":
         if not target.is_native:
             # non-native clang build
             if target.arch == "armv5" and target.isa == "thumb1":
-                c_flags += " --target=arm-linux-gnueabihf -mcpu=arm926ej-s -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=arm926ej-s", "-mthumb"]
             elif target.arch == "armv5" and target.isa == "arm":
-                c_flags += " --target=arm-linux-gnueabihf -march=armv5te -marm"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv5te", "-marm"]
             elif target.arch == "armv6" and target.isa == "thumb1":
-                c_flags += " --target=arm-linux-gnueabihf -mcpu=arm1136j-s -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=arm1136j-s", "-mthumb"]
             elif target.arch == "armv6" and target.isa == "thumb2":
-                c_flags += " --target=arm-linux-gnueabihf -mcpu=arm1156t2-s -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=arm1156t2-s", "-mthumb"]
             elif target.arch == "armv6" and target.isa == "arm":
-                c_flags += " --target=arm-linux-gnueabihf -march=armv6 -marm"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv6", "-marm"]
             elif target.arch == "armv7" and target.isa == "thumb2":
-                c_flags += " --target=arm-linux-gnueabihf -mcpu=cortex-a17 -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=cortex-a17", "-mthumb"]
             elif target.arch == "armv7" and target.isa == "arm":
-                c_flags += " --target=arm-linux-gnueabihf -march=armv7-a -marm"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv7-a", "-marm"]
             elif target.arch == "armv8" and target.isa == "thumb2":
-                c_flags += " --target=arm-linux-gnueabihf -mcpu=cortex-a32 -mthumb"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=cortex-a32", "-mthumb"]
             elif target.arch == "armv8" and target.isa == "arm":
-                c_flags += " --target=arm-linux-gnueabihf -march=armv8-a -marm"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv8-a", "-marm"]
             elif target.arch == "armv8" and target.isa == "aarch64":
-                c_flags += " --target=arm-linux-gnueabihf -march=armv8-a -maarch64"
+                target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv8-a", "-maarch64"]
             elif target.arch.startswith("mips") and "64" in target.arch:
-                c_flags += f" --target={target.arch}-linux-gnuabi64"
-            elif target.arch in {"x86", "x86_64"}:
-                c_flags += " --target=i686-linux-gnu -mpclmul -msse2 -maes"
-            elif target.arch in ["mips", "mipsel", "x86_64", "powerpc64le", "s390x", "riscv64"]:
-                c_flags += f" --target={target.arch}-linux-gnu"
+                target_c_flags += [f"--target={target.arch}-linux-gnuabi64"]
+            elif target.arch == "x86":
+                target_c_flags += ["--target=i686-linux-gnu", "-mpclmul", "-msse2", "-maes"]
+            elif target.arch == "x86_64":
+                target_c_flags += ["--target=x86_64-linux-gnu", "-mpclmul", "-msse2", "-maes"]
+            elif target.arch in ["mips", "mipsel", "powerpc64le", "s390x", "riscv64"]:
+                target_c_flags += [f"--target={target.arch}-linux-gnu"]
             else:
                 error(f"unsupported target {target.arch} {target.isa} for clang")
 
+    # unconditionally add user-specified flags
+    c_flags = target.cflags.split(" ")
+
+    # add each CFLAG for target only if not user-specified
+    for f in reversed(target_c_flags):
+        if '=' in f:
+            # option like -mstd=c99
+            o, v = f.split("=")
+            if any(x.startswith(f"{o}=") for x in c_flags):
+                continue
+        elif f.startswith("-O"):
+            # special case for -Os, -Oz, etc
+            if any([x.startswith("-O") for x in c_flags]):
+                continue
+        elif f in ["-mthumb", "-marm"]:
+            # special case for Arm ISA selection
+            if not {"-mthumb", "-marm"}.isdisjoint(c_flags):
+                continue
+        else:
+            # binary options like e.g. "-maes", "-fno-lto", "-Wxyz"
+            # check that neither e.g. "-mXYZ" nor "-mno-XYZ" is present before adding it
+            if len(f) > 5 and f[2:5] == "no-":
+                o = {f[:2] + f[5:], f}
+            else:
+                o = {f, f[:2] + "no-" + f[2:]}
+            if not o.isdisjoint(c_flags): continue
+        # not already present: put at start so it should be over-ridden if the above missed something
+        c_flags = [f] + c_flags
+
     ld_flags = target.ldflags
     if args.asan:
-        ld_flags += " " + ASAN_LDFLAGS
+        ld_flags = ld_flags + " " + " ".join(ASAN_LDFLAGS)
     if not target.is_native:
         ld_flags += " --static"
 
     exes = toolchain_exes(target)
-
     return {
-        "CFLAGS": c_flags.strip(),
+        "CFLAGS": " ".join(x for x in c_flags if x != "").strip(),
         "LDFLAGS": ld_flags.strip(),
         "CC": exes["compiler"],
         "OBJDUMP": exes["objdump"],
@@ -397,35 +432,56 @@ def configure_options(target):
     # user-specified options to apply to all targets
     options += args.config_options
 
+    set_no_platform_entropy = False
     disable_spm = False
 
     individual_options = [x for x in options if x.startswith("MBEDTLS_") or x.startswith("-MBEDTLS_") or x.startswith("PSA_") or x.startswith("-PSA_")]
     bulk_options = [x for x in options if x not in individual_options]
 
     for config in bulk_options:
-        if config.endswith(".h"):
+        if config == COPY_TFM_CONFIG:
+            # special flag to copy both TF-M config files - these have a couple of possible locations
+            for mc, cc in TFM_CONFIG_FILES:
+                if os.path.exists(f"{ROOT}/configs/{mc}") and (cc is None or os.path.exists(f"{ROOT}/configs/{cc}")):
+                    if mc == TFM_CONFIG_FILES[0][0]:
+                        # latest TF-M config file unsets this, so set it again
+                        set_no_platform_entropy = True
+                    for c, dest in zip([mc, cc], [CONFIG_FILE, CRYPTO_CONFIG_FILE]):
+                        if c is not None:
+                            log(f"cp configs/{c} {dest[len(ROOT) + 1:]}")
+                            shutil.copy(f"{ROOT}/configs/{c}", dest)
+                    break
+            else:
+                # for looking at old checkouts where these configs were not in the tree, fetch from
+                # date they were first created instead
+                # also disable MBEDTLS_PSA_CRYPTO_SPM is required to get it to build
+                disable_spm = True
+                for config, dest in zip(TFM_CONFIG_FILES[-1], [CONFIG_FILE, CRYPTO_CONFIG_FILE]):
+                    log(f"git show 2f1ae5a86ebd67faa50c3983b4567656c2234674:configs/{config} > {dest[len(ROOT) + 1:]}")
+                    output, _ = subrun(["git", "show", "origin/development:configs/" + config], silent=True)
+                    with open(dest, 'w') as f:
+                        f.write(output)
+        elif config.endswith(".h"):
             # a config file - overwrite existing config file
             path = config if os.path.exists(config) else f"{ROOT}/configs/{config}"
             if path.split("/")[-1].startswith("crypto_config_"):
                 dest = CRYPTO_CONFIG_FILE
             else:
                 dest = CONFIG_FILE
-            if config in { TFM_CONFIG, TFM_CRYPTO_CONFIG } and not os.path.exists(path):
-                # for looking at old checkouts where these configs were not in the tree, fetch from
-                # date they were first created instead
-                # also disable MBEDTLS_PSA_CRYPTO_SPM is required to get it to build
-                disable_spm = True
-                log(f"git show 2f1ae5a86ebd67faa50c3983b4567656c2234674:configs/{config} > {dest[len(ROOT) + 1:]}")
-                output, _ = subrun(["git", "show", "origin/development:configs/" + config], silent=True)
-                with open(dest, 'w') as f:
-                    f.write(output)
-            else:
-                log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
-                shutil.copy(path, dest)
+            log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
+            shutil.copy(path, dest)
         else:
             # a configuration recognised by config.py, e.g. "baremetal"
             log(f"scripts/config.py {config}")
             subrun([f"{ROOT}/scripts/config.py", config], silent=True)
+
+    if disable_spm:
+        # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
+        # and more options again (not sure which) for 3.0.0
+        set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
+    if set_no_platform_entropy:
+        # this gets disabled by #8164 - ensure it is set
+        set_config_option("set", "MBEDTLS_NO_PLATFORM_ENTROPY", silent=False)
 
     for config in individual_options:
         # an individual option like MBEDTLS_XYZ or -PSA_XYZ
@@ -434,11 +490,6 @@ def configure_options(target):
             action = "unset"
             config = config[1:]
         set_config_option(action, config, silent=False)
-
-    if disable_spm:
-        # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
-        # and more options again (not sure which) for 3.0.0
-        set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
 
 
 def flags_to_hr_str(flags):
@@ -613,7 +664,13 @@ EXAMPLE USAGE
 Build the library:
 mtest
 
-Test sha functions under ASAN
+Build with modified configuration:
+mtest MBEDTLS_CIPHER_MODE_XTS -MBEDTLS_CIPHER_MODE_CTR   # enable XTS, and disable CTR
+mtest config-thread                                      # use "configs/config-thread.h"
+mtest baremetal                                          # use baremetal preset from config.py
+mtest baremetal -MBEDTLS_CIPHER_MODE_CBC                 # baremetal, with CBC disabled
+
+Test sha functions under ASAN:
 mtest shax -A
 
 Build and run all the aes tests, with clang and gcc, with MBEDTLS_AESCE_C set and MBEDTLS_AESNI_C unset:
@@ -627,17 +684,17 @@ mtest -k alignment
 
 Report library size, as built by armclang -Oz with TF-M configuration for armv8 thumb2:
 mtest -S
-mtest -S clang                                  # as above, but use clang instead of the default armclang
-mtest -S MBEDTLS_P256M_EXAMPLE_DRIVER_ENABLED   # as above, but modify TF-M config with given option(s)
+mtest -S clang-16                             # as above, but use clang-16 instead of the default armclang
+mtest -S MBEDTLS_P256M_EXAMPLE_DRIVER_ENABLED # as above, but modify TF-M config with given option(s)
 
 Build aes.o multiple times, with every combination of the given options:
 mtest aes.o MBEDTLS_AES_SETKEY_ENC_ALT,MBEDTLS_AES_DECRYPT_ALT,MBEDTLS_AES_ROM_TABLES,MBEDTLS_AES_ENCRYPT_ALT,MBEDTLS_AES_SETKEY_DEC_ALT,MBEDTLS_AES_FEWER_TABLES,MBEDTLS_PADLOCK_C
 
-Disassemble cmac.o
+Disassemble cmac.o:
 mtest cmac.o -d
 
-Disassemble mbedtls_xor for arm, built with clang -Os
-mtest -d mbedtls_xor -Os clang arm
+Disassemble mbedtls_xor for arm, built with gcc-12 -Os:
+mtest -d mbedtls_xor -Os gcc-12 arm
 '''
 
     REST_HELP = f'''Optional list of tests, compilers, flags, architectures, config options and build targets.
@@ -648,7 +705,8 @@ Flags: anything starting with a '-' will get passed to CFLAGS if not recognised 
 Architectures: {", ".join(ARM_ISAS)}, armv5, ..., armv8 or e.g. armv7-thumb2
     {", ".join(ARCHS)}
 Config options: individual options are set with e.g. MBEDTLS_AESCE_C, or unset with e.g. -PSA_WANT_ALG_MD5.
-    Options recognised by scripts/config.py are permitted (e.g. "baremetal"), or any ".h" file.
+    Options recognised by scripts/config.py are permitted (e.g. "baremetal").
+    Passing a file from configs/ (e.g. "config-tfm") or any ".h" file will replace the existing config file.
     Iterate over the cross-product of options X,Y,Z by specifying a comma-separated list of config options.
     The original config files will be restored when mtest exits.
 Build targets: build the library by default, or files (e.g. aes.o), programs (e.g. selftest) or tests (as above)'''
@@ -708,8 +766,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     supported_configs = get_supported_configs()
     config = []
     if args.size_tfm:
-        config.append(TFM_CONFIG)
-        config.append(TFM_CRYPTO_CONFIG)
+        config.append(COPY_TFM_CONFIG)
     for a in list(args.rest):
         if a.endswith(".h") and os.path.exists(a):
             # arbitrary .h file
@@ -875,9 +932,9 @@ def main():
     try:
         for target in args.targets:
             if target.compiler in ALL_COMPILERS:
-                log(f"{target.arch_isa} {target.compiler} {target.cflags}", indent=0)
+                log(f"{target.arch_isa} {target.compiler}", indent=0)
             else:
-                log(f"{target.compiler} {target.cflags}", indent=0)
+                log(f"{target.compiler}", indent=0)
             try:
                 log(indent_adjust=4)
                 backup_config_options(restore=True, delete_backup=False)
