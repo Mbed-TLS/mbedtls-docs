@@ -156,7 +156,7 @@ def toolchain_exes(target):
         triple_arch = "aarch64"
     elif target.arch.startswith("armv"):
         triple_arch = "arm"
-        triple_abi = "gnueabi"
+        triple_abi = "gnueabihf"
     if target.arch in ["mips64", "mips64el"]:
         triple_abi = "gnuabi64"
     triple = f"{triple_arch}-linux-{triple_abi}"
@@ -323,9 +323,9 @@ def toolchain(target, exit_on_failure=True):
                 elif target.arch == "armv7" and target.isa == "arm":
                     target_c_flags += ["-march=armv7-a+simd", "-marm"]
                 elif target.arch == "armv8" and target.isa == "thumb2":
-                    target_c_flags += ["-mcpu=cortex-a32", "-mthumb"]
+                    target_c_flags += ["-mcpu=cortex-a32+crypto", "-mthumb"]
                 elif target.arch == "armv8" and target.isa == "arm":
-                    target_c_flags += ["-mcpu=cortex-a32", "-marm"]
+                    target_c_flags += ["-mcpu=cortex-a32+crypto", "-marm"]
                 elif target.arch == "armv8" and target.isa == "aarch64":
                     target_c_flags += ["-mcpu=cortex-a78", "-march=armv8.2-a+simd+crypto"]
                 elif target.arch.startswith("armv"):
