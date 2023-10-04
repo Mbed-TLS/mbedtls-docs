@@ -39,7 +39,7 @@ DEFAULT_COMPILER  = "clang"
 # and https://en.wikipedia.org/wiki/List_of_ARM_processors
 # https://stackoverflow.com/questions/15036909/how-to-list-supported-target-architectures-in-clang/35061913#35061913
 NON_NATIVE_SUPPORT = {
-    "armclang": [ "armv6-thumb1", "armv7-arm", "armv8-thumb2", "armv8-aarch64" ],
+    "armclang": [ "armv6-thumb1", "armv6-arm", "armv7-thumb2", "armv7-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ],
     "gcc":      [ "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv7-thumb2", "armv7-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ] + ARCHS,
     "clang":    [ "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv7-thumb2", "armv7-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ] + ARCHS,
     "iar":      [ "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv7-thumb2", "armv7-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ]
@@ -291,17 +291,22 @@ def toolchain(target, exit_on_failure=True):
         target_c_flags += ASAN_CFLAGS
 
     if target.compiler == "armclang":
-        if target.isa == "thumb1":
+        if target.arch == "armv8" and target.isa == "thumb2" and args.size_tfm:
+            target_c_flags += TFM_ARMCLANG_TARGET_FLAGS
+        elif target.arch == "armv6" and target.isa == "thumb1":
             # strictly speaking, includes "some 32-bit Thumb2 instructions" but this is the oldest ISA armclang supports
             target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m0", "-mthumb"]
-        elif target.isa == "thumb2":
-            if args.size_tfm:
-                target_c_flags += TFM_ARMCLANG_TARGET_FLAGS
-            else:
-                target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33+dsp", "-mthumb"]
-        elif target.isa == "arm":
+        elif target.arch == "armv6" and target.isa == "arm":
+            target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m0", "-marm"]
+        elif target.arch == "armv7" and target.isa == "thumb2":
+            target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m3", "-mthumb"]
+        elif target.arch == "armv7" and target.isa == "arm":
             target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-a17", "-marm"]
-        elif target.isa == "aarch64":
+        elif target.arch == "armv8" and target.isa == "thumb2":
+            target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-m33+dsp", "-mthumb"]
+        elif target.arch == "armv8" and target.isa == "arm":
+            target_c_flags += ["--target=arm-arm-none-eabi", "-mcpu=cortex-a72", "-marm"]
+        elif target.arch == "armv8" and target.isa == "aarch64":
             target_c_flags += ["--target=aarch64-arm-none-eabi", "-mcpu=cortex-a78"]
         else:
             if exit_on_failure: error(f"unsupported ISA {target.isa} for armclang")
