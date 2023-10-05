@@ -55,10 +55,8 @@ MEMSAN_OPTIONS = [ "MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN", "-MBEDTLS_USE_PSA_CRYPTO
 MEMSAN_CFLAGS  = ['-fsanitize=memory', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls', '-fsanitize-memory-track-origins=2']
 MEMSAN_CC      = "clang"
 
-# TODO: can some of the IAR limitations be removed?
 COMPILER_CONFIGS = {
 #    "armclang": [ "MBEDTLS_NO_UDBL_DIVISION" ]
-    "iar": [ "MBEDTLS_NO_PLATFORM_ENTROPY", "-MBEDTLS_HAVE_TIME_DATE", "-MBEDTLS_HAVE_TIME", "-MBEDTLS_TIMING_C", "-MBEDTLS_FS_IO", "-MBEDTLS_PSA_ITS_FILE_C", "-MBEDTLS_PSA_CRYPTO_STORAGE_C", "-MBEDTLS_NET_C" ]
 }
 
 ASAN_CFLAGS   = ['-fsanitize=address', '-fno-common', '-fsanitize=undefined', '-fno-sanitize-recover=all', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
@@ -945,7 +943,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                 else:
                     a, i = arch, None
                 arm_arch_v = int(a[4]) if a.startswith("armv") else 0
-                baremetal = c == "armclang" or "-none-" in c
+                baremetal = c in [ "armclang", "iar" ] or "-none-" in c
                 if len(config) == 0 and baremetal:
                     target_config = [ "baremetal" ]
                 else:
@@ -988,7 +986,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                         error(f"don't know how to set target flags for compiler {c}")
 
                 arm_arch_v = int(a[4]) if a.startswith("armv") else 0
-                baremetal = c == "armclang" or "-none-" in c
+                baremetal = c in [ "armclang", "iar" ] or "-none-" in c
                 if len(config) == 0 and baremetal:
                     target_config = [ "baremetal" ]
                 else:
