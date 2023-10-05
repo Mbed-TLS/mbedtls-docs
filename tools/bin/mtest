@@ -38,11 +38,12 @@ DEFAULT_COMPILER  = "clang"
 # see https://en.wikipedia.org/wiki/ARM_Cortex-M#Instruction_sets
 # and https://en.wikipedia.org/wiki/List_of_ARM_processors
 # https://stackoverflow.com/questions/15036909/how-to-list-supported-target-architectures-in-clang/35061913#35061913
+# default first (you get the first thing that matches if you specify only half of <arch>-<isa>, e.g. "armv8" or "thumb2")
 NON_NATIVE_SUPPORT = {
-    "armclang": [ "armv6-thumb1", "armv6-arm", "armv7-thumb2", "armv7-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ],
-    "gcc":      [ "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv7-thumb2", "armv7-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ] + ARCHS,
-    "clang":    [ "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv7-thumb2", "armv7-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ] + ARCHS,
-    "iar":      [ "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv7-thumb2", "armv7-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ]
+    "armclang": [ "armv7-thumb2", "armv7-arm", "armv6-thumb1", "armv6-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ],
+    "gcc":      [ "armv7-thumb2", "armv7-arm", "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ] + ARCHS,
+    "clang":    [ "armv7-thumb2", "armv7-arm", "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ] + ARCHS,
+    "iar":      [ "armv7-thumb2", "armv7-arm", "armv5-thumb1", "armv5-arm", "armv6-thumb1", "armv6-thumb2", "armv6-arm", "armv8-thumb2", "armv8-arm", "armv8-aarch64" ]
 }
 
 QEMU_NAME_MAP = {
