@@ -156,7 +156,10 @@ def toolchain_exes(target):
         triple_arch = "aarch64"
     elif target.arch.startswith("armv"):
         triple_arch = "arm"
-        triple_abi = "gnueabihf"
+        if target.arm_arch >= 7:
+            triple_abi = "gnueabihf"
+        else:
+            triple_abi = "gnueabi"
     if target.arch in ["mips64", "mips64el"]:
         triple_abi = "gnuabi64"
     triple = f"{triple_arch}-linux-{triple_abi}"
@@ -306,7 +309,7 @@ def toolchain(target, exit_on_failure=True):
     elif target.compiler_family == "gcc":
         if not target.is_native:
             # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
-            if True or not ("-march" in c_flags or "-mcpu" in c_flags):
+            if not ("-march" in target.cflags or "-mcpu" in target.cflags):
                 # not user-specified arch/isa/cpu
                 if target.arch == "armv5" and target.isa == "thumb1":
                     target_c_flags += ["-mcpu=arm926ej-s", "-mthumb"]
