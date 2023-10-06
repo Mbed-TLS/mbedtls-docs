@@ -596,7 +596,9 @@ def disassemble(target):
             disarg = "--disassemble"
         else:
             disarg = f"--disassemble={fn}"
-        output, _ = subrun([objdump] + objfiles + [disarg, "--visualize-jumps=extended-color"], silent=True)
+        cmd = [objdump] + objfiles + [disarg, "--visualize-jumps=extended-color"]
+        log(" ".join(cmd), indent=4)
+        output, _ = subrun(cmd, silent=True)
         if fn is None:
             result.append(output)
         else:
@@ -1046,8 +1048,8 @@ def main():
                         log("skipping size: " + toolchain_exes(target)["size_error"])
                 if args.disassemble is not None:
                     if can_disassemble(target):
+                        log(f"disassembly:")
                         d = disassemble(target)
-                        log(f"Disassembly:")
                         print(d)
                         print()
                     else:
