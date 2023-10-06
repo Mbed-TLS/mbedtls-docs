@@ -326,6 +326,7 @@ def toolchain(target, exit_on_failure=True):
         elif target.compiler_family == "gcc":
             if not target.is_native:
                 # see https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html
+                # see https://stackoverflow.com/questions/37050532/detect-arm-neon-availability-in-the-preprocessor
                 if not ("-march" in target.cflags or "-mcpu" in target.cflags):
                     # not user-specified arch/isa/cpu
                     if target.arch == "armv5" and target.isa == "thumb1":
