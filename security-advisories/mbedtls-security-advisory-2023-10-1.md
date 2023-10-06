@@ -32,7 +32,7 @@ The vulnerability is not present in the default build of Mbed TLS. It is only pr
 * In Mbed TLS 3.x or 2.28, make sure that `MBEDTLS_CIPHER_NULL_CIPHER` is not enabled.
 * In Mbed TLS 2.28, also make sure that `MBEDTLS_REMOVE_ARC4_CIPHERSUITES` is enabled, or that `MBEDTLS_ARC4_C` is not enabled.
 
-If the vulnerable cipher suites are enabled at compile time, they can be disabled at compile time by calling `mbedtls_ssl_conf_ciphersuites()` with a list that does not include null-cipher or RC4 cipher suites. Alternatively, call `mbedtls_ssl_conf_ciphersuites_for_version()` for all affected protocol versions (SSLv3, TLS 1.0, TLS 1.1, TLS 1.2).
+If the vulnerable cipher suites are enabled at compile time, they can be disabled at run time by calling `mbedtls_ssl_conf_ciphersuites()` with a list that does not include null-cipher or RC4 cipher suites. Alternatively, call `mbedtls_ssl_conf_ciphersuites_for_version()` for all affected protocol versions (SSLv3, TLS 1.0, TLS 1.1, TLS 1.2).
 
 Applications that only accept TLS 1.3 are not affected.
 
