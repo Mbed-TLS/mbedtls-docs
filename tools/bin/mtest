@@ -78,7 +78,8 @@ COMPILER_FLAGS = {
 TFM_TARGET_FLAGS = {
     ("armclang", "armv8-thumb2"): ["-mcpu=cortex-m33+nodsp+nofp", "-mthumb", "--target=arm-arm-none-eabi"],
     ("clang",    "armv8-thumb2"): ["-mcpu=cortex-m33+nodsp+nofp", "-mthumb", "--target=arm-linux-gnueabi"],
-    ("gcc",      "armv8-thumb2"): ["-mcpu=cortex-m33+nodsp+nofp", "-mthumb"]
+    ("gcc",      "armv8-thumb2"): ["-mcpu=cortex-m33+nodsp+nofp", "-mthumb"],
+    ("iar",      "armv8-thumb2"): ["--cpu=Cortex-M33.no_dsp", "--thumb"]
 }
 
 TFM_CONFIG_FILES = [("config-tfm.h", None), ("tfm_mbedcrypto_config_profile_medium.h", "crypto_config_profile_medium.h")]
