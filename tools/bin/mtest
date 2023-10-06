@@ -906,6 +906,8 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     if not args.archs:
         if args.size_tfm:
             args.archs = [ "armv8-thumb2" ]
+        elif args.compilers == [ "iar" ]:
+            args.archs = [ "armv8-thumb2" ]
         else:
             args.archs = [ NATIVE_TARGET ]
 
