@@ -837,7 +837,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     cflags  = " ".join([x[7:].strip() for x in args.rest if x.startswith("CFLAGS=")])
     # assume any unknown args, i.e. anything starting with a "-" is to be passed to the compiler via CFLAGS
     cflags += " " + " ".join([x for x in args.rest if x.startswith("-") and not x.startswith("-MBEDTLS_") and not x.startswith("-PSA_WANT_")])
-    cflags += " ".join([x for x in sys.argv if x.startswith("-W") and len(x) > 2])
+    cflags += " " + " ".join([x for x in sys.argv if x.startswith("-W") and len(x) > 2])
 
     # extract config options
     args.config_options  = [x for x in args.rest if x.startswith("MBEDTLS_") or x.startswith("PSA_WANT_") or x.startswith("-PSA_WANT_")]
