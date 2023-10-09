@@ -373,7 +373,7 @@ def toolchain(target, exit_on_failure=True):
                 elif target.arch == "armv7" and target.isa == "arm":
                     target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv7-a", "-marm"]
                 elif target.arch == "armv8" and target.isa == "thumb2":
-                    target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=cortex-a32", "-mthumb"]
+                    target_c_flags += ["--target=arm-linux-gnueabihf", "-mcpu=cortex-a32+crypto", "-mthumb"]
                 elif target.arch == "armv8" and target.isa == "arm":
                     target_c_flags += ["--target=arm-linux-gnueabihf", "-march=armv8-a", "-marm"]
                 elif target.arch == "armv8" and target.isa == "aarch64":
