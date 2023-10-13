@@ -307,6 +307,8 @@ Type function arguments and variables properly. Specifically, the `int` and `siz
 
 For values that can't be negative, use unsigned variables. Keep the type in mind when building loops with unsigned variables.
 
+When it's unavoidable that a `size_t` must be passed as an `int` function parameter, it's necessary to add a cast to avoid warnings on some compilers.
+
 ### `Goto`
 
 Use of `goto` is allowed in functions that have to do cleaning up before returning from the function even when an error has occurred. It can also be used to exit nested loops. In other cases the use of `goto` should be avoided.
