@@ -297,15 +297,23 @@ int do_calc_length(const unsigned char *str);
 
 The code uses the C99 ISO standard.
 
+However, don't use variable-length arrays (VLAs) as they are not supported by all compilers/systems, and can cause problems for static analysis.
+
+In addition, avoid using `const` values to size arrays or as part of rvalues for other constants, as this is not supported by (at least) MSVC.
+
 ### Proper argument and variable typing
 
 Type function arguments and variables properly. Specifically, the `int` and `size` fields hold their maximum length in a platform-independent way. For buffer length, this almost always means using `size_t`.
 
 For values that can't be negative, use unsigned variables. Keep the type in mind when building loops with unsigned variables.
 
+When it's unavoidable that a `size_t` must be passed as an `int` function parameter, it's necessary to add a cast to avoid warnings on some compilers.
+
 ### `Goto`
 
 Use of `goto` is allowed in functions that have to do cleaning up before returning from the function even when an error has occurred. It can also be used to exit nested loops. In other cases the use of `goto` should be avoided.
+
+Some compilers (e.g. IAR) issue warnings when a `goto` jumps over a variable declaration. In these cases, either hoist the variable to the top of the function, use a local block, or extract the code with this variable into a smaller `static` function. If hoisting a pointer, it must be initialized, to avoid potential code-paths where it may be used uninitialized.
 
 ### Exit early and prevent nesting
 
