@@ -313,6 +313,8 @@ When it's unavoidable that a `size_t` must be passed as an `int` function parame
 
 Use of `goto` is allowed in functions that have to do cleaning up before returning from the function even when an error has occurred. It can also be used to exit nested loops. In other cases the use of `goto` should be avoided.
 
+Some compilers (e.g. IAR) issue warnings when a `goto` jumps over a variable declaration. In these cases, either hoist the variable to the top of the function, use a local block, or extract the code with this variable into a smaller `static` function. If hoisting a pointer, it must be initialized, to avoid potential code-paths where it may be used uninitialized.
+
 ### Exit early and prevent nesting
 
 Structure functions to exit or `goto` the exit code as early as possible. This prevents nesting of code blocks and improves code readability.
