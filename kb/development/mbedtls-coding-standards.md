@@ -297,6 +297,8 @@ int do_calc_length(const unsigned char *str);
 
 The code uses the C99 ISO standard.
 
+However, don't use variable-length arrays (VLAs) as they are not supported by all compilers/systems, and can cause problems for static analysis.
+
 ### Proper argument and variable typing
 
 Type function arguments and variables properly. Specifically, the `int` and `size` fields hold their maximum length in a platform-independent way. For buffer length, this almost always means using `size_t`.
