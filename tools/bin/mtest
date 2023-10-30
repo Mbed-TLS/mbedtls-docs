@@ -83,7 +83,11 @@ TFM_TARGET_FLAGS = {
     ("iar",      "armv8-thumb2"): ["--cpu=Cortex-M33.no_dsp", "--thumb"]
 }
 
-TFM_CONFIG_FILES = [("config-tfm.h", None), ("tfm_mbedcrypto_config_profile_medium.h", "crypto_config_profile_medium.h")]
+# Each tuple contains: (config file, associated crypto_config file if needed, hash of first usable version of file)
+TFM_CONFIG_FILES = [
+    ("config-tfm.h", None, "0c98f9f8423c74fcd2a04a0f1c17e3f9fb37448b"),
+    ("tfm_mbedcrypto_config_profile_medium.h", "crypto_config_profile_medium.h", "2f1ae5a86ebd67faa50c3983b4567656c2234674"),
+]
 COPY_TFM_CONFIG = "//TFM-CONFIG//"
 
 Target = namedtuple("Target", ["compiler", "compiler_family", "arch", "baremetal", "isa", "arch_isa", "is_native", "arm_arch", "cflags", "ldflags", "config"])
@@ -504,6 +508,12 @@ def set_config_option(action, option, silent=True):
         error(output)
 
 
+def git_history_contains(hash):
+    cmd = ["git", "merge-base", "--is-ancestor", hash, "HEAD"]
+    _, status = subrun(cmd, silent=True, ignore_failure=True)
+    return status == 0
+
+
 def configure_options(target):
     # gather up required options:
     # target-specific options
@@ -516,7 +526,7 @@ def configure_options(target):
     # user-specified options to apply to all targets
     options += args.config_options
 
-    set_no_platform_entropy = False
+    config_is_tfm = False
     disable_spm = False
 
     individual_options = [x for x in options if x.startswith("MBEDTLS_") or x.startswith("-MBEDTLS_") or x.startswith("PSA_") or x.startswith("-PSA_")]
@@ -526,12 +536,11 @@ def configure_options(target):
         if config == COPY_TFM_CONFIG:
             # older versions of this config file need SPM to be disabled
             disable_spm = True
+            config_is_tfm = True
             # special flag to copy both TF-M config files - these have a couple of possible locations
-            for mc, cc in TFM_CONFIG_FILES:
+            for mc, cc, _ in TFM_CONFIG_FILES:
                 if os.path.exists(f"{ROOT}/configs/{mc}") and (cc is None or os.path.exists(f"{ROOT}/configs/{cc}")):
                     if mc == TFM_CONFIG_FILES[0][0]:
-                        # latest TF-M config file unsets this, so set it again
-                        set_no_platform_entropy = True
                         disable_spm = False # not needed with latest version
                     for c, dest in zip([mc, cc], [CONFIG_FILE, CRYPTO_CONFIG_FILE]):
                         if c is not None:
@@ -541,9 +550,10 @@ def configure_options(target):
             else:
                 # for looking at old checkouts where these configs were not in the tree, fetch from
                 # date they were first created instead
+                hash = TFM_CONFIG_FILES[-1][2]
                 for config, dest in zip(TFM_CONFIG_FILES[-1], [CONFIG_FILE, CRYPTO_CONFIG_FILE]):
-                    log(f"git show 2f1ae5a86ebd67faa50c3983b4567656c2234674:configs/{config} > {dest[len(ROOT) + 1:]}")
-                    output, _ = subrun(["git", "show", "origin/development:configs/" + config], silent=True)
+                    log(f"git show {hash}:configs/{config} > {dest[len(ROOT) + 1:]}")
+                    output, _ = subrun(["git", "show", f"{hash}:configs/{config}"], silent=True)
                     with open(dest, 'w') as f:
                         f.write(output)
         elif config.endswith(".h"):
@@ -553,6 +563,8 @@ def configure_options(target):
                 dest = CRYPTO_CONFIG_FILE
             else:
                 dest = CONFIG_FILE
+            if any(x[0] == os.path.basename(path) for x in TFM_CONFIG_FILES):
+                config_is_tfm = True
             log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
             shutil.copy(path, dest)
         else:
@@ -564,8 +576,9 @@ def configure_options(target):
         # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
         # and more options again (not sure which) for 3.0.0
         set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
-    if set_no_platform_entropy:
-        # this gets disabled by #8164 - ensure it is set
+
+    if config_is_tfm and target.baremetal and not git_history_contains("51e72456f9dd7bfc3a4eee53de046f4390a3d83b"):
+        # older versions require this to be set for baremetal
         set_config_option("set", "MBEDTLS_NO_PLATFORM_ENTROPY", silent=False)
 
     for config in individual_options:
@@ -866,6 +879,10 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     supported_configs = get_supported_configs()
     config = []
     if args.size_tfm:
+        # if using latest tfm config, this uses a different location for crypto_config file
+        if os.path.exists(f"{ROOT}/configs/{TFM_CONFIG_FILES[0][0]}"):
+            global CRYPTO_CONFIG_FILE
+            CRYPTO_CONFIG_FILE = f"{ROOT}/configs/ext/crypto_config_profile_medium.h"
         config.append(COPY_TFM_CONFIG)
     for a in list(args.rest):
         if a.endswith(".h") and os.path.exists(a):
