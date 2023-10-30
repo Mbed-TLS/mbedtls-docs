@@ -104,16 +104,15 @@ else:
     else:
         NATIVE_TARGET = uname
 
-    CONFIG_BACKUP        = ROOT + "/include/mbedtls/mbedtls_config.h.mtest_backup"
     CONFIG_FILE          = ROOT + "/include/mbedtls/mbedtls_config.h"
-    CRYPTO_CONFIG_BACKUP = ROOT + "/include/psa/crypto_config.h.mtest_backup"
     CRYPTO_CONFIG_FILE   = ROOT + "/include/psa/crypto_config.h"
     if not os.path.exists(CONFIG_FILE):
         # config file not found, assume we are on 2.x
-        CONFIG_BACKUP = ROOT + "/include/mbedtls/config.h.mtest_backup"
         CONFIG_FILE   = ROOT + "/include/mbedtls/config.h"
     if not os.path.exists(CRYPTO_CONFIG_FILE):
         CRYPTO_CONFIG_FILE = None
+
+BACKUP_SUFFIX = ".mtest_backup"
 
 
 def log(msg=None, indent=0, indent_adjust=0, _indent=[0]):
@@ -468,15 +467,18 @@ def toolchain(target, exit_on_failure=True):
 def backup_config_options(restore, delete_backup):
     if restore:
         # restore backup
-        shutil.copy(CONFIG_BACKUP, CONFIG_FILE)
-        if CRYPTO_CONFIG_FILE is not None: shutil.copy(CRYPTO_CONFIG_BACKUP, CRYPTO_CONFIG_FILE)
+        shutil.copy(CONFIG_FILE + BACKUP_SUFFIX, CONFIG_FILE)
+        if CRYPTO_CONFIG_FILE is not None:
+            shutil.copy(CRYPTO_CONFIG_FILE + BACKUP_SUFFIX, CRYPTO_CONFIG_FILE)
         if delete_backup:
-            os.remove(CONFIG_BACKUP)
-            os.remove(CRYPTO_CONFIG_BACKUP)
+            os.remove(CONFIG_FILE + BACKUP_SUFFIX)
+            if CRYPTO_CONFIG_FILE is not None:
+                os.remove(CRYPTO_CONFIG_FILE + BACKUP_SUFFIX)
     else:
         # make a backup
-        shutil.copy(CONFIG_FILE, CONFIG_BACKUP)
-        if CRYPTO_CONFIG_FILE is not None: shutil.copy(CRYPTO_CONFIG_FILE, CRYPTO_CONFIG_BACKUP)
+        shutil.copy(CONFIG_FILE, CONFIG_FILE + BACKUP_SUFFIX)
+        if CRYPTO_CONFIG_FILE is not None:
+            shutil.copy(CRYPTO_CONFIG_FILE, CRYPTO_CONFIG_FILE + BACKUP_SUFFIX)
 
 
 def set_config_option(action, option, silent=True):
