@@ -9,6 +9,7 @@ import re
 import glob
 import sys
 import shutil
+import shlex
 from collections import namedtuple
 
 ALL_COMPILERS = [ "gcc", "clang", "armclang", "arm-none-eabi-gcc", "iar" ]
@@ -127,12 +128,17 @@ def error(msg):
     exit(1)
 
 
-def subrun(cmd, test_dir=False, silent=False, ignore_failure=False):
+def subrun(cmd, test_dir=False, silent=False, ignore_failure=False, color=False):
     dir = TEST_DIR if test_dir else ROOT
-    if not silent:
-        r = subprocess.run(cmd, cwd=dir, shell=False)
+    # wrap with script to get coloured output
+    if color:
+        script_cmd = [ "script", "--return", "--quiet", "-a", "/dev/null", "-c", shlex.join(cmd)]
     else:
-        r = subprocess.run(cmd, cwd=dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        script_cmd = cmd
+    if not silent:
+        r = subprocess.run(script_cmd, cwd=dir, shell=False)
+    else:
+        r = subprocess.run(script_cmd, cwd=dir, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = "" if r.stdout is None else r.stdout.decode("utf-8")
     if r.returncode != 0 and not ignore_failure:
         # failure
@@ -664,11 +670,11 @@ def build(target, tests):
         else:
             bts = ["lib"]
         log(f'{make_log} {" ".join(bts)} {flags_to_hr_str(flags)}')
-        subrun(make_cmd + bts + flags, silent=True)
+        subrun(make_cmd + bts + flags, silent=True, color=True)
 
         if args.tests:
             log(f"{make_log} -C {TEST_DIR} {' '.join(tests)} {flags_to_hr_str(flags)}")
-            subrun(make_cmd + tests + flags, test_dir=True, silent=True)
+            subrun(make_cmd + tests + flags, test_dir=True, silent=True, color=True)
 
         if args.tests:
             log(subrun(["file", tests[0]], test_dir=True, silent=True)[0].strip())
