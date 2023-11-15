@@ -1004,7 +1004,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
                         error(f"don't know how to set target flags for compiler {c}")
 
                 arm_arch_v = int(a[4]) if a.startswith("armv") else 0
-                baremetal = c in [ "armclang", "iar" ] or "-none-" in c or args.size_tfm
+                baremetal = c in [ "armclang", "iar" ] or "-none-" in c or (args.size_tfm and compiler_family == "gcc")
                 if len(config) == 0 and baremetal:
                     target_config = [ "baremetal" ]
                 else:
