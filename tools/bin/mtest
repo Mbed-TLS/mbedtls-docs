@@ -866,10 +866,6 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     supported_configs = get_supported_configs()
     config = []
     if args.size_tfm:
-        config.append("MBEDTLS_AES_ONLY_128_BIT_KEY_LENGTH")
-        config.append("MBEDTLS_PSA_P256M_DRIVER_ENABLED")
-        config.append("-PSA_WANT_ALG_DETERMINISTIC_ECDSA")
-        config.append("-PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE")
         config.append(COPY_TFM_CONFIG)
     for a in list(args.rest):
         if a.endswith(".h") and os.path.exists(a):
