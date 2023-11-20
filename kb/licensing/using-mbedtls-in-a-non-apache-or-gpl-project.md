@@ -12,4 +12,4 @@ We encourage and support the use of the Mbed TLS library in Open Source projects
 
 ## How does using Mbed TLS in a non-Apache project work?
 
-You should check if the license you use is compatible with the Apache 2.0 or GPL v2 licenses.
+You should check if the license you use is compatible with the Apache 2.0 or GPL licenses.
