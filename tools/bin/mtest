@@ -657,13 +657,12 @@ def build(target, tests):
 
         configure_options(target)
 
-        if args.jobs is None:
-            make_cmd = ["make"]
-            make_log = "make"
-        else:
-            if args.jobs == -1: args.jobs=""
-            make_cmd = ["make", f"-j{args.jobs}"]
-            make_log = f"make -j{args.jobs}"
+        # use -k (--keep-going) to ensure we show all compile errors
+        make_cmd = ["make", "-k"]
+        if args.jobs is not None:
+            jobs_arg = "-j" if args.jobs == -1 else f"-j{args.jobs}"
+            make_cmd.append(jobs_arg)
+        make_log = " ".join(make_cmd)
 
         if args.build_targets:
             bts = args.build_targets
