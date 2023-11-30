@@ -99,6 +99,7 @@ if gitresult.returncode != 0 or not os.path.exists(f"{ROOT}/include/mbedtls"):
     ROOT = None # will display help and exit during argument parsing
 else:
     # found root, construct the other paths
+    os.chdir(ROOT)
     TEST_DIR = ROOT + "/tests"
 
     uname = subprocess.run(["uname", "-m"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout.decode("utf-8").strip()
@@ -110,12 +111,9 @@ else:
         NATIVE_TARGET = uname
 
     CONFIG_FILE          = ROOT + "/include/mbedtls/mbedtls_config.h"
-    CRYPTO_CONFIG_FILE   = ROOT + "/include/psa/crypto_config.h"
     if not os.path.exists(CONFIG_FILE):
         # config file not found, assume we are on 2.x
         CONFIG_FILE   = ROOT + "/include/mbedtls/config.h"
-    if not os.path.exists(CRYPTO_CONFIG_FILE):
-        CRYPTO_CONFIG_FILE = None
 
 BACKUP_SUFFIX = ".mtest_backup"
 
@@ -474,44 +472,60 @@ def toolchain(target, exit_on_failure=True):
     }
 
 
-def backup_config_options(restore, delete_backup):
-    if restore:
+def backup_config_options(path, files=set()):
+    if path is None:
         # restore backup
-        shutil.copy(CONFIG_FILE + BACKUP_SUFFIX, CONFIG_FILE)
-        if CRYPTO_CONFIG_FILE is not None:
-            shutil.copy(CRYPTO_CONFIG_FILE + BACKUP_SUFFIX, CRYPTO_CONFIG_FILE)
-        if delete_backup:
-            os.remove(CONFIG_FILE + BACKUP_SUFFIX)
-            if CRYPTO_CONFIG_FILE is not None:
-                os.remove(CRYPTO_CONFIG_FILE + BACKUP_SUFFIX)
+        for path in list(files):
+            shutil.copy(path + BACKUP_SUFFIX, path)
+            os.remove(path + BACKUP_SUFFIX)
+            files.remove(path)
     else:
         # make a backup
-        shutil.copy(CONFIG_FILE, CONFIG_FILE + BACKUP_SUFFIX)
-        if CRYPTO_CONFIG_FILE is not None:
-            shutil.copy(CRYPTO_CONFIG_FILE, CRYPTO_CONFIG_FILE + BACKUP_SUFFIX)
-
-
-def set_config_option(action, option, silent=True):
-    force = [ "--force" ] if action == "set" else []
-    if option.startswith("PSA_WANT"):
-        if not silent:
-            log(f"scripts/config.py -f {CRYPTO_CONFIG_FILE} {action} {option} {'1' if action == 'set' else ''}")
-        if action == "set":
-            output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", CRYPTO_CONFIG_FILE, action, option, "1"], silent=True, ignore_failure=True)
-        else:
-            output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", CRYPTO_CONFIG_FILE, action, option], silent=True, ignore_failure=True)
-    else:
-        if not silent:
-            log(f"scripts/config.py {action} {option}")
-        output, success = subrun([f"{ROOT}/scripts/config.py"] + force + [action, option], silent=True, ignore_failure=True)
-    if success != 0:
-        error(output)
+        if path not in files:
+            shutil.copy(path, path + BACKUP_SUFFIX)
+            files.add(path)
 
 
 def git_history_contains(hash):
     cmd = ["git", "merge-base", "--is-ancestor", hash, "HEAD"]
     _, status = subrun(cmd, silent=True, ignore_failure=True)
     return status == 0
+
+
+def get_crypto_config_file():
+    # parse the config file and identify the crypto config file location
+    cmd = ["clang", "-dM", "-E", f"-I{ROOT}/include", f"{ROOT}/include/mbedtls/mbedtls_config.h"]
+    output, _ = subrun(cmd, silent=True)
+    path = f"{ROOT}/include/psa/crypto_config.h"
+    for l in output.splitlines():
+        if l.startswith("#define MBEDTLS_PSA_CRYPTO_CONFIG_FILE "):
+            path = l.split(" ")[-1][1:-1]
+        if not path.startswith("/"):
+            for rel in [f"{ROOT}/include/mbedtls", f"{ROOT}/include"]:
+                p = os.path.normpath(f"{rel}/{path}")
+                if os.path.exists(p):
+                    path = os.path.relpath(p, start=ROOT)
+                    break
+    return path
+
+
+def set_config_option(action, option, crypto_config_path, silent=True):
+    force = [ "--force" ] if action == "set" else []
+    if option.startswith("PSA_WANT"):
+        backup_config_options(crypto_config_path)
+        if not silent:
+            log(f"scripts/config.py -f {crypto_config_path} {action} {option} {'1' if action == 'set' else ''}")
+        if action == "set":
+            output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", crypto_config_path, action, option, "1"], silent=True, ignore_failure=True)
+        else:
+            output, success = subrun([f"{ROOT}/scripts/config.py"] + force + ["--file", crypto_config_path, action, option], silent=True, ignore_failure=True)
+    else:
+        backup_config_options(CONFIG_FILE)
+        if not silent:
+            log(f"scripts/config.py {action} {option}")
+        output, success = subrun([f"{ROOT}/scripts/config.py"] + force + [action, option], silent=True, ignore_failure=True)
+    if success != 0:
+        error(output)
 
 
 def configure_options(target):
@@ -526,60 +540,75 @@ def configure_options(target):
     # user-specified options to apply to all targets
     options += args.config_options
 
-    config_is_tfm = False
-    disable_spm = False
-
     individual_options = [x for x in options if x.startswith("MBEDTLS_") or x.startswith("-MBEDTLS_") or x.startswith("PSA_") or x.startswith("-PSA_")]
-    bulk_options = [x for x in options if x not in individual_options]
+    header_options = [x for x in options if x.endswith(".h")]
+    config_py_groups = [x for x in options if x not in individual_options and x != COPY_TFM_CONFIG and x not in header_options]
+    
+    crypto_config_file = None
 
-    for config in bulk_options:
-        if config == COPY_TFM_CONFIG:
-            # older versions of this config file need SPM to be disabled
-            disable_spm = True
-            config_is_tfm = True
-            # special flag to copy both TF-M config files - these have a couple of possible locations
-            for mc, cc, _ in TFM_CONFIG_FILES:
-                if os.path.exists(f"{ROOT}/configs/{mc}") and (cc is None or os.path.exists(f"{ROOT}/configs/{cc}")):
-                    if mc == TFM_CONFIG_FILES[0][0]:
-                        disable_spm = False # not needed with latest version
-                    for c, dest in zip([mc, cc], [CONFIG_FILE, CRYPTO_CONFIG_FILE]):
-                        if c is not None:
-                            log(f"cp configs/{c} {dest[len(ROOT) + 1:]}")
-                            shutil.copy(f"{ROOT}/configs/{c}", dest)
-                    break
-            else:
-                # for looking at old checkouts where these configs were not in the tree, fetch from
-                # date they were first created instead
-                hash = TFM_CONFIG_FILES[-1][2]
-                for config, dest in zip(TFM_CONFIG_FILES[-1], [CONFIG_FILE, CRYPTO_CONFIG_FILE]):
-                    log(f"git show {hash}:configs/{config} > {dest[len(ROOT) + 1:]}")
-                    output, _ = subrun(["git", "show", f"{hash}:configs/{config}"], silent=True)
-                    with open(dest, 'w') as f:
-                        f.write(output)
-        elif config.endswith(".h"):
-            # a config file - overwrite existing config file
-            path = config if os.path.exists(config) else f"{ROOT}/configs/{config}"
-            if path.split("/")[-1].startswith("crypto_config_"):
-                dest = CRYPTO_CONFIG_FILE
-            else:
-                dest = CONFIG_FILE
-            if any(x[0] == os.path.basename(path) for x in TFM_CONFIG_FILES):
-                config_is_tfm = True
-            log(f"cp {path[len(ROOT) + 1:] if path.startswith(ROOT) else path} {dest[len(ROOT) + 1:]}")
-            shutil.copy(path, dest)
+    new_config = None
+    new_crypto_config = None
+
+    config_is_tfm = False
+
+    # identify replacement config files, if any
+    if COPY_TFM_CONFIG in options:
+        config_is_tfm = True
+        if os.path.exists(f"{ROOT}/configs/config-tfm.h"):
+            new_config = f"{ROOT}/configs/config-tfm.h"
         else:
-            # a configuration recognised by config.py, e.g. "baremetal"
-            log(f"scripts/config.py {config}")
-            subrun([f"{ROOT}/scripts/config.py", config], silent=True)
+            new_config = f"{ROOT}/configs/tfm_mbedcrypto_config_profile_medium.h"
+            new_crypto_config = f"{ROOT}/configs/crypto_config_profile_medium.h"
+            # for looking at old checkouts where these configs were not in the tree, fetch from
+            # date they were first created instead
+            for config in [new_config, new_crypto_config]:
+                if not os.path.exists(config):
+                    hash = "2f1ae5a86ebd67faa50c3983b4567656c2234674"
+                    log(f"git show {hash}:configs/{config} > configs/{config}")
+                    output, _ = subrun(["git", "show", f"{hash}:configs/{config}"], silent=True)
+                    with open(f"{ROOT}/configs/{config}", 'w') as f:
+                        f.write(output)
 
-    if disable_spm:
-        # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling,
-        # and more options again (not sure which) for 3.0.0
-        set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", silent=False)
+    for config in header_options:
+        # a config file - overwrite existing config file
+        path = config if os.path.exists(config) else f"{ROOT}/configs/{config}"
+        if path.split("/")[-1].startswith("crypto_config_"):
+            new_crypto_config = path
+        else:
+            new_config = path
+        if any(x[0] == os.path.basename(path) for x in ["config-tfm.h", "tfm_mbedcrypto_config_profile_medium", "crypto_config_profile_medium.h"]):
+            config_is_tfm = True
 
-    if config_is_tfm and target.baremetal and not git_history_contains("51e72456f9dd7bfc3a4eee53de046f4390a3d83b"):
-        # older versions require this to be set for baremetal
-        set_config_option("set", "MBEDTLS_NO_PLATFORM_ENTROPY", silent=False)
+    # backup and overwrite the config files
+    if new_config is not None:
+        backup_config_options(CONFIG_FILE)
+        log(f"cp {new_config[len(ROOT) + 1:]} {CONFIG_FILE[len(ROOT) + 1:]}")
+        shutil.copy(new_config, CONFIG_FILE)
+    if new_crypto_config is not None:
+        crypto_config_file = get_crypto_config_file()
+        backup_config_options(crypto_config_file)
+        log(f"cp {new_crypto_config[len(ROOT) + 1:]} {crypto_config_file[len(ROOT) + 1:]}")
+        shutil.copy(new_crypto_config, crypto_config_file)
+
+    # apply bulk config.py settings to main config file
+    for config in config_py_groups:
+        options.remove(config)
+        # a configuration recognised by config.py, e.g. "baremetal"
+        backup_config_options(CONFIG_FILE)
+        log(f"scripts/config.py {config}")
+        subrun([f"{ROOT}/scripts/config.py", config], silent=True)
+        
+    if config_is_tfm:
+        # adjust options for older versions of the config files to allow TF-M config to build
+        # at some point in the past, MBEDTLS_HAVE_ASM also needs disabling
+        if not git_history_contains("51e72456f9dd7bfc3a4eee53de046f4390a3d83b"):
+            if target.baremetal:
+                set_config_option("set", "MBEDTLS_NO_PLATFORM_ENTROPY", crypto_config_file, silent=False)
+            if not git_history_contains("0c98f9f8423c74fcd2a04a0f1c17e3f9fb37448b"):
+                set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", crypto_config_file, silent=False)
+                if not git_history_contains("b873577fc341098bab9b96e38c24bc41e0bc784e"):
+                    set_config_option("set", "MBEDTLS_ASN1_PARSE_C", crypto_config_file, silent=False)
+                    set_config_option("set", "MBEDTLS_ASN1_WRITE_C", crypto_config_file, silent=False)
 
     for config in individual_options:
         # an individual option like MBEDTLS_XYZ or -PSA_XYZ
@@ -587,7 +616,10 @@ def configure_options(target):
         if config.startswith("-"):
             action = "unset"
             config = config[1:]
-        set_config_option(action, config, silent=False)
+        if config.startswith("PSA_WANT"):
+            if crypto_config_file is None:
+                crypto_config_file = get_crypto_config_file()
+        set_config_option(action, config, crypto_config_file, silent=False)
 
 
 def flags_to_hr_str(flags):
@@ -692,6 +724,7 @@ def build(target, tests):
             log(subrun(["file", tests[0]], test_dir=True, silent=True)[0].strip())
         log("ok")
     finally:
+        backup_config_options(None) # restore files
         log(indent_adjust=-4)
 
 
@@ -879,10 +912,6 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     supported_configs = get_supported_configs()
     config = []
     if args.size_tfm:
-        # if using latest tfm config, this uses a different location for crypto_config file
-        if os.path.exists(f"{ROOT}/configs/{TFM_CONFIG_FILES[0][0]}"):
-            global CRYPTO_CONFIG_FILE
-            CRYPTO_CONFIG_FILE = f"{ROOT}/configs/ext/crypto_config_profile_medium.h"
         config.append(COPY_TFM_CONFIG)
     for a in list(args.rest):
         if a.endswith(".h") and os.path.exists(a):
@@ -1046,45 +1075,40 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
 
 def main():
     quiet = len(args.targets) > 1 or len(args.tests) > 1
-    backup_config_options(restore=False, delete_backup=False)
 
-    try:
-        for target in args.targets:
-            if target.compiler in ALL_COMPILERS:
-                log(f"{target.arch_isa} {target.compiler}", indent=0)
+    for target in args.targets:
+        if target.compiler in ALL_COMPILERS:
+            log(f"{target.arch_isa} {target.compiler}", indent=0)
+        else:
+            log(f"{target.compiler}", indent=0)
+        try:
+            log(indent_adjust=4)
+            if can_build(target):
+                build(target, args.tests)
             else:
-                log(f"{target.compiler}", indent=0)
-            try:
-                log(indent_adjust=4)
-                backup_config_options(restore=True, delete_backup=False)
-                if can_build(target):
-                    build(target, args.tests)
+                log("skipping target: " + toolchain_exes(target)["compiler_error"])
+                continue
+            if args.size:
+                if can_size(target):
+                    size(target)
                 else:
-                    log("skipping target: " + toolchain_exes(target)["compiler_error"])
-                    continue
-                if args.size:
-                    if can_size(target):
-                        size(target)
-                    else:
-                        log("skipping size: " + toolchain_exes(target)["size_error"])
-                if args.disassemble is not None:
-                    if can_disassemble(target):
-                        log(f"disassembly:")
-                        d = disassemble(target)
-                        print(d)
-                        print()
-                    else:
-                        log("skipping disassemble: " + toolchain_exes(target)["objdump_error"])
-                if args.tests:
-                    if can_run(target):
-                        run(target, args.tests, quiet=quiet)
-                    else:
-                        log("skipping running tests: " + toolchain_exes(target)["qemu_error"])
-            finally:
-                log("\n", indent=0)
-                log(indent_adjust=-4)
-    finally:
-        backup_config_options(restore=True, delete_backup=True)
+                    log("skipping size: " + toolchain_exes(target)["size_error"])
+            if args.disassemble is not None:
+                if can_disassemble(target):
+                    log(f"disassembly:")
+                    d = disassemble(target)
+                    print(d)
+                    print()
+                else:
+                    log("skipping disassemble: " + toolchain_exes(target)["objdump_error"])
+            if args.tests:
+                if can_run(target):
+                    run(target, args.tests, quiet=quiet)
+                else:
+                    log("skipping running tests: " + toolchain_exes(target)["qemu_error"])
+        finally:
+            log("\n", indent=0)
+            log(indent_adjust=-4)
 
 args = parse_args()
 main()
