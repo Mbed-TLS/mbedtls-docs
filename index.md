@@ -20,6 +20,11 @@ For more information, see the following:
 * [Mbed TLS website](https://www.trustedfirmware.org/projects/mbed-tls/)
 * [PSA Crypto API specification](https://arm-software.github.io/psa-api/crypto/)
 
+For questions and discussions:
+
+* [The Mbed TLS mailing list](https://lists.trustedfirmware.org/mailman3/lists/mbed-tls.lists.trustedfirmware.org/).
+* The `#mbed-tls` channel on the [TrustedFirmware Discord server](https://discord.com/channels/1106321706588577904/1144310640341700739) - use the [https://discord.gg/5PpXhvda5p](invite link) to join.
+
 ```{toctree}
 ---
 maxdepth: 2
