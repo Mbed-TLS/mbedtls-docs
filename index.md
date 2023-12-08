@@ -23,7 +23,7 @@ For more information, see the following:
 For questions and discussions:
 
 * [The Mbed TLS mailing list](https://lists.trustedfirmware.org/mailman3/lists/mbed-tls.lists.trustedfirmware.org/).
-* The `#mbed-tls` channel on the [TrustedFirmware Discord server](https://discord.com/channels/1106321706588577904/1144310640341700739) - use the [https://discord.gg/5PpXhvda5p](invite link) to join.
+* The `#mbed-tls` channel on the [TrustedFirmware Discord server](https://discord.com/channels/1106321706588577904/1144310640341700739) - use the [invite link](https://discord.gg/5PpXhvda5p) to join.
 
 ```{toctree}
 ---
