@@ -691,8 +691,7 @@ def build(target, tests):
 
         configure_options(target)
 
-        # use -k (--keep-going) to ensure we show all compile errors
-        make_cmd = ["make", "-k"]
+        make_cmd = ["make"]
         if args.jobs is not None:
             jobs_arg = "-j" if args.jobs == -1 else f"-j{args.jobs}"
             make_cmd.append(jobs_arg)
