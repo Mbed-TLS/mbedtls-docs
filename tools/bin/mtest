@@ -141,16 +141,9 @@ def subrun(cmd, test_dir=False, silent=False, ignore_failure=False, color=False)
     return (output, r.returncode)
 
 
-def sync():
-    # Ensure that e.g. config updates are sync'd before running make - have occasionally observed errors
-    # that might have come from make not seeing the changes to the config that have just been written.
-    subrun(["sync", ROOT], silent=True)
-
-
 def clean():
     log("make clean")
     subrun(["make", "clean"], silent=True)
-    sync()
 
 
 def toolchain_exes(target):
@@ -585,8 +578,6 @@ def configure_options(target):
         backup_config_options(crypto_config_file)
         log(f"cp {new_crypto_config} {crypto_config_file}")
         shutil.copy(new_crypto_config, crypto_config_file)
-    
-    sync()
 
     # apply bulk config.py settings to main config file
     for config in config_py_groups:
@@ -618,8 +609,6 @@ def configure_options(target):
             if crypto_config_file is None:
                 crypto_config_file = get_crypto_config_file()
         set_config_option(action, config, crypto_config_file, silent=False)
-    
-    sync()
 
 
 def flags_to_hr_str(flags):
@@ -719,8 +708,6 @@ def build(target, tests):
         if args.tests:
             log(f"{make_log} -C {TEST_DIR} {' '.join(tests)} {flags_to_hr_str(flags)}")
             subrun(make_cmd + tests + flags, test_dir=True, silent=True, color=True)
-
-        sync()
 
         if args.tests:
             log(subrun(["file", tests[0]], test_dir=True, silent=True)[0].strip())
