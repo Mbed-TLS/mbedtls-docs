@@ -604,7 +604,7 @@ def configure_options(target):
                 set_config_option("set", "MBEDTLS_NO_PLATFORM_ENTROPY", crypto_config_file, silent=False)
             if not git_history_contains("0c98f9f8423c74fcd2a04a0f1c17e3f9fb37448b"):
                 set_config_option("unset", "MBEDTLS_PSA_CRYPTO_SPM", crypto_config_file, silent=False)
-                if not git_history_contains("b873577fc341098bab9b96e38c24bc41e0bc784e"):
+                if not git_history_contains("d4c2c9bf94d6f8da93ff0477fcf9343a518899ea"):
                     set_config_option("set", "MBEDTLS_ASN1_PARSE_C", crypto_config_file, silent=False)
                     set_config_option("set", "MBEDTLS_ASN1_WRITE_C", crypto_config_file, silent=False)
 
