@@ -56,7 +56,7 @@ MEMSAN_OPTIONS = [ "MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN", "-MBEDTLS_USE_PSA_CRYPTO
 MEMSAN_CFLAGS  = ['-fsanitize=memory', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls', '-fsanitize-memory-track-origins=2']
 MEMSAN_CC      = "clang"
 
-ASAN_CFLAGS   = ['-fsanitize=address', '-fno-common', '-fsanitize=undefined', '-fno-sanitize-recover=all', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
+ASAN_CFLAGS   = ['-fsanitize=address', '-fno-common', '-fsanitize=undefined', '-fno-sanitize-recover=all', '-O2', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
 ASAN_LDFLAGS  = ASAN_CFLAGS
 
 WARNING_FLAGS = {
