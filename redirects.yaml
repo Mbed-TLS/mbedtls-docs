@@ -5,20 +5,22 @@
 # redirects - changes to this file are only applied when they are merged
 # into the main branch.
 
-- type: sphinx_htmldir
+- type: html_to_clean_url
+  from_url: /
+  to_url: /
 
 - type: page
-  from_url: /tech-updates/security-advisories/
+  from_url: /tech-updates/security-advisories
   to_url: /security-advisories/
 
 - type: page
-  from_url: /security-advisories/security-advisories/
+  from_url: /security-advisories/security-advisories
   to_url: /security-advisories/
 
-- type: exact
-  from_url: /en/latest/security-advisories/advisories/$rest
-  to_url: /en/latest/security-advisories/
+- type: page
+  from_url: /security-advisories/advisories/*
+  to_url: /security-advisories/:splat
 
 - type: page
-  from_url: /roadmap/
+  from_url: /roadmap
   to_url: /project/roadmap/
