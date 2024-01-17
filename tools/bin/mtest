@@ -273,6 +273,11 @@ def toolchain(target, exit_on_failure=True):
         # IAR defaults to C99 and doesn't have an option for it to be explicitly specified
         target_c_flags += ["-std=c99"]
 
+    if args.memsan:
+        target_c_flags += MEMSAN_CFLAGS
+    elif args.asan:
+        target_c_flags += ASAN_CFLAGS
+
     if args.size_tfm and "clang" in target.compiler:
         target_c_flags += ["-Oz"]
     elif target.compiler_family == "iar":
@@ -292,11 +297,6 @@ def toolchain(target, exit_on_failure=True):
     else:
         if target.compiler_family in WARNING_FLAGS:
             target_c_flags += WARNING_FLAGS[target.compiler_family]
-
-    if args.memsan:
-        target_c_flags += MEMSAN_CFLAGS
-    elif args.asan:
-        target_c_flags += ASAN_CFLAGS
 
     if args.size_tfm and (target.compiler_family, target.arch_isa) in TFM_TARGET_FLAGS:
         # Preset flags to get reference target for TF-M size builds
