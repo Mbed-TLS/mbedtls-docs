@@ -101,7 +101,3 @@ ln -s x86_64-linux-gnu/asm /usr/include/asm
 ### Notes about networking
 
 The tests attempt to establish an IPv6 connection to the local host. This is optional, and will be skipped if IPv6 is not available. However, if IPv6 is possible but IPv6 connections to localhost are blocked by a firewall, the test will fail.
-
-### Docker environment
-
-A Dockerfile is provided in [tests/docker](https://github.com/Mbed-TLS/mbedtls/tree/development/tests/docker).
