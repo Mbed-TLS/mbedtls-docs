@@ -26,7 +26,7 @@ The Jenkins PR job includes the following parts:
     - Some cross compilation with GCC-arm, Arm Compiler 5 (`armcc`), Arm Compiler 6 (`armclang`) and MinGW (`i686-w64-mingw32-gcc`). These are only builds, not tests.
 - Run a subset of `tests/scripts/all.sh` on FreeBSD (amd64)
 - Build on Windows with MinGW and Visual Studio. We use the following Visual Studio versions:
-    - Since Mbed TLS 2.19: VS 2013, 2015, 2017. As of January 2022, we expect to drop VS 2013 soon.
+    - Since Mbed TLS 2.19: VS 2013, 2015, 2017. As of January 2024, we expect to drop VS 2013 soon.
 
 The component names are:
 
