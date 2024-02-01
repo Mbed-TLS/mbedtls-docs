@@ -23,7 +23,7 @@ Same criteria as priority-high, below, but needed for the Mbed TLS team's most i
 This classification is often used for vulnerability fixes with a public disclosure date.
 
 
-## priority-high and 
+## priority-high
 
 This classification is used for PRs which have a target date for merging - typically one of:
 
