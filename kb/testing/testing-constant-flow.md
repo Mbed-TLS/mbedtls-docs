@@ -78,9 +78,9 @@ From looking at papers, it seems that various researchers are using various cust
 In recent years there seems to be more interest from the programming languages community in eliminating side-channel attacks by providing some form of formal guarantee of safety. These methods usually involve making a new (or modifying a) language/compiler that can detect the incorrect usage of secrets.
 
 References:
-- http://cuda.dcc.ufmg.br/flowtracker/
-- https://ranjitjhala.github.io/static/fact_dsl.pdf
-- https://eprint.iacr.org/2019/1393.pdf#section.4 (section IV, useful summary of recent ideas)
+- <http://cuda.dcc.ufmg.br/flowtracker/>
+- <https://ranjitjhala.github.io/static/fact_dsl.pdf>
+- <https://eprint.iacr.org/2019/1393.pdf#section.4> (section IV, useful summary of recent ideas)
 
 Pros:
 - Often provides some guarantee of safety

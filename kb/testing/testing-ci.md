@@ -104,4 +104,4 @@ The tests attempt to establish an IPv6 connection to the local host. This is opt
 
 ### Docker environment
 
-A Dockerfile is provided in [tests/docker](https://github.com/ARMmbed/mbedtls/tree/development/tests/docker).
+A Dockerfile is provided in [tests/docker](https://github.com/Mbed-TLS/mbedtls/tree/development/tests/docker).
