@@ -1,14 +1,14 @@
 # Mbed TLS CI
 
-All code that is included in Mbed TLS must be contributed in the form of [[https://github.com/Mbed-TLS/mbedtls/pulls | pull requests on GitHub]] and undergoes some automated testing. This page describes the continuous integration jobs that run on every pull request.
+All code that is included in Mbed TLS must be contributed in the form of [pull requests on GitHub](https://github.com/Mbed-TLS/mbedtls/pulls) and undergoes some automated testing. This page describes the continuous integration jobs that run on every pull request.
 
 ## DCO
 
-This job checks that all commits have a `Signed-off-by:` line. The presence of this line indicates that the author of the commit certifies that the commit is covered by the [[https://github.com/Mbed-TLS/mbedtls/blob/development/dco.txt | Developer Certificate of Origin]] and contributed according to the [[https://github.com/Mbed-TLS/mbedtls/blob/development/README.md#License | project license]].
+This job checks that all commits have a `Signed-off-by:` line. The presence of this line indicates that the author of the commit certifies that the commit is covered by the [Developer Certificate of Origin](https://github.com/Mbed-TLS/mbedtls/blob/development/dco.txt) and contributed according to the [project license](https://github.com/Mbed-TLS/mbedtls/blob/development/README.md#License).
 
 All commits must have such a line, otherwise the commit cannot be accepted for legal reasons. As a temporary exception, commits from Arm employees or from other contributors who already have a contributor license agreement (CLA) can still be accepted, but please include a `Signed-off-by:` line in any new work.
 
-If the DCO job fails, please reword all commit messages that are missing a `Signed-off-by:` line. If you have multiple commit messages to rewrite, [[https://stackoverflow.com/questions/25570947/how-to-use-git-interactive-rebase-for-signing-off-a-series-of-commits | How to use git interactive rebase for signing off a series of commits]] may help.
+If the DCO job fails, please reword all commit messages that are missing a `Signed-off-by:` line. If you have multiple commit messages to rewrite, [How to use git interactive rebase for signing off a series of commits](https://stackoverflow.com/questions/25570947/how-to-use-git-interactive-rebase-for-signing-off-a-series-of-commits) may help.
 
 ## PR-head and PR-merge jobs
 

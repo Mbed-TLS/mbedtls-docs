@@ -36,7 +36,7 @@ qemu-aarch64 -L /usr/aarch64-linux-gnu ./test_suite_mpi
 
 ### mtest
 
-With [[https://github.com/Mbed-TLS/mbedtls-docs/blob/main/tools/bin/mtest | mtest]]:
+With [mtest](https://github.com/Mbed-TLS/mbedtls-docs/blob/main/tools/bin/mtest):
 
 ```
 mtest <arch> <test names>
@@ -50,7 +50,7 @@ mtest aarch64 cmac
 
 ### mbedtls-prepare-build
 
-With [[https://github.com/ARMmbed/mbedtls-docs/blob/main/tools/bin/mbedtls-prepare-build | mbedtls-prepare-build]]:
+With [mbedtls-prepare-build](https://github.com/ARMmbed/mbedtls-docs/blob/main/tools/bin/mbedtls-prepare-build):
 
 ```
 mbedtls-prepare-build -d build-aarch64 --cc=clang --cflags='-O2 -target aarch64-linux-gnu' --qemu-ld-prefix=aarch64-linux-gnu

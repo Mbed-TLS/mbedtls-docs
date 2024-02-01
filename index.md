@@ -27,7 +27,7 @@ For questions and discussions:
 
 Security vulnerabilities:
 
-Please see our [process for reporting vulnerabilities](project/vulnerabilities.md).
+* Please see our [process for reporting vulnerabilities](project/vulnerabilities.md).
 
 ```{toctree}
 ---
