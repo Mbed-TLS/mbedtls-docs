@@ -64,12 +64,12 @@ Pros:
 Cons:
 - only works with clang on Linux, FreeBSD, NetBSD
 - being compile-time instrumentation, limited with respect to inline assembly
-- for the same reason, misses branches in toolchain-provided functions (for example long multiplication, see Kaufmann et al [^1]) which valgrind would see
+- for the same reason, misses branches in toolchain-provided functions (for example long multiplication, see Kaufmann et al. [^1]) which valgrind would see
 - has an annoying bug where it [misses secret-dependent memory accesses via libc functions](https://github.com/google/sanitizers/issues/1296)
 
 Note: since 2.24.0 we're using this: see `MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN` in `config.h`; components `test_memsan_constant_flow` and ``test_memsan_constant_flow_psa` in `all.sh`; and `tests/suites/test_suite_constant_time`.
 
-[^1]: When Constant-time Source Yields Variable-time Binary: Exploiting Curve25519-donna Built with MSVC 2015. Thierry Kaufmann, Herv ́e Pelletier, Serge Vaudenay, and Karine Villegas. 21 December 2016, Springer Science and Business Media LLC. DOI: 10.1007/978-3-319-48965-0_36. https://core.ac.uk/reader/148026376
+[^1]: When Constant-time Source Yields Variable-time Binary: Exploiting Curve25519-donna Built with MSVC 2015. Thierry Kaufmann, Hervé Pelletier, Serge Vaudenay, and Karine Villegas. 21 December 2016, Springer Science and Business Media LLC. DOI: 10.1007/978-3-319-48965-0_36. https://core.ac.uk/reader/148026376
 
 ### Custom tools
 
