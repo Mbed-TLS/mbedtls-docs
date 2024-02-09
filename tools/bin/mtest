@@ -893,6 +893,7 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     if options_with_comma:
         # extract raw list for generating cross-product (discard leading hyphens)
         options_with_comma = set(x[1:] if x.startswith("-") else x for x in ",".join(options_with_comma).split(','))
+        if "" in options_with_comma: options_with_comma.remove("")
         args.config_options     = [x for x in args.config_options if "," not in x]
         # generate cross-product
         dash_combinations = itertools.product(["", "-"], repeat=len(options_with_comma))
