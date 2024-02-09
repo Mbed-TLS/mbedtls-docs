@@ -242,6 +242,8 @@ def toolchain_exes(target):
 
     if target.arch.startswith("armv"):
         qemu_arch = "arm"
+    elif "-m32" in target.cflags.split(" ") and target.arch == "x86_64":
+        qemu_arch = "i386"
     else:
         qemu_arch = QEMU_NAME_MAP.get(target.arch, target.arch)
     qemu_exe = f"qemu-{qemu_arch}-static"
