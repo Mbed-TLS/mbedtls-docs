@@ -894,9 +894,10 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     options_with_comma = [x for x in args.config_options if "," in x]
     if options_with_comma:
         # extract raw list for generating cross-product (discard leading hyphens)
-        options_with_comma = set(x[1:] if x.startswith("-") else x for x in ",".join(options_with_comma).split(','))
+        options_with_comma = [x[1:] if x.startswith("-") else x for x in ",".join(options_with_comma).split(',')]
+        options_with_comma = list(dict.fromkeys(options_with_comma)) # remove duplicates
         if "" in options_with_comma: options_with_comma.remove("")
-        args.config_options     = [x for x in args.config_options if "," not in x]
+        args.config_options = [x for x in args.config_options if "," not in x]
         # generate cross-product
         dash_combinations = itertools.product(["", "-"], repeat=len(options_with_comma))
         configs_xprod = [[dash + option for dash, option in zip(dashes, options_with_comma)] for dashes in dash_combinations]
