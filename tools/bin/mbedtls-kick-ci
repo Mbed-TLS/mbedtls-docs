@@ -24,7 +24,7 @@ host_open_ci=mbedtls.trustedfirmware.org
 # give it a name, then click Generate. You get one chance to copy it, so do it
 # now! Then put it into ~/bin/jmt.
 #
-# Make sure ~/bin/jmt is chmod 0700.
+# Make sure ~/bin/jmt is chmod 0600.
 
 . ~/bin/jmt
 
