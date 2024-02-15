@@ -56,7 +56,7 @@ MEMSAN_OPTIONS = [ "MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN", "-MBEDTLS_USE_PSA_CRYPTO
 MEMSAN_CFLAGS  = ['-fsanitize=memory', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls', '-fsanitize-memory-track-origins=2']
 MEMSAN_CC      = "clang"
 
-ASAN_CFLAGS   = ['-fsanitize=address', '-fno-common', '-fsanitize=undefined', '-fno-sanitize-recover=all', '-O1', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
+ASAN_CFLAGS   = ['-fsanitize=address', '-fno-common', '-fsanitize=undefined', '-fno-sanitize-recover=all', '-O2', '-g3', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
 ASAN_LDFLAGS  = ASAN_CFLAGS
 
 WARNING_FLAGS = {
@@ -107,6 +107,9 @@ else:
         CONFIG_FILE   = "include/mbedtls/config.h"
 
 BACKUP_SUFFIX = ".mtest_backup"
+
+# Python 3.7 doesn't have shlex.join, but we can work around it
+if "join" not in dir(shlex): shlex.join = lambda l: " ".join(shlex.quote(x) for x in l)
 
 
 def log(msg=None, indent=0, indent_adjust=0, _indent=[0]):
@@ -242,6 +245,8 @@ def toolchain_exes(target):
 
     if target.arch.startswith("armv"):
         qemu_arch = "arm"
+    elif "-m32" in target.cflags.split(" ") and target.arch == "x86_64":
+        qemu_arch = "i386"
     else:
         qemu_arch = QEMU_NAME_MAP.get(target.arch, target.arch)
     qemu_exe = f"qemu-{qemu_arch}-static"
@@ -273,6 +278,11 @@ def toolchain(target, exit_on_failure=True):
         # IAR defaults to C99 and doesn't have an option for it to be explicitly specified
         target_c_flags += ["-std=c99"]
 
+    if args.memsan:
+        target_c_flags += MEMSAN_CFLAGS
+    elif args.asan:
+        target_c_flags += ASAN_CFLAGS
+
     if args.size_tfm and "clang" in target.compiler:
         target_c_flags += ["-Oz"]
     elif target.compiler_family == "iar":
@@ -292,11 +302,6 @@ def toolchain(target, exit_on_failure=True):
     else:
         if target.compiler_family in WARNING_FLAGS:
             target_c_flags += WARNING_FLAGS[target.compiler_family]
-
-    if args.memsan:
-        target_c_flags += MEMSAN_CFLAGS
-    elif args.asan:
-        target_c_flags += ASAN_CFLAGS
 
     if args.size_tfm and (target.compiler_family, target.arch_isa) in TFM_TARGET_FLAGS:
         # Preset flags to get reference target for TF-M size builds
@@ -502,19 +507,23 @@ def get_crypto_config_file():
 
 def set_config_option(action, option, crypto_config_path, silent=True):
     force = [ "--force" ] if action == "set" else []
+    value = []
+    if action == "set":
+        if "=" in option:
+            option, v = option.split("=")
+            value = [v]
+        elif option.startswith("PSA_WANT"):
+            value = ['1']
     if option.startswith("PSA_WANT"):
         backup_config_options(crypto_config_path)
         if not silent:
-            log(f"scripts/config.py -f {crypto_config_path} {action} {option} {'1' if action == 'set' else ''}")
-        if action == "set":
-            output, success = subrun([f"scripts/config.py"] + force + ["--file", crypto_config_path, action, option, "1"], silent=True, ignore_failure=True)
-        else:
-            output, success = subrun([f"scripts/config.py"] + force + ["--file", crypto_config_path, action, option], silent=True, ignore_failure=True)
+            log(f"scripts/config.py -f {crypto_config_path} {action} {option} {''.join(value)}")
+        output, success = subrun([f"scripts/config.py"] + force + ["--file", crypto_config_path, action, option] + value, silent=True, ignore_failure=True)
     else:
         backup_config_options(CONFIG_FILE)
         if not silent:
-            log(f"scripts/config.py {action} {option}")
-        output, success = subrun([f"scripts/config.py"] + force + [action, option], silent=True, ignore_failure=True)
+            log(f"scripts/config.py {action} {option} {''.join(value)}")
+        output, success = subrun([f"scripts/config.py"] + force + [action, option] + value, silent=True, ignore_failure=True)
     if success != 0:
         error(output)
 
@@ -888,8 +897,10 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     options_with_comma = [x for x in args.config_options if "," in x]
     if options_with_comma:
         # extract raw list for generating cross-product (discard leading hyphens)
-        options_with_comma = set(x[1:] if x.startswith("-") else x for x in ",".join(options_with_comma).split(','))
-        args.config_options     = [x for x in args.config_options if "," not in x]
+        options_with_comma = [x[1:] if x.startswith("-") else x for x in ",".join(options_with_comma).split(',')]
+        options_with_comma = list(dict.fromkeys(options_with_comma)) # remove duplicates
+        if "" in options_with_comma: options_with_comma.remove("")
+        args.config_options = [x for x in args.config_options if "," not in x]
         # generate cross-product
         dash_combinations = itertools.product(["", "-"], repeat=len(options_with_comma))
         configs_xprod = [[dash + option for dash, option in zip(dashes, options_with_comma)] for dashes in dash_combinations]
