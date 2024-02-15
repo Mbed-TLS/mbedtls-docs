@@ -108,6 +108,9 @@ else:
 
 BACKUP_SUFFIX = ".mtest_backup"
 
+# Python 3.7 doesn't have shlex.join, but we can work around it
+if "join" not in dir(shlex): shlex.join = lambda l: " ".join(shlex.quote(x) for x in l)
+
 
 def log(msg=None, indent=0, indent_adjust=0, _indent=[0]):
     _indent[0] += indent_adjust
