@@ -67,6 +67,9 @@ WARNING_FLAGS = {
 WARNING_FLAGS["arm-none-eabi-gcc"] = WARNING_FLAGS["gcc"]
 WARNING_FLAGS["armclang"]          = WARNING_FLAGS["clang"]
 
+# Before this hash, the default config and the TF-M config require warnings to be disabled
+NO_WARN_HASH="9cf17dad9d32dc4cedbac0d25ea57d2006a3a34b"
+
 # Use full system libraries for IAR
 COMPILER_FLAGS = {
     "iar": ["--dlib_config=full"]
@@ -875,6 +878,10 @@ Build targets: build the library by default, or files (e.g. aes.o), programs (e.
     if ROOT is None:
         print("couldn't find root of Mbed TLS checkout (must run from within an Mbed TLS checkout)")
         exit(1)
+
+    if not args.no_warnings and not git_history_contains(NO_WARN_HASH):
+        # If we are building an old hash that doesn't build without the --no-warnings flag, then automatically set it.
+        args.no_warnings = True
 
     # extract compilers
     args.compilers = [x[3:].strip() for x in args.rest if x.startswith("CC=")]
