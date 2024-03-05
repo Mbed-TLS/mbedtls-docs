@@ -10,6 +10,17 @@ All commits must have such a line, otherwise the commit cannot be accepted for l
 
 If the DCO job fails, please reword all commit messages that are missing a `Signed-off-by:` line. If you have multiple commit messages to rewrite, [How to use git interactive rebase for signing off a series of commits](https://stackoverflow.com/questions/25570947/how-to-use-git-interactive-rebase-for-signing-off-a-series-of-commits) may help.
 
+## Documentation build
+
+The Mbed TLS API documentation, rendered by Doxygen, is published [on readthedocs](https://mbed-tls.readthedocs.io/en/latest/). GitHub triggers a readthedocs build on every pull request. This is controlled by [`.readthedocs.yaml`](https://github.com/Mbed-TLS/mbedtls/blob/development/.readthedocs.yaml). This check is required: a pull request cannot be merged unless it passes.
+
+### Retrying a stuck or failed documentation build
+
+If the readthedocs build fails due to a transient failure (e.g. could not communicate to GitHub), or if the status is not reported back to GitHub due to a transient failure, you can re-trigger a new build in one of the following ways:
+
+* If you have a readthedocs account with suitable permissions, go to the build page (`https://readthedocs.org/projects/mbedtls-versioned/builds/<NUMBER>/`) and click “Rebuild this build”.
+* Close and reopen the pull request. This triggers a new readthedocs build, and preserves Jenkins results and GitHub review states.
+
 ## PR-head and PR-merge jobs
 
 The PR-//NNN//-head and PR-//NNN//-merge jobs run an extensive battery of tests on several platforms. The -head jobs run the tests on the tip of the submitted code. The -merge jobs run the tests on a merge with the target branch.
