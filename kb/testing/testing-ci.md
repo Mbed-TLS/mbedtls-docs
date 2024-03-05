@@ -10,6 +10,12 @@ All commits must have such a line, otherwise the commit cannot be accepted for l
 
 If the DCO job fails, please reword all commit messages that are missing a `Signed-off-by:` line. If you have multiple commit messages to rewrite, [How to use git interactive rebase for signing off a series of commits](https://stackoverflow.com/questions/25570947/how-to-use-git-interactive-rebase-for-signing-off-a-series-of-commits) may help.
 
+### Retrying a stuck DCO check
+
+GitHub triggers a DCO check whenever a pull request is updated. This check is required: a pull request cannot be merged unless it passes.
+
+If the DCO check doesn't report back to GitHub (the status remains “Pending” and no “Details” link appears), the only known solution is to change the commit ID at the head of the pull request. You can amend the head commit without changing its commit message: this changes the commit date, so it changes the commit ID. Force-pushing such an amended commit triggers all new CI checks, but does not invalidate review approvals.
+
 ## Documentation build
 
 The Mbed TLS API documentation, rendered by Doxygen, is published [on readthedocs](https://mbed-tls.readthedocs.io/en/latest/). GitHub triggers a readthedocs build on every pull request. This is controlled by [`.readthedocs.yaml`](https://github.com/Mbed-TLS/mbedtls/blob/development/.readthedocs.yaml). This check is required: a pull request cannot be merged unless it passes.
