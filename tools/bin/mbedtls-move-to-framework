@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+"""Move files from the Mbed TLS repository to the framework repository.
+
+Invoke this script from a Git working directory with a branch of Mbed TLS.
+"""
+
+# Copyright The Mbed TLS Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import argparse
+import os
+import pathlib
+import re
+import subprocess
+import sys
+from typing import List, Optional, Tuple, Dict
+
+
+class RepoFileMover:
+    """Move files between repos while retaining history."""
+
+    GIT_EXE = 'git'
+    DEFAULT_BRANCH = 'main'
+
+    def __init__(self, source_repo: str, dest_repo: str,
+                 source_branch_name: str, dest_branch_name: str,
+                 file_map: Dict[str, str]):
+        self._source_repo = os.path.abspath(source_repo)
+        self._dest_repo = os.path.abspath(dest_repo)
+
+        self._src_branch_name = source_branch_name
+        self._tmp_framework_branch_name = 'tmp-branch-move-files-to-framework'
+        self._framework_branch_name = dest_branch_name
+
+        self._file_map = {os.path.normpath(k): os.path.normpath(v) for k, v in file_map.items()}
+
+    def run_git(self, git_cmd: List[str], **kwargs) -> str:
+        """Run a git command and return its output."""
+        if 'universal_newlines' not in kwargs:
+            kwargs['universal_newlines'] = True
+        cmd = [self.GIT_EXE] + git_cmd
+        return subprocess.check_output(cmd, **kwargs)
+
+    def add_file_move(self, src_path: str, dst_path: str) -> None:
+        """Move file at relative path src_path in the source repo to dst_path
+        in the destination repo"""
+        self._file_map[src_path] = dst_path
+
+    def ensure_dirs_exist(self, path: str) -> None:
+        """Make sure all of the required directories exist for
+        moving a given file or directory to it."""
+
+        # Remove any trailing slashes
+        while path[-1] == os.sep:
+            path = path[:-1]
+
+        # Get the directory names
+        dirs, file = os.path.split(path)
+        # Make all required directories
+        os.makedirs(dirs, exist_ok=True)
+
+    def create_dest_repo_branch(self):
+        """Create the branch containing the moved files only"""
+
+        # Create a new branch
+        self.run_git(['checkout', '-b', self._tmp_framework_branch_name])
+
+        # Get a list of all files in the repo
+        repo_files = self.run_git(['ls-files']).split()
+
+        # Get a set of the files we are moving (taking account of directories)
+        files_to_retain = set()
+        for f in self._file_map:
+            if os.path.isdir(f):
+                dir_files = self.run_git(['ls-files', f]).split()
+                dir_files = [os.path.normpath(dir_file) for dir_file in dir_files]
+                files_to_retain.update(dir_files)
+            else:
+                files_to_retain.add(os.path.normpath(f))
+
+        # Delete all files except the ones we are moving
+        for f in repo_files:
+            if os.path.normpath(f) not in files_to_retain:
+                self.run_git(['rm', f])
+
+        # Rename files as requested
+        for f in self._file_map:
+            # Git won't let us move things to themselves
+            if self._file_map[f] != f:
+                self.ensure_dirs_exist(self._file_map[f])
+                self.run_git(['mv', f, self._file_map[f]])
+
+        # Commit the result
+        commit_message = "Move some files to framework repository"
+        self.run_git(['commit', '-asm', commit_message])
+
+    def create_src_repo_branch(self):
+        """Create the branch deleting the moved files"""
+
+        # Create a new branch
+        self.run_git(['checkout', '-b', self._src_branch_name])
+
+        # Delete the moved files
+        files_to_delete = self._file_map.keys()
+        for f in files_to_delete:
+            if os.path.isdir(f):
+                self.run_git(['rm', '-r', f])
+            else:
+                self.run_git(['rm', f])
+
+        # Commit the result
+        commit_message = "Move some files to framework repository"
+        self.run_git(['commit', '-asm', commit_message])
+
+    def merge_files_into_framework(self):
+        """Add the source repo as a remote, pull in the destination branch
+        and merge into a new branch"""
+        # Change to the desination repo
+        os.chdir(self._dest_repo)
+
+        # Fetch/checkout the branch that has the moved files on it
+        self.run_git(['fetch', self._source_repo,
+                      self._tmp_framework_branch_name + ':' + self._tmp_framework_branch_name])
+
+        # Checkout the default branch
+        self.run_git(['checkout', self.DEFAULT_BRANCH])
+
+        # Create a new branch with checkout -b
+        self.run_git(['checkout', '-b', self._framework_branch_name])
+
+        # Merge in the previously-fetched branch using --allow-unrelated-histories
+        self.run_git(['merge', self._tmp_framework_branch_name, '--allow-unrelated-histories'])
+
+    def move_files(self):
+        os.chdir(self._source_repo)
+
+        base_commit = self.run_git(['rev-parse', 'HEAD']).strip()
+
+        self.create_dest_repo_branch()
+        # Reset state of repo
+        self.run_git(['checkout', base_commit])
+
+        self.create_src_repo_branch()
+        # Reset state of repo
+        self.run_git(['checkout', base_commit])
+
+        self.merge_files_into_framework()
+
+        # Delete the temporary branches in both repos
+        self.run_git(['branch', '-D', self._tmp_framework_branch_name])
+
+        os.chdir(self._source_repo)
+        self.run_git(['branch', '-D', self._tmp_framework_branch_name])
+
+
+def main() -> int:
+    """Command line entry point."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path', action='append', nargs='?',
+                        help='Path to move, (colon-separate for renames)'
+                             '(e.g. "tests/scripts" or "tests/scripts:foo")')
+    parser.add_argument('--from', dest='from_repo',
+                        metavar='FROM', required=True,
+                        help='Path to the Mbed TLS repo to move files from')
+    parser.add_argument('--to', dest='to_repo', metavar='TO', required=True,
+                        help='Path to the framework repo to move files to')
+    parser.add_argument('--src-branch',
+                        default='move-files-from-mbedtls-to-framework',
+                        required=False,
+                        help='Name of the new branch create in the Mbed TLS repo')
+    parser.add_argument('--dst-branch', default='move-files-into-framework',
+                        required=False,
+                        help='Name of the new branch create in the framework repo')
+    args = parser.parse_args()
+
+    file_map = {}
+    for p in args.path:
+        # If the name contains a colon it is a rename,
+        # otherwise just a plain path.
+        if ':' in p:
+            rename = p.split(':')
+            if len(rename) != 2:
+                print('Error: Path rename must be of the form "src:dest"',
+                      file=sys.stderr)
+                return 1
+
+            file_map[rename[0]] = rename[1]
+
+        else:
+            file_map[p] = p
+
+    file_mover = RepoFileMover(args.from_repo, args.to_repo,
+                               args.src_branch, args.dst_branch,
+                               file_map)
+    file_mover.move_files()
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
