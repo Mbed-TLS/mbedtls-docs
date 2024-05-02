@@ -16,7 +16,7 @@ If you are interested in collaborating on any of the roadmap features or other f
 * [Mbed TLS] Mbed TLS4.0 Preparations  
 * [PSA Crypto] PSA Crypto repository becomes live
 * [Mbed TLS] Mbed TLS uses PSA Crypto repository
-* [PSA Crypto] SPAKE2+
+* [PSA Crypto] SPAKE2+ Implementation
 * [PSA Crypto] [PBKDF2 PSA SW Implementation]
 
 **2024 CQ4**
