@@ -74,8 +74,10 @@ class RepoFileMover:
 
         # Get the directory names
         dirs, file = os.path.split(path)
-        # Make all required directories
-        os.makedirs(dirs, exist_ok=True)
+
+        if dirs != '':
+            # Make all required directories
+            os.makedirs(dirs, exist_ok=True)
 
     def create_dest_repo_branch(self):
         """Create the branch containing the moved files only"""
