@@ -32,17 +32,23 @@ class RepoFileMover:
     """Move files between repos while retaining history."""
 
     GIT_EXE = 'git'
-    DEFAULT_BRANCH = 'main'
+    FRAMEWORK_DEFAULT_BASE_BRANCH = 'main'
 
     def __init__(self, source_repo: str, dest_repo: str,
                  source_branch_name: str, dest_branch_name: str,
-                 file_map: Dict[str, str]):
+                 file_map: Dict[str, str],
+                 dest_base_branch_name: Optional[str] = None):
         self._source_repo = os.path.abspath(source_repo)
         self._dest_repo = os.path.abspath(dest_repo)
 
         self._src_branch_name = source_branch_name
         self._tmp_framework_branch_name = 'tmp-branch-move-files-to-framework'
         self._framework_branch_name = dest_branch_name
+
+        if dest_base_branch_name is None:
+            self._framework_base_branch_name = self.FRAMEWORK_DEFAULT_BASE_BRANCH
+        else:
+            self._framework_base_branch_name = dest_base_branch_name
 
         self._file_map = {os.path.normpath(k): os.path.normpath(v) for k, v in file_map.items()}
 
@@ -135,7 +141,7 @@ class RepoFileMover:
                       self._tmp_framework_branch_name + ':' + self._tmp_framework_branch_name])
 
         # Checkout the default branch
-        self.run_git(['checkout', self.DEFAULT_BRANCH])
+        self.run_git(['checkout', self._framework_base_branch_name])
 
         # Create a new branch with checkout -b
         self.run_git(['checkout', '-b', self._framework_branch_name])
@@ -183,6 +189,8 @@ def main() -> int:
     parser.add_argument('--dst-branch', default='move-files-into-framework',
                         required=False,
                         help='Name of the new branch create in the framework repo')
+    parser.add_argument('--dst-base-branch', default=None, required=False,
+                        help='Base branch in the framework repo to make changes from')
     args = parser.parse_args()
 
     file_map = {}
@@ -203,7 +211,8 @@ def main() -> int:
 
     file_mover = RepoFileMover(args.from_repo, args.to_repo,
                                args.src_branch, args.dst_branch,
-                               file_map)
+                               file_map,
+                               args.dst_base_branch)
     file_mover.move_files()
 
     return 0
