@@ -10,7 +10,7 @@ Mbed TLS is designed in the portable C language with embedded environments as a 
 
 The aim of this tutorial is to show you how to secure your client and server communication with Mbed TLS. The following major components  are involved:
 
-![Mbed TLS Stack.png](https://web.archive.org/web/20210921191453/https://mbed-tls-docs-images.s3.amazonaws.com/mbedtls-stack.png)
+![Mbed TLS Stack.png](../assets/mbedtls-stack.png)
 
 From the bottom up:
 
