@@ -6,15 +6,15 @@ All of the settings described on this page are available in `mbedtls_config.h`, 
 
 If you need to reduce your memory footprint even more or have related questions, please submit a query in our [support forum](https://forums.mbed.com/c/mbed-tls.html) or open an issue in our [GitHub repository](https://github.com/Mbed-TLS/mbedtls/issues.html). We welcome ideas you may have to further reduce the size in RAM or ROM storage. Please, let us know if you have suggestions for improvements.
 
-# Binary footprint
+## Binary footprint
 
 The binary footprint is the size of the actual file on disk, in the ROM or the flash.
 
-## Minimizing features
+### Minimizing features
 
 By default, Mbed TLS offers several compatibility options and frequently used functionalities. To reduce the footprint, adapt `mbedtls_config.h` to disable the functions that you do not need.
 
-# Memory footprint
+## Memory footprint
 
 The memory footprint is the size of the memory needed at runtime to store variables, contexts and other runtime information.
 
