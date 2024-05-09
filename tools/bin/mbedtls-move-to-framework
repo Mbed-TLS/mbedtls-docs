@@ -132,6 +132,45 @@ class RepoFileMover:
         commit_message = "Move some files to framework repository"
         self.run_git(['commit', '-asm', commit_message])
 
+    def resolve_deletion_conflicts(self):
+        file_statuses = self.run_git(['status', '--porcelain'])
+
+        # Get conflicting files
+        files_by_status = {}
+        for line in file_statuses.splitlines():
+            # Process lines like:
+            # D dir1/myfile.txt
+            # M myfile.csv
+            # etc
+            line = line.strip().split()
+
+            if len(line) != 2:
+                continue
+            status = line[0]
+            filename = line[1]
+
+            if len(status) == 2:
+                # Check cases where conflicts need to be resolved
+                if status not in ('AD', 'DA', 'UD', 'DU'):
+                    # Resolve conflicts only if one file has been deleted.
+                    # We can't deal with multiple-modifications etc
+                    return False
+
+            if status in files_by_status:
+                files_by_status[status].append(filename)
+            else:
+                files_by_status[status] = [filename]
+
+        # Restore any deleted files
+        if 'D' in files_by_status:
+            for f in files_by_status['D']:
+                self.run_git(['checkout', 'HEAD', '--', f])
+
+        # Add all files
+        self.run_git(['add', '.'])
+
+        return True
+
     def merge_files_into_framework(self):
         """Add the source repo as a remote, pull in the destination branch
         and merge into a new branch"""
@@ -148,8 +187,17 @@ class RepoFileMover:
         # Create a new branch with checkout -b
         self.run_git(['checkout', '-b', self._framework_branch_name])
 
-        # Merge in the previously-fetched branch using --allow-unrelated-histories
-        self.run_git(['merge', self._tmp_framework_branch_name, '--allow-unrelated-histories'])
+        try:
+            # Merge in the previously-fetched branch using --allow-unrelated-histories
+            self.run_git(['merge', self._tmp_framework_branch_name, '--allow-unrelated-histories'])
+        except subprocess.CalledProcessError as git_error:
+            # We have conflicts, resolve them if possible
+            if not self.resolve_deletion_conflicts():
+                raise git_error
+
+            # Continue the merge without opening an editor
+            self.run_git(['-c', 'core.editor=/bin/true',
+                          'merge', '--continue'])
 
     def move_files(self):
         os.chdir(self._source_repo)
