@@ -1185,6 +1185,16 @@ class MakefileMaker:
         self.add_clean('$(programs)')
         self.add_run_target('programs/test/benchmark')
         self.add_run_target('programs/test/selftest')
+        self.target('ssl-opt',
+                    ['programs/ssl/seedfile',
+                     'programs/ssl/ssl_client2$(EXEXT)',
+                     'programs/ssl/ssl_server2$(EXEXT)',
+                     'programs/test/query_compile_time_config$(EXEXT)',
+                     'programs/test/udp_proxy$(EXEXT)',
+                     'tests/seedfile'],
+                    [],
+                    help='Build the programs needed for ssl-opt.sh',
+                    phony=True)
         # TODO: *_demo.sh
         self.target('test_zeroize',
                     ['programs/test/zeroize'],
