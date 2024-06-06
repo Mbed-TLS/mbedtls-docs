@@ -1793,6 +1793,8 @@ class BuildTreeMaker:
         self.makefile.generate()
         self.config.run()
 
+CLANG_WARNING_CFLAGS = '-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE'
+
 """Named presets.
 
 This is a dictionary mapping preset names to their descriptions. The
@@ -1806,18 +1808,25 @@ _preset_options = {
         _help='Clang with ASan+UBSan, current configuration',
         config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
         CC='clang',
-        CFLAGS='-O',
+        CFLAGS='-O2',
         COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
-        WARNING_CFLAGS='-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE',
+        WARNING_CFLAGS=CLANG_WARNING_CFLAGS,
+    ),
+    'asan-gcc': argparse.Namespace(
+        _help='GCC with ASan+UBSan, current configuration',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='gcc',
+        CFLAGS='-O2',
+        COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
     ),
     'cf': argparse.Namespace(
         _help='Constant flow with MSan, current configuration',
         config_set=['MBEDTLS_TEST_CONSTANT_FLOW_MEMSAN'],
         config_unset=['MBEDTLS_AESNI_C'],
         CC='clang',
-        CFLAGS='-O',
+        CFLAGS='-O2',
         COMMON_FLAGS='-fsanitize=memory -g3',
-        WARNING_CFLAGS='-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE',
+        WARNING_CFLAGS=CLANG_WARNING_CFLAGS,
     ),
     'coverage': argparse.Namespace(
         _help='Build with coverage instrumentation',
@@ -1870,9 +1879,17 @@ _preset_options = {
         config_name='full',
         config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
         CC='clang',
-        CFLAGS='-O',
+        CFLAGS='-O2',
         COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
-        WARNING_CFLAGS='-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE',
+        WARNING_CFLAGS=CLANG_WARNING_CFLAGS,
+    ),
+    'full-asan-gcc': argparse.Namespace(
+        _help='Full configuration with GCC+ASan+UBSan',
+        config_name='full',
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='gcc',
+        CFLAGS='-O2',
+        COMMON_FLAGS='-fsanitize=address,undefined -fno-sanitize-recover=all -fno-common -g3',
     ),
     'full-debug': argparse.Namespace(
         _help='Full configuration, debug build',
@@ -1909,9 +1926,9 @@ _preset_options = {
         config_unset=['MBEDTLS_AESNI_C',
                       'MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
         CC='clang',
-        CFLAGS='-O',
+        CFLAGS='-O2',
         COMMON_FLAGS='-fsanitize=memory -g3',
-        WARNING_CFLAGS='-Werror -Wall -Wextra -Wdocumentation -Wno-documentation-deprecated-sync -std=c99 -D_DEFAULT_SOURCE',
+        WARNING_CFLAGS=CLANG_WARNING_CFLAGS,
     ),
     'noplatform': argparse.Namespace(
         _help='Full except platform/fsio/net',
@@ -1945,6 +1962,15 @@ _preset_options = {
         CC='arm-linux-gnueabi-gcc',
         CFLAGS='-Os',
         COMMON_FLAGS='-mthumb',
+    ),
+    'tsan': argparse.Namespace(
+        _help='Clang with TSan, current configuration + pthread',
+        config_set=['MBEDTLS_THREADING_C', 'MBEDTLS_THREADING_PTHREAD'],
+        config_unset=['MBEDTLS_MEMORY_BUFFER_ALLOC_C'],
+        CC='clang',
+        CFLAGS='-O2',
+        COMMON_FLAGS='-fsanitize=thread -fno-sanitize-recover=all -fno-common -g3',
+        WARNING_CFLAGS=CLANG_WARNING_CFLAGS,
     ),
     'valgrind': argparse.Namespace(
         # This is misleading: it doesn't actually run programs through
