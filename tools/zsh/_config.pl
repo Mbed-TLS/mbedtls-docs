@@ -1,9 +1,12 @@
 #compdef config.pl config.py
-## Completion for scripts/config.pl and scripts/config.pl in Mbed TLS.
+## Completion for scripts/config.pl and scripts/config.py in Mbed TLS.
 
 _config_pl_symbols () {
   local -a identifiers
-  identifiers=("${(@f)$(_call_program _config_pl_symbols sed -n \''s!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p'\' \$config_h)}")
+  identifiers=("${(@f)$(_call_program _config_pl_symbols 'sed -n \
+      -e '\''s!^/*\**#define \(MBEDTLS_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p'\'' \
+      -e '\''s!^/*\**#define \(PSA_[0-9A-Z_a-z][0-9A-Z_a-z]*\).*!\1!p'\'' \
+      $config_h')}")
   _describe -t symbols 'config.h symbols' identifiers
 }
 
@@ -26,6 +29,11 @@ _config_pl () {
     {'-o','--force'}'[define symbol even if not present]' \
     '1:config.pl command:->command' \
     '*::config.pl commands:->param'
+  if (($+opt_args[--file])); then
+    config_h=$opt_args[--file]
+  elif (($+opt_args[-f])); then
+    config_h=$opt_args[-f]
+  fi
   case $state in
     (command)
       _describe -t commands 'config.pl command' commands_with_descriptions;;
