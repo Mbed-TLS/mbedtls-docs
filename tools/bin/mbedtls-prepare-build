@@ -720,7 +720,7 @@ class MakefileMaker:
         extra = set()
         with open(os.path.join(self.options.source, c_file)) as stream:
             for line in stream:
-                m = re.match(r'#include ["<](.*)[">]', line)
+                m = re.match(r' *# *include *["<](.*?)[">]', line)
                 if m is None:
                     continue
                 filename = m.group(1)
@@ -748,6 +748,8 @@ class MakefileMaker:
         before the build.
         """
         if 'ssl_debug_helpers_generated.' in filename:
+            return False
+        if 'value_names_generated' in filename:
             return False
         if '_generated.' in filename:
             return True
@@ -1640,6 +1642,7 @@ class ConfigInclude(ConfigExplicit):
         if not os.path.isabs(source_path):
             source_path = os.path.join(os.pardir, os.pardir, source_path)
         self.lines.append('#ifndef MBEDTLS_CHECK_CONFIG_H')
+        #TODO: in 2.x, MBEDTLS_USER_CONFIG_FILE needs to go here!
         self.lines.append('#include "{}"'.format(source_path))
         self.lines.append('')
 
