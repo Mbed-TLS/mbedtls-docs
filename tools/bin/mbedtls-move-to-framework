@@ -64,6 +64,44 @@ class RepoFileMover:
         in the destination repo"""
         self._file_map[src_path] = dst_path
 
+    def _path_parts(self, path: str) -> List[str]:
+        return path.split(os.path.sep)
+
+    def _direct_children(self, dir_path: str) -> List[str]:
+        """Get the direct children of a subdirectory (at least the ones
+        that matter to git)"""
+        leaf_files = self.run_git(['ls-files', dir_path]).split()
+        path_len = len(self._path_parts(dir_path)) + 1
+        direct_children = set([
+            os.path.join(
+                *self._path_parts(f)[:path_len]
+            )
+            for f in leaf_files
+        ])
+        return list(direct_children)
+
+    def _expand_dir_move(self, dir_path: str) -> None:
+        """Expand a directory move into the moves of its children"""
+        if dir_path in self._file_map:
+            # Get the direct children of this directory
+            expanded_paths = self._direct_children(dir_path)
+            # Make an equivalent mapping for each direct child
+            for path in expanded_paths:
+                self._file_map[path] = (self._file_map[dir_path]
+                                        + path[len(dir_path):])
+            # Remove the mapping for the original directory, since we want
+            # some files to remain behind in it.
+            self._file_map.pop(dir_path, None)
+
+    def add_exception(self, src_path: str) -> None:
+        path_components = self._path_parts(src_path)
+        # Expand the directories prefixing the exception,
+        # starting with the shortest prefix
+        for i in range(1, len(path_components)):
+            self._expand_dir_move(os.path.join(*path_components[:i]))
+        # Remove the exception
+        self._file_map.pop(src_path, None)
+
     def ensure_dirs_exist(self, path: str) -> None:
         """Make sure all of the required directories exist for
         moving a given file or directory to it."""
@@ -226,7 +264,11 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', action='append', nargs='?',
                         help='Path to move, (colon-separate for renames)'
-                             '(e.g. "tests/scripts" or "tests/scripts:foo")')
+                             ' (e.g. "tests/scripts" or "tests/scripts:foo")')
+    parser.add_argument('--except', action='append', nargs='?',
+                        dest='file_exceptions',
+                        help='Exceptions to --path arguments'
+                             ' (Files or directories not to move')
     parser.add_argument('--from', dest='from_repo',
                         metavar='FROM', required=True,
                         help='Path to the Mbed TLS repo to move files from')
@@ -263,6 +305,10 @@ def main() -> int:
                                args.src_branch, args.dst_branch,
                                file_map,
                                args.dst_base_branch)
+
+    for e in args.file_exceptions:
+        file_mover.add_exception(e)
+
     file_mover.move_files()
 
     return 0
