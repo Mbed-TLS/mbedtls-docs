@@ -267,6 +267,7 @@ def main() -> int:
                              ' (e.g. "tests/scripts" or "tests/scripts:foo")')
     parser.add_argument('--except', action='append', nargs='?',
                         dest='file_exceptions',
+                        default=[],
                         help='Exceptions to --path arguments'
                              ' (Files or directories not to move')
     parser.add_argument('--from', dest='from_repo',
