@@ -164,7 +164,7 @@ Options = argparse.Namespace
 A submodule is a subdirectory of the source tree which has the same
 general structure as the source tree.
 """
-SUBMODULE_NAMES = ['crypto']
+SUBMODULE_NAMES = ['crypto', 'tf-psa-crypto']
 
 
 class SourceFile:
@@ -457,9 +457,10 @@ class MakefileMaker:
         it exists, return its path from the root of the source tree.
         Otherwise return filename unchanged.
         """
-        in_crypto = os.path.join('crypto', filename)
-        if os.path.exists(in_crypto):
-            filename = in_crypto
+        for submodule in SUBMODULE_NAMES:
+            in_submodule = os.path.join(submodule, filename)
+            if os.path.exists(in_submodule):
+                filename = in_submodule
         return '$(SOURCE_DIR)/' + filename
 
     def source_exists(self, filename: str) -> bool:
@@ -1789,7 +1790,8 @@ class BuildTreeMaker:
                      ['tests', 'data_files'],
                      ['tests', 'opt-testcases'],
                      ['tests', 'scripts'],
-                     ['tests', 'ssl-opt.sh']]:
+                     ['tests', 'ssl-opt.sh'],
+                     ['tf-psa-crypto']]:
             self.link_to_source_maybe(link)
         self.link_test_suites()
         self.prepare_source()
