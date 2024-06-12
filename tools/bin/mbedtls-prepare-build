@@ -1956,7 +1956,11 @@ _preset_options = {
     ),
     'm0plus': argparse.Namespace(
         _help='Baremetal configuration for Cortex-M0+ target',
-        config_name='baremetal',
+        # 'baremetal_size' only exists since shortly before mbedtls-3.2.0
+        # and mbedtls-2.28.1. In older versions, use the 'baremetal'
+        # configuration and unset
+        # 'MBEDTLS_DEBUG_C,MBEDTLS_SELF_TEST,MBEDTLS_TEST_HOOKS'.
+        config_name='baremetal_size',
         default_target='lib',
         CC='arm-none-eabi-gcc',
         CFLAGS='-Os',
