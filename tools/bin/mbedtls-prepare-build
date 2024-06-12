@@ -322,9 +322,12 @@ class OnTargetTestGenerator(TestGeneratorInterface):
         datax_file = os.path.splitext(c_file)[0] + '.datax'
         return sjoin(c_file, datax_file)
 
-    @staticmethod
-    def script(source_dir: str) -> str:
-        return os.path.dirname(source_dir) + '/scripts/generate_test_code.py'
+    def script(self, source_dir: str) -> str:
+        if os.path.exists(os.path.join(self.options.source, source_dir,
+                                       '../scripts/generate_test_code.py')):
+            return os.path.dirname(source_dir) + '/scripts/generate_test_code.py'
+        else:
+            return 'framework/scripts/generate_test_code.py'
 
     @staticmethod
     def function_files(function_file: str, on_target=False) -> List[str]:
@@ -334,12 +337,11 @@ class OnTargetTestGenerator(TestGeneratorInterface):
                                 'target_test' if on_target else 'host_test']] +
                 [function_file])
 
-    @classmethod
-    def command(cls, function_file: str, data_file: str) -> str:
+    def command(self, function_file: str, data_file: str) -> str:
         source_dir = os.path.dirname(function_file)
         suite_path = '$(SOURCE_DIR_FROM_TESTS)/' + source_dir
         return sjoin('$(PYTHON)',
-                     '$(SOURCE_DIR_FROM_TESTS)/' + cls.script(source_dir),
+                     '$(SOURCE_DIR_FROM_TESTS)/' + self.script(source_dir),
                      '-f $(SOURCE_DIR_FROM_TESTS)/' + function_file,
                      '-d $(SOURCE_DIR_FROM_TESTS)/' + data_file,
                      '-t', suite_path + '/main_test.function',
@@ -418,7 +420,8 @@ class MakefileMaker:
             'library/psa_crypto_driver_wrappers.c': self.PSA_CRYPTO_DRIVER_WRAPPERS_DEPENDENCIES,
         }
         self.submodules = list(self.gather_submodules(self.options.source))
-        if self.source_exists('tests/scripts/generate_test_code.py'):
+        if self.source_exists('tests/scripts/generate_test_code.py') or \
+           self.source_exists('framework/scripts/generate_test_code.py'):
             self.test_generator = OnTargetTestGenerator(options) #type: TestGeneratorInterface
         else:
             self.test_generator = ClassicTestGenerator(options)
