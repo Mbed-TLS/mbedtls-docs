@@ -1,0 +1,41 @@
+<html>
+<head>   
+    <title>MbedTLS Release Sign</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>MbedTLS Release Sign-Tool</h1>
+    <h2>Sign a release</h2>
+    <p>To get started:</p>
+    <ul>
+        <li>Select the release tarball</li>
+        <li>Type in the maintainer's password</li>
+        <li>Press Upload</li>
+    </ul>
+    <form class="custom-form" action = "/sign" method = "post" enctype="multipart/form-data">
+        <label class="custom-file-upload">Release
+            <input type="file" name="rel_file"></label>
+        <br>
+        <input type="text" id="pw" name="passw" placeholder="Type Password">
+        <input type = "submit" value="Upload">   
+    </form>
+    <hr />
+    <h2>Verify a release</h2>
+    <p>To get started:</p>
+    <ul>
+        <li>Select the archive containing the release firmware</li>
+        <li>Select the asc file with the signature</li>
+        <li>press Upload.</li>
+    </ul>
+    <form class="custom-form" action= "/verify" method = "post" enctype="multipart/form-data">  
+        <label class="custom-file-upload">Release  
+            <input type="file" name="rel_file"></label>
+        <br>
+        <label class="custom-file-upload"> Sig/ture
+            <input type="file" name="sig_file"></label>
+        <br>            
+        <input type = "submit" value="Upload">
+    </form>
+</body>   
+</html>
+

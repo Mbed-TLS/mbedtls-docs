@@ -1,0 +1,30 @@
+
+<html> 
+   <head> 
+      <title>Sign</title>
+      <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+   </head>
+   <body> 
+      <h2>Sign Results</h2>
+      <table align="center" border="2" cellpadding="1" cellspacing="1" style="width:500px">
+         <tbody>
+            <tr>
+               <th scope="row">Tarball</th>
+               <td><a href="{{artf_url}}">{{artf_name}}</a></td>
+            </tr>
+            <tr>
+               <th scope="row">sha256</th>
+               <td><a href="{{sha_url}}">{{sha}}</a></td>
+            </tr>
+            <tr>
+               <th scope="row">Signature</th>
+               <td><a href="{{sign_url}}">{{sign_name}}</a></td>
+            </tr>
+            <tr>
+               <th scope="row">Download All</th>
+               <td><a href="{{zip_url}}">{{zip_name}}</a></td>
+            </tr>
+         </tbody>
+      </table>
+   </body> 
+</html>
