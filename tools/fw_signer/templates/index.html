@@ -1,5 +1,5 @@
 <html>
-<head>   
+<head>
     <title>MbedTLS Release Sign</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -17,7 +17,7 @@
             <input type="file" name="rel_file"></label>
         <br>
         <input type="text" id="pw" name="passw" placeholder="Type Password">
-        <input type = "submit" value="Upload">   
+        <input type = "submit" value="Upload">
     </form>
     <hr />
     <h2>Verify a release</h2>
@@ -27,15 +27,15 @@
         <li>Select the asc file with the signature</li>
         <li>press Upload.</li>
     </ul>
-    <form class="custom-form" action= "/verify" method = "post" enctype="multipart/form-data">  
-        <label class="custom-file-upload">Release  
+    <form class="custom-form" action= "/verify" method = "post" enctype="multipart/form-data">
+        <label class="custom-file-upload">release
             <input type="file" name="rel_file"></label>
         <br>
         <label class="custom-file-upload"> Sig/ture
             <input type="file" name="sig_file"></label>
-        <br>            
+        <br>
         <input type = "submit" value="Upload">
     </form>
-</body>   
+</body>
 </html>
 
