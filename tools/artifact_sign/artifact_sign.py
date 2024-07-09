@@ -1,4 +1,4 @@
-"""Create a simple firmware sign and verify server."""
+"""Create a simple artifact sign and verify server."""
 
 # Copyright The Mbed TLS Contributors
 # SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
@@ -6,10 +6,10 @@
 
 # The script assumes that gpg agent caching is
 # disabled. The password provided by the user is used to confirm
-# that the user is authorised to sign the firmware.
+# that the user is authorised to sign the files.
 
 # Please configure gpg-agent with `max-cache-ttl 0` when deploying.
-# Run as MBEDTLS_FW_SIGN_SERVER_IP=X.X.X.X && python firmware_signer.py
+# Run as MBEDTLS_FW_SIGN_SERVER_IP=X.X.X.X && python artifact_sign.py
 
 import random
 import os
