@@ -2,7 +2,7 @@
 
 This document describes how to structure a contribution to Mbed TLS: [where](#repositories-and-branches), [what](#contents-of-a-contribution) and [what structure](#structure-of-a-contribution).
 
-For the process of submitting a contribution, please see the [review process guide for contributors](/reviews/review-for-contributors.md).
+For the process of submitting a contribution, please see the [review process guide for contributors](../../reviews/review-for-contributors.md).
 
 For guidance on the content of contributions, please see the [base contributing guidance](https://github.com/Mbed-TLS/mbedtls/blob/development/CONTRIBUTING.md)
 
@@ -40,7 +40,7 @@ When you add test data, please explain how it was produced, either in a comment 
 
 All new features should be tested.
 
-See the [test guidelines](/kb/development/test_suites.md) and a [test overview](/kb/generic/what-tests-and-checks-are-run-for-polarssl.md).
+See the [test guidelines](../development/test_suites.md) and a [test overview](../generic/what-tests-and-checks-are-run-for-polarssl.md).
 
 #### Non-regression tests
 
@@ -56,7 +56,7 @@ Here are a few cases where we don't expect a non-regression test:
 
 For basic unit tests, you can just compile the project and run `make test`. Note that this only tests the default configuration. The entry point to testing with many different configurations is [`tests/scripts/all.sh`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/scripts/all.sh).
 
-To run some tests, in particular TLS testing, you will need additional tooling. See the [Testing and CI guide](/kb/testing/testing-ci.md) for more information.
+To run some tests, in particular TLS testing, you will need additional tooling. See the [Testing and CI guide](../testing/testing-ci.md) for more information.
 
 Note that you do not need to run all the tests locally. You should run the tests that are most relevant to your contribution, for example:
 
