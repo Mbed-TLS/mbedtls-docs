@@ -284,6 +284,9 @@ def main() -> int:
                         help='Name of the new branch create in the framework repo')
     parser.add_argument('--dst-base-branch', default=None, required=False,
                         help='Base branch in the framework repo to make changes from')
+    parser.add_argument('--print-file-map', action='store_true',
+                        help='Don\'t perform the move, just print out'
+                             'the file map created (used for debugging)')
     args = parser.parse_args()
 
     file_map = {}
@@ -310,7 +313,11 @@ def main() -> int:
     for e in args.file_exceptions:
         file_mover.add_exception(e)
 
-    file_mover.move_files()
+    if args.print_file_map:
+        for k, v in file_mover._file_map.items():
+            print(f'{k}: {v}')
+    else:
+        file_mover.move_files()
 
     return 0
 
