@@ -20,7 +20,7 @@ If you are interested in collaborating on any of the roadmap features or other f
 * [PSA Crypto] TF-PSA-Crypto repository becomes live
 * [Mbed TLS] Mbed TLS uses TF-PSA-Crypto repository
 * [PSA Crypto] [PSA Client-Server Testing](<https://github.com/orgs/Mbed-TLS/projects/1#column-19851174>)
-* [PSA Crypto] [SPAKE2+ Implementation] (<https://github.com/orgs/Mbed-TLS/projects/16/views/1>)
+* [PSA Crypto] [SPAKE2+ Implementation](<https://github.com/orgs/Mbed-TLS/projects/16/views/1>)
 
 **2025 CQ1**
 * [Mbed TLS] Mbed TLS4.0 Alpha 
