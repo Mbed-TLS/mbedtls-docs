@@ -7,7 +7,7 @@ If you are interested in collaborating on any of the roadmap features or other f
 **2024 CQ3 (In Development)**
 * [Mbed TLS] [Mbed TL3.6.1](<https://github.com/orgs/Mbed-TLS/projects/1#column-19883226>)
 * [PSA Crypto] [PSA Crypto Repo split foundation1](<https://github.com/orgs/Mbed-TLS/projects/1#column-19914196>)
-* [PSA Crypto] [PSA Crypto Repo split foundation2]([<https://github.com/orgs/Mbed-TLS/projects/1#column-19914196>)
+* [PSA Crypto] [PSA Crypto Repo split foundation2]([https://github.com/orgs/Mbed-TLS/projects/1#column-19914196>)
 * [PSA Crypto] [PSA Crypto Repo split foundation3](<https://github.com/orgs/Mbed-TLS/projects/1#column-19868513>)
 * [Mbed TLS] [Mbed TLS4.0 Preparations1](<https://github.com/orgs/Mbed-TLS/projects/1#column-19890139>)
 * [Mbed TLS] [Mbed TLS4.0 Preparations2](<https://github.com/orgs/Mbed-TLS/projects/1#column-19886039>) 
