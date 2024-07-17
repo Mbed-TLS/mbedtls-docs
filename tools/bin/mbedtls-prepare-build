@@ -671,7 +671,21 @@ class MakefileMaker:
         """
         dirs = []
         submodule, base = self.get_file_submodule(filename)
-        subdirs = ['include', 'include/mbedtls', 'library']
+        # When there is a tf-psa-crypto submodule, we need the toplevel
+        # include in addition to the one in the subdmodule. The calls
+        # to list_source_files only return matches from the submodule if
+        # present.
+        subdirs = ['include']
+        for pattern in [
+                'include',
+                'drivers/*/include',
+                'library',
+                'core',
+                'drivers/*/library',
+                'drivers/*/src',
+        ]:
+            matches = self.list_source_files(self.options.source, pattern)
+            subdirs += [source.relative_path() for source in matches]
         if base.startswith('tests') or base.startswith('programs'):
             subdirs.append('tests')
             if self.source_exists('tests/include'):
@@ -683,11 +697,15 @@ class MakefileMaker:
             dirs.append(subdir)
             if submodule is not None:
                 dirs.append(os.path.join(submodule, subdir))
-            if submodule == '3rdparty/everest':
-                dirs.append(os.path.join(submodule, 'include/everest'))
-                if '/kremlib/' in filename:
-                    dirs.append(os.path.join(submodule, 'include/everest/kremlib'))
-                print(filename, dirs)
+        if submodule == '3rdparty/everest':
+            dirs.append(os.path.join(submodule, 'include/everest'))
+            if '/kremlib/' in filename:
+                dirs.append(os.path.join(submodule, 'include/everest/kremlib'))
+        elif '/everest/' in filename:
+            prefix = ''
+            if 'tf-psa-crypto/' in filename:
+                prefix = 'tf-psa-crypto/'
+            dirs.append(prefix + 'drivers/everest/include/everest')
         return dirs
 
     def include_path_options(self, filename: str) -> str:
@@ -826,14 +844,12 @@ class MakefileMaker:
                                '$(WARNING_CFLAGS)',
                                '$(COMMON_FLAGS)',
                                '$(CFLAGS)',
-                               ' '.join(['$({}_CFLAGS)'.format(section)]),
-                               # TODO: some files need extra -I (currently:
-                               # 3rdparty/everest/library/**/*.c need
-                               # 3rdparty/everest/include/everst and some
-                               # need .../kremlib as well). This is currently
-                               # handled in the include_path method, but
-                               # we don't call it here, only for a section
-                               # as a whole.
+                               '$({}_CFLAGS)'.format(section),
+                               # TODO: The section CFLAGS already contain some
+                               # -I options. But in the library, we need
+                               # extra -I options for some files (e.g. everest).
+                               # So we add partially redundant -I options here.
+                               self.include_path_options(c_path),
                                extra_flags.strip(),
                                '-o $@',
                                switch, c_path)],
@@ -953,7 +969,11 @@ class MakefileMaker:
                                      self.object_extension,
                                      self.shared_library_extension)])
         # Enumerate modules and emit the rules to build them
-        modules = self.list_source_files(self.options.source, 'library/*.c')
+        modules = self.list_source_files(self.options.source,
+                                         'core/*.c',
+                                         'drivers/*/*.c',
+                                         'drivers/*/*/*.c',
+                                         'library/*.c')
         for module in modules:
             self.object_target('LIBRARY', module)
         contents = collections.defaultdict(list)
@@ -1138,7 +1158,14 @@ class MakefileMaker:
                      for lib in libs]
         dash_l_libs = [self.dash_l_lib(lib) for lib in libs]
         if base == 'programs/test/dlopen':
-            object_deps.append('library/platform.o library/platform_util.o')
+            for base in ['platform', 'platform_util']:
+                for lib in ['library', 'drivers/builtin/src']:
+                    if self.source_exists(os.path.join(lib, base) + '.c'):
+                        object_deps.append(os.path.join(lib, base) + self.object_extension)
+                        break
+                    if self.source_exists(os.path.join('tf-psa-crypto', lib, base) + '.c'):
+                        object_deps.append(os.path.join(lib, base) + self.object_extension)
+                        break
         else:
             object_deps.append('$(test_crypto_objects)')
             if self.Library.X509 in libs:
@@ -1797,25 +1824,43 @@ class BuildTreeMaker:
 
     def run(self) -> None:
         """Go ahead and prepate the build tree."""
-        for subdir in ([['include', 'mbedtls'],
-                        ['library'],
-                        ['tests', 'src', 'drivers'],
-                        ['tests', 'src', 'test_helpers']] +
-                       [['programs', d] for d in self.programs_subdirs()]):
+        for subdir in (
+                [
+                    ['framework'],
+                    ['include', 'mbedtls'],
+                    ['library'],
+                    ['tests', 'src', 'drivers'],
+                    ['tests', 'src', 'test_helpers'],
+                ] +
+                [['programs', d] for d in self.programs_subdirs()]
+        ):
             self.make_subdir(subdir)
+        if os.path.exists(os.path.join(self.options.source, 'tf-psa-crypto')):
+            for subdir in [
+                    ['core'],
+                    ['drivers', 'builtin', 'src'],
+                    ['drivers', 'everest', 'library'],
+                    ['drivers', 'everest', 'library', 'kremlib'],
+                    ['drivers', 'everest', 'library', 'legacy'],
+                    ['drivers', 'p256-m', 'p256-m'],
+            ]:
+                self.make_subdir(subdir)
         source_link = os.path.join(self.options.dir, 'source')
         if not self.options.in_tree_build and not os.path.exists(source_link):
             os.symlink(self.source_path, source_link)
-        for link in [['include', 'psa'], # hack for psa_constant_names.py
-                     ['programs', 'test', 'zeroize.c'],
-                     ['scripts'],
-                     ['tests', 'configs'],
-                     ['tests', 'compat.sh'],
-                     ['tests', 'data_files'],
-                     ['tests', 'opt-testcases'],
-                     ['tests', 'scripts'],
-                     ['tests', 'ssl-opt.sh'],
-                     ['tf-psa-crypto']]:
+        for link in [
+                ['framework', 'data_files'],
+                ['include', 'psa'], # hack for psa_constant_names.py
+                ['programs', 'test', 'zeroize.c'],
+                ['scripts'],
+                ['tests', 'configs'],
+                ['tests', 'compat.sh'],
+                ['tests', 'data_files'],
+                ['tests', 'opt-testcases'],
+                ['tests', 'scripts'],
+                ['tests', 'ssl-opt.sh'],
+                ['tf-psa-crypto'],
+        ]:
             self.link_to_source_maybe(link)
         self.link_test_suites()
         self.prepare_source()
