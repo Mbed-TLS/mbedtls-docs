@@ -6,14 +6,14 @@ If you are interested in collaborating on any of the roadmap features or other f
 
 **2024 CQ3 (In Development)**
 * [Mbed TLS] [Mbed TL3.6.1](<https://github.com/orgs/Mbed-TLS/projects/1#column-19883226>)
-* [PSA Crypto] [PSA Crypto Repo split foundation1](<https://github.com/orgs/Mbed-TLS/projects/1#column-19914196>)
-* [PSA Crypto] [PSA Crypto Repo split foundation2]([https://github.com/orgs/Mbed-TLS/projects/1#column-19914196>)
-* [PSA Crypto] [PSA Crypto Repo split foundation3](<https://github.com/orgs/Mbed-TLS/projects/1#column-19868513>)
+* [PSA Crypto] [PSA Crypto Repo split Preparation-1](<https://github.com/orgs/Mbed-TLS/projects/1#column-19914196>)
+* [PSA Crypto] [PSA Crypto Repo split Preparation-2](https://github.com/orgs/Mbed-TLS/projects/1#column-19914196>)
+* [PSA Crypto] [PSA Crypto Repo split Preparation-3](<https://github.com/orgs/Mbed-TLS/projects/1#column-19868513>)
 * [Mbed TLS] [Mbed TLS4.0 Preparations1](<https://github.com/orgs/Mbed-TLS/projects/1#column-19890139>)
 * [Mbed TLS] [Mbed TLS4.0 Preparations2](<https://github.com/orgs/Mbed-TLS/projects/1#column-19886039>) 
 * [Mbed TLS] [Bignum Improvements](<https://github.com/orgs/Mbed-TLS/projects/1#column-19853826>)
 * [PSA Crypto] [PSA Client-Server Testing](<https://github.com/orgs/Mbed-TLS/projects/1#column-19851174>)
-* [PSA Crypto] [SPAKE2+ Implementation] (<https://github.com/orgs/Mbed-TLS/projects/16/views/1>)
+* [PSA Crypto] [SPAKE2+ Implementation](<https://github.com/orgs/Mbed-TLS/projects/16/views/1>)
 
 **2024 CQ4**
 * [Mbed TLS] Mbed TLS4.0 Preparations  
