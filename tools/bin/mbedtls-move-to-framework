@@ -237,6 +237,16 @@ class RepoFileMover:
             self.run_git(['-c', 'core.editor=/bin/true',
                           'merge', '--continue'])
 
+        # Edge case: when we are not renaming the files, their deletion in
+        # previous branches moved to the framework will take precedence without
+        # merge conficts. Treat these files specially and restore them.
+        for f in self._file_map:
+            if self._file_map[f] == f:
+                self.run_git(['checkout', self._tmp_framework_branch_name, '--', f])
+                self.run_git(['add', f])
+                self.run_git(['-c', 'core.editor=/bin/true',
+                              'commit', '--amend'])
+
     def move_files(self):
         os.chdir(self._source_repo)
 
