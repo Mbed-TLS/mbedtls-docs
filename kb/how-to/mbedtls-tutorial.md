@@ -188,7 +188,7 @@ Mbed TLS requires a good random number generator and its own SSL context and SSL
 
 The headers required for Mbed TLS:
 
-    #include "mbedtls/net.h"
+    #include "mbedtls/net_sockets.h"
     #include "mbedtls/ssl.h"
     #include "mbedtls/entropy.h"
     #include "mbedtls/ctr_drbg.h"
