@@ -47,8 +47,8 @@ Within the base64 encoded data, the following DER structure is present:
 
 ```
     RSAPublicKey ::= SEQUENCE {
-    modulus   INTEGER,  -- n
-    publicExponentINTEGER   -- e
+      modulus   INTEGER,  -- n
+      publicExponent    INTEGER   -- e
     }
 ```
 
@@ -96,10 +96,10 @@ Within the base64 encoded data, the following DER structure is present:
     RSAPrivateKey ::= SEQUENCE {
       version   Version,
       modulus   INTEGER,  -- n
-      publicExponentINTEGER,  -- e
+      publicExponent    INTEGER,  -- e
       privateExponent   INTEGER,  -- d
-      prime1INTEGER,  -- p
-      prime2INTEGER,  -- q
+      prime1    INTEGER,  -- p
+      prime2    INTEGER,  -- q
       exponent1 INTEGER,  -- d mod (p-1)
       exponent2 INTEGER,  -- d mod (q-1)
       coefficient   INTEGER,  -- (inverse of q) mod p
@@ -148,7 +148,7 @@ Within the base64 encoded data, the following DER structure is present:
 ```
     EncryptedPrivateKeyInfo ::= SEQUENCE {
       encryptionAlgorithm  EncryptionAlgorithmIdentifier,
-      encryptedDataEncryptedData
+      encryptedData    EncryptedData
     }
     
     EncryptionAlgorithmIdentifier ::= AlgorithmIdentifier
