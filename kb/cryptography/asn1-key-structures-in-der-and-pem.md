@@ -124,7 +124,7 @@ Within the base64 encoded data, the following DER structure is present:
     PrivateKeyInfo ::= SEQUENCE {
       version Version,
       algorithm   AlgorithmIdentifier,
-      PrivateKey  BIT STRING
+      PrivateKey  OCTET STRING
     }
     
     AlgorithmIdentifier ::= SEQUENCE {
@@ -133,7 +133,7 @@ Within the base64 encoded data, the following DER structure is present:
     }
 ```
 
-So for an RSA private key, the OID is `1.2.840.113549.1.1.1`, and the `RSAPrivateKey` is the `PrivateKey` key data bitstring.
+So for an RSA private key, the OID is `1.2.840.113549.1.1.1`, and the `RSAPrivateKey` is the `PrivateKey` key data octet string.
 
 The encrypted PKCS#8 encoded data starts and ends with the tags:
 
