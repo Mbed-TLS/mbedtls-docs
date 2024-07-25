@@ -67,8 +67,8 @@ PR="$1"
 SCOPE="$2"
 
 case "$PR" in
-    [0-9][0-9][0-9][0-9]) : ;;          # all Mbed TLS PRs are four digits for now
-    *) echo $usage 1>&2; exit 2 ;;      # doesn't look like a number
+    *[!0-9]*) echo >&2 "$0: $PR: pull request must be a number"; exit 2;;
+    *) : ;;                             # Must be a number
 esac
 
 did_something=0
