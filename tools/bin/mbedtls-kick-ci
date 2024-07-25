@@ -2,7 +2,7 @@
 
 set -eu
 
-script=$(basename $0)
+script=$(basename -- "$0")
 usage="$script: usage: $script PR_NUMBER [all|internal|internal-pr-head|internal-pr-merge|openci|...]"
 
 host_internal_ci=jenkins-mbedtls.oss.arm.com
@@ -54,13 +54,13 @@ kick_one () {
     did_something=1
 }
 
-if [ $# = 1 ]; then
-    set -- $1 all
+if [ $# -eq 1 ]; then
+    set -- "$1" all
 fi
 
 if [ $# != 2 ]; then
     echo $usage 1>&2
-    exit 255
+    exit 2
 fi
 
 PR="$1"
@@ -68,7 +68,7 @@ SCOPE="$2"
 
 case "$PR" in
     [0-9][0-9][0-9][0-9]) : ;;          # all Mbed TLS PRs are four digits for now
-    *) echo $usage 1>&2; exit 255 ;;    # doesn't look like a number
+    *) echo $usage 1>&2; exit 2 ;;      # doesn't look like a number
 esac
 
 did_something=0
@@ -99,5 +99,5 @@ esac
 
 if [ "$did_something" != 1 ]; then
     echo $usage 1>&2
-    exit 255
+    exit 2
 fi
