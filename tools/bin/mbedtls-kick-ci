@@ -8,7 +8,10 @@ usage="$script: usage: $script PR_NUMBER [all|internal|internal-pr-head|internal
 host_internal_ci=jenkins-mbedtls.oss.arm.com
 host_open_ci=mbedtls.trustedfirmware.org
 
-# ~/bin/jmt needs to contain the Jenkins user and API token for each CI, e.g.
+: ${XDG_CONFIG_HOME:=~/.config}
+
+# ~/.config/mbedtls/ci-tokens.sh needs to contain the Jenkins user and API
+# token for each CI, e.g.
 #
 # JENKINS_INTERNAL_USER_ID=user-id-for-internal-ci
 # JENKINS_INTERNAL_API_TOKEN=1111111111111111111111111111111111
@@ -22,11 +25,11 @@ host_open_ci=mbedtls.trustedfirmware.org
 #
 # To get an API token, choose Configure from your user page, click Add new Token,
 # give it a name, then click Generate. You get one chance to copy it, so do it
-# now! Then put it into ~/bin/jmt.
+# now! Then put it into ~/.config/mbedtls/ci-tokens.sh.
 #
-# Make sure ~/bin/jmt is chmod 0600.
+# Make sure ~/.config/mbedtls/ci-tokens.sh is chmod 0600.
 
-. ~/bin/jmt
+. "$XDG_CONFIG_HOME/mbedtls/ci-tokens.sh"
 
 kick_one () {
     # kick_one DESC USER TOKEN URL
