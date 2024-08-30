@@ -2,8 +2,8 @@
 
 **Title** | Stack buffer overflow in ECDSA signature conversion functions
 --------- | -----------------------------------------------------
-**CVE** | TODO
-**Date** | TODO
+**CVE** | CVE-2024-45158
+**Date** | 30 August 2024
 **Affects** | Mbed TLS 3.6.0
 **Severity** | High
 

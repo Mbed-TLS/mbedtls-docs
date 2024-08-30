@@ -2,8 +2,8 @@
 
 **Title** | CTR\_DRBG prioritized over HMAC\_DRBG as the PSA DRBG
 --------- | -----------------------------------------------------
-**CVE** | TODO
-**Date** | TODO
+**CVE** | CVE-2024-45157
+**Date** | 30 August 2024
 **Affects** | All versions of Mbed TLS since 2.26.0
 **Severity** | Low
 

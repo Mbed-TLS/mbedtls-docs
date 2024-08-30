@@ -2,8 +2,8 @@
 
 **Title** | Limited authentication bypass in TLS 1.3 optional client authentication
 --------- | -----------------------------------------------------
-**CVE** | TODO
-**Date** | TODO
+**CVE** | CVE-2024-45159
+**Date** | 30 August 2024
 **Affects** | Mbed TLS 3.2.0 to 3.6.0 included
 **Severity** | Medium
 
