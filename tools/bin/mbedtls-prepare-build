@@ -330,10 +330,23 @@ class OnTargetTestGenerator(TestGeneratorInterface):
         else:
             return 'framework/scripts/generate_test_code.py'
 
-    @staticmethod
-    def function_files(function_file: str, on_target=False) -> List[str]:
+    def helpers_dir(self, source_dir: str) -> str:
+        if os.path.exists(os.path.join(self.options.source,
+                                       source_dir,
+                                       'helpers.function')):
+            return source_dir
+        elif os.path.exists(os.path.join(self.options.source,
+                                         'tf-psa-crypto',
+                                         source_dir,
+                                         'helpers.function')):
+            # tf-psa-crypto transition
+            return 'tf-psa-crypto/' + source_dir
+        else:
+            raise Exception('Unable to locate test helpers for ' + source_dir)
+
+    def function_files(self, function_file: str, on_target=False) -> List[str]:
         source_dir = os.path.dirname(function_file)
-        return (['{}/{}.function'.format(source_dir, helper)
+        return (['{}/{}.function'.format(self.helpers_dir(source_dir), helper)
                  for helper in ['helpers', 'main_test',
                                 'target_test' if on_target else 'host_test']] +
                 [function_file])
@@ -341,13 +354,14 @@ class OnTargetTestGenerator(TestGeneratorInterface):
     def command(self, function_file: str, data_file: str) -> str:
         source_dir = os.path.dirname(function_file)
         suite_path = '$(SOURCE_DIR_FROM_TESTS)/' + source_dir
+        helpers_path = '$(SOURCE_DIR_FROM_TESTS)/' + self.helpers_dir(source_dir)
         return sjoin('$(PYTHON)',
                      '$(SOURCE_DIR_FROM_TESTS)/' + self.script(source_dir),
                      '-f $(SOURCE_DIR_FROM_TESTS)/' + function_file,
                      '-d $(SOURCE_DIR_FROM_TESTS)/' + data_file,
-                     '-t', suite_path + '/main_test.function',
-                     '-p', suite_path + '/host_test.function',
-                     '--helpers-file', suite_path + '/helpers.function',
+                     '-t', helpers_path + '/main_test.function',
+                     '-p', helpers_path + '/host_test.function',
+                     '--helpers-file', helpers_path + '/helpers.function',
                      '-s', suite_path,
                      '-o .')
 
