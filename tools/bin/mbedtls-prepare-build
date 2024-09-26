@@ -2029,6 +2029,16 @@ _preset_options = {
         CFLAGS='-Os',
         COMMON_FLAGS='-mthumb',
     ),
+    'iar-thumb': argparse.Namespace(
+        _help='Baremetal+ configuration built with IAR',
+        config_name='baremetal',
+        config_unset=['MBEDTLS_PLATFORM_FPRINTF_ALT',
+                      'MBEDTLS_PLATFORM_SETBUF_ALT'],
+        default_target='lib',
+        CC='iccarm',
+        CFLAGS='-Ohz --cpu_mode=thumb --cpu=Cortex-M0',
+        WARNING_CFLAGS='--warnings_are_errors',
+    ),
     'm0plus': argparse.Namespace(
         _help='Baremetal configuration for Cortex-M0+ target',
         # 'baremetal_size' only exists since shortly before mbedtls-3.2.0
