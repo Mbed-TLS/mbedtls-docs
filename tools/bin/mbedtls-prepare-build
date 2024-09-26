@@ -782,15 +782,19 @@ class MakefileMaker:
             #return True
         return False
 
+    INCLUDE_ONLY_C_FILES = frozenset([
+        'FStar_UInt128_extracted.c', # included by Hacl_Curve25519_joined.c
+        'FStar_UInt64_FStar_UInt32_FStar_UInt16_FStar_UInt8.c', # included by Hacl_Curve25519_joined.c
+        'Hacl_Curve25519.c', # included by Hacl_Curve25519_joined.c
+        'psa_constant_names_generated.c', # included by psa_constant_names.c
+        'ssl_test_common_source.c', # included by ssl_*2.c
+    ])
     def is_include_only(self, filename: str) -> bool:
         """Whether the specified C file is only meant for use in "#include" directive.
 
         Implemented with heuristics based on the name.
         """
-        return os.path.basename(filename) in {
-            'psa_constant_names_generated.c',
-            'ssl_test_common_source.c',
-        }
+        return os.path.basename(filename) in self.INCLUDE_ONLY_C_FILES
 
     def c_with_dependencies(self, c_file: str) -> List[str]:
         """A list of C dependencies in makefile syntax.
