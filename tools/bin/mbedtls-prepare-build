@@ -1237,11 +1237,11 @@ class MakefileMaker:
                     phony=True)
         self.add_clean('$(programs)')
         self.target('ssl-opt',
-                    ['programs/ssl/seedfile',
-                     'programs/ssl/ssl_client2$(EXEXT)',
-                     'programs/ssl/ssl_server2$(EXEXT)',
-                     'programs/test/query_compile_time_config$(EXEXT)',
+                    [program for program in executables
+                     if program.startswith('programs/ssl')] +
+                    ['programs/test/query_compile_time_config$(EXEXT)',
                      'programs/test/udp_proxy$(EXEXT)',
+                     'programs/ssl/seedfile',
                      'tests/seedfile'],
                     [],
                     help='Build the programs needed for ssl-opt.sh',
