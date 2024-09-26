@@ -1206,6 +1206,7 @@ class MakefileMaker:
                     clean=False,
                     short='LD    $@')
         executables.append(exe_file)
+        self.add_run_target(src.base())
 
     def programs_section(self) -> None:
         """Emit the makefile rules to build the sample programs."""
@@ -1235,8 +1236,6 @@ class MakefileMaker:
                     help='Build the sample programs.',
                     phony=True)
         self.add_clean('$(programs)')
-        self.add_run_target('programs/test/benchmark')
-        self.add_run_target('programs/test/selftest')
         self.target('ssl-opt',
                     ['programs/ssl/seedfile',
                      'programs/ssl/ssl_client2$(EXEXT)',
