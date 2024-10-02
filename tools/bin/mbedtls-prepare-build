@@ -969,6 +969,14 @@ class MakefileMaker:
                     all_sources[base] = src
         return sorted(all_sources.values())
 
+    def library_modules(self) -> Iterable[SourceFile]:
+        """Generate the list of C source files for the library."""
+        return self.list_source_files(self.options.source,
+                                      'core/*.c',
+                                      'drivers/*/*.c',
+                                      'drivers/*/*/*.c',
+                                      'library/*.c')
+
     def library_section(self) -> None:
         """Generate the section of the makefile for the library directory.
 
@@ -987,11 +995,7 @@ class MakefileMaker:
                                      self.object_extension,
                                      self.shared_library_extension)])
         # Enumerate modules and emit the rules to build them
-        modules = self.list_source_files(self.options.source,
-                                         'core/*.c',
-                                         'drivers/*/*.c',
-                                         'drivers/*/*/*.c',
-                                         'library/*.c')
+        modules = self.library_modules()
         for module in modules:
             self.object_target('LIBRARY', module)
         contents = collections.defaultdict(list)
