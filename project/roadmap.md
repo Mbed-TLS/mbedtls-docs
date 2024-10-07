@@ -44,7 +44,7 @@ If you are interested in collaborating on any of the roadmap features or other f
  * Post Quantum Crypto
 
 **Completed**
-* [Mbed TLS] [Mbed TL3.6.1]
+* [Mbed TLS] [Mbed TLS3.6.1]
 * [PSA Crypto] [PBKDF2 PSA SW Implementation]
 * [Mbed TLS] [3.6 LTS release]
 * [Mbed TLS] [TLS1.3 early data] 
