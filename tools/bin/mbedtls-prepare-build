@@ -1154,7 +1154,7 @@ class MakefileMaker:
 
     def list_source_files(self,
                           root: str,
-                          *patterns: str) -> Iterable[SourceFile]:
+                          *patterns: str) -> List[SourceFile]:
         """List the source files matching any of the specified patterns.
 
         Look for the specified wildcard pattern under all submodules, including
