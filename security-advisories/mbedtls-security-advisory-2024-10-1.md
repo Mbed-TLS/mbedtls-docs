@@ -3,7 +3,7 @@
 **Title** | Buffer underrun in pkwrite when writing an opaque key pair
 --------- | ----------------------------------------------------------
 **CVE** | CVE-2024-49195
-**Date** | 14 October 2024
+**Date** | 15 October 2024
 **Affects** | Mbed TLS 3.5.0 to 3.6.1 included
 **Severity** | HIGH
 
