@@ -1,12 +1,23 @@
 # Mbed TLS CI
 
-All code that is included in Mbed TLS must be contributed in the form of [pull requests on GitHub](https://github.com/Mbed-TLS/mbedtls/pulls) and undergoes some automated testing. This page describes the continuous integration jobs that run on every pull request.
+All code that is included in Mbed TLS must be contributed in the form of [pull requests on GitHub](https://github.com/Mbed-TLS/mbedtls/pulls) and undergoes some automated testing. This page describes the continuous integration (CI) jobs that run on every pull request.
+
+## Overview of the CI
+
+The following checks are reported on GitHub:
+
+* [DCO](#dco): check that all commit messages have a `Signed-off-by:` line. This must pass.
+* [readthedocs](#documentation-build): build the documentation for online browsing. This must pass.
+* [PR tests](#pr-tests): build and test the library in over 100 different configurations and platforms, as well as a few simple static checks. This must pass.
+* [Interface stability tests](#interface-stability-tests): compare some interfaces before and after the proposed changes. This has many false positives, and a pull request can be merged if this check fails, at the gatekeeper's discretion.
+
+The PR tests and the interface stability tests run on two hosts: “Internal CI” which is only accessible to Arm employees, and “TF OpenCI” which is publicly accessible. In principle, these run the same tests, thus if you are not an Arm employee (or even if you are) you can generally ignore the internal CI. At the time of writing, OpenCI is mandatory and internal CI is optional, so intermittent failures on the internal CI can be ignored.
 
 ## DCO
 
 This job checks that all commits have a `Signed-off-by:` line. The presence of this line indicates that the author of the commit certifies that the commit is covered by the [Developer Certificate of Origin](https://github.com/Mbed-TLS/mbedtls/blob/development/dco.txt) and contributed according to the [project license](https://github.com/Mbed-TLS/mbedtls/blob/development/README.md#License).
 
-All commits must have such a line, otherwise the commit cannot be accepted for legal reasons. As a temporary exception, commits from Arm employees or from other contributors who already have a contributor license agreement (CLA) can still be accepted, but please include a `Signed-off-by:` line in any new work.
+All commits must have such a line, otherwise the commit cannot be accepted for legal reasons. For Arm employees or other contributors who already have a contributor license agreement (CLA), we can legally accept contributions without a DCO, however depending on the repository it may be technically impossible to merge a pull request with a failed DCO check.
 
 If the DCO job fails, please reword all commit messages that are missing a `Signed-off-by:` line. If you have multiple commit messages to rewrite, [How to use git interactive rebase for signing off a series of commits](https://stackoverflow.com/questions/25570947/how-to-use-git-interactive-rebase-for-signing-off-a-series-of-commits) may help.
 
@@ -25,19 +36,19 @@ The Mbed TLS API documentation, rendered by Doxygen, is published [on readthedoc
 If the readthedocs build fails due to a transient failure (e.g. could not communicate to GitHub), or if the status is not reported back to GitHub due to a transient failure, you can re-trigger a new build in one of the following ways:
 
 * If you have a readthedocs account with suitable permissions, go to the build page (`https://readthedocs.org/projects/mbedtls-versioned/builds/<NUMBER>/`) and click “Rebuild this build”.
-* Close and reopen the pull request. This triggers a new readthedocs build, and preserves Jenkins results and GitHub review states.
+* Close and reopen the pull request. This triggers a new readthedocs build, and preserves PR tests results and GitHub review states.
 
-## PR-head and PR-merge jobs
+## PR tests
 
-The PR-//NNN//-head and PR-//NNN//-merge jobs run an extensive battery of tests on several platforms. The -head jobs run the tests on the tip of the submitted code. The -merge jobs run the tests on a merge with the target branch.
+The “PR tests” (pull request tests) check is the bulk of the CI. It runs an extensive battery of tests on many configurations and with several toolchains and platforms. The tests are hosted on Jenkins.
 
-The PR-head job runs in public-facing CI every time a pull request is updated.
+This check must pass on at least one of the CIs (OpenCI or Internal CI). Which one is required can vary over time (depending on which one is most reliable and most convenient).
 
-### High-level overview of the Jenkins test coverage
+### High-level overview of the PR tests
 
-The Jenkins PR job includes the following parts:
+The PR tests check includes the following parts:
 
-- Run `tests/scripts/all.sh` on Ubuntu 16.04 x86 (64-bit). This script includes:
+- Run most of `tests/scripts/all.sh`. The default platform is on Ubuntu 16.04 x86 (64-bit), but some components request a different platform. This script includes:
     - Some sanity checks.
     - Tests of the library in various configurations. The tests are mainly unit tests (`make test`), SSL feature tests (`tests/ssl-opt.sh`) and interoperability tests (`tests/compat.sh`).
     - Some cross compilation with GCC-arm, Arm Compiler 5 (`armcc`), Arm Compiler 6 (`armclang`) and MinGW (`i686-w64-mingw32-gcc`). These are only builds, not tests.
@@ -79,6 +90,10 @@ The `win32-msvc12_64` component is identical except that it runs `cmake . -G "Vi
 
 ## Tooling
 
+This section describes some of the tooling needed to reproduce CI failures locally. Typical Linux or Mac developer machines have most of the necessary tooling, but not all. Note in particular that the SSL test scripts are written with specific versions of GnuTLS and OpenSSL in mind, and tend to have spurious failure when run against different versions.
+
+For Linux-based tests, you can download Docker files with all the tools from the [mbedtls-test repository](https://github.com/Mbed-TLS/mbedtls-test/tree/main/resources/docker_files).
+
 ### Tooling for all.sh
 
 To run `tests/scripts/all.sh`, you need at least the following tools:
@@ -91,7 +106,7 @@ To run `tests/scripts/all.sh`, you need at least the following tools:
 * `gcc` or `clang` (depending on the component) for native builds.
 * GNU make or CMake (depending on the component).
 * Perl 5.
-* Python ≥3..
+* Python ≥3.6 (different branches may have different version requirements).
 * The commands `openssl`, `gnutls-cli` and `gnutls-serv` must be present in the `$PATH` to run any test component (otherwise `all.sh` refuses to start). If you don't have them, you can still run some test components that don't do any interoperability testing with `env OPENSSL=false GNUTLS_CLI=false GNUTLS_SERV=false tests/scripts/all.sh …`.
 
 ### Running `all.sh` on Ubuntu
