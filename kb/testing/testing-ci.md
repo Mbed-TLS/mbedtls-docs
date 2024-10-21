@@ -1,12 +1,25 @@
 # Mbed TLS CI
 
-All code that is included in Mbed TLS must be contributed in the form of [pull requests on GitHub](https://github.com/Mbed-TLS/mbedtls/pulls) and undergoes some automated testing. This page describes the continuous integration jobs that run on every pull request.
+All code that is included in Mbed TLS must be contributed in the form of [pull requests on GitHub](https://github.com/Mbed-TLS/mbedtls/pulls) and undergoes some automated testing. This page describes the continuous integration (CI) jobs that run on every pull request.
+
+For tips on investigating CI failures, see the [Mbed TLS CI failure FAQ](understanding-ci-failures.md).
+
+## Overview of the CI
+
+The following checks are reported on GitHub:
+
+* [DCO](#dco): check that all commit messages have a `Signed-off-by:` line. This must pass.
+* [readthedocs](#documentation-build): build the documentation for online browsing. This must pass.
+* [PR tests](#pr-tests): build and test the library in over 100 different configurations and platforms, as well as a few simple static checks. This must pass.
+* [Interface stability tests](#interface-stability-tests): compare some interfaces before and after the proposed changes. This has many false positives, and a pull request can be merged if this check fails, at the gatekeeper's discretion.
+
+The PR tests and the interface stability tests run on two hosts: “Internal CI” which is only accessible to Arm employees, and “TF OpenCI” which is publicly accessible. In principle, these run the same tests, thus if you are not an Arm employee (or even if you are) you can generally ignore the internal CI. At the time of writing, OpenCI is mandatory and internal CI is optional, so intermittent failures on the internal CI can be ignored.
 
 ## DCO
 
 This job checks that all commits have a `Signed-off-by:` line. The presence of this line indicates that the author of the commit certifies that the commit is covered by the [Developer Certificate of Origin](https://github.com/Mbed-TLS/mbedtls/blob/development/dco.txt) and contributed according to the [project license](https://github.com/Mbed-TLS/mbedtls/blob/development/README.md#License).
 
-All commits must have such a line, otherwise the commit cannot be accepted for legal reasons. As a temporary exception, commits from Arm employees or from other contributors who already have a contributor license agreement (CLA) can still be accepted, but please include a `Signed-off-by:` line in any new work.
+All commits must have such a line, otherwise the commit cannot be accepted for legal reasons. For Arm employees or other contributors who already have a contributor license agreement (CLA), we can legally accept contributions without a DCO, however depending on the repository it may be technically impossible to merge a pull request with a failed DCO check.
 
 If the DCO job fails, please reword all commit messages that are missing a `Signed-off-by:` line. If you have multiple commit messages to rewrite, [How to use git interactive rebase for signing off a series of commits](https://stackoverflow.com/questions/25570947/how-to-use-git-interactive-rebase-for-signing-off-a-series-of-commits) may help.
 
@@ -25,25 +38,26 @@ The Mbed TLS API documentation, rendered by Doxygen, is published [on readthedoc
 If the readthedocs build fails due to a transient failure (e.g. could not communicate to GitHub), or if the status is not reported back to GitHub due to a transient failure, you can re-trigger a new build in one of the following ways:
 
 * If you have a readthedocs account with suitable permissions, go to the build page (`https://readthedocs.org/projects/mbedtls-versioned/builds/<NUMBER>/`) and click “Rebuild this build”.
-* Close and reopen the pull request. This triggers a new readthedocs build, and preserves Jenkins results and GitHub review states.
+* Close and reopen the pull request. This triggers a new readthedocs build, and preserves PR tests results and GitHub review states.
 
-## PR-head and PR-merge jobs
+## PR tests
 
-The PR-//NNN//-head and PR-//NNN//-merge jobs run an extensive battery of tests on several platforms. The -head jobs run the tests on the tip of the submitted code. The -merge jobs run the tests on a merge with the target branch.
+The “PR tests” (pull request tests) check is the bulk of the CI. It runs an extensive battery of tests on many configurations and with several toolchains and platforms. The tests are hosted on Jenkins.
 
-The PR-head job runs in public-facing CI every time a pull request is updated.
+This check must pass on at least one of the CIs (OpenCI or Internal CI). Which one is required can vary over time (depending on which one is most reliable and most convenient).
 
-### High-level overview of the Jenkins test coverage
+### High-level overview of the PR tests
 
-The Jenkins PR job includes the following parts:
+The PR tests check includes the following parts:
 
-- Run `tests/scripts/all.sh` on Ubuntu 16.04 x86 (64-bit). This script includes:
+- Run most of `tests/scripts/all.sh`. The default platform is on Ubuntu 16.04 x86 (64-bit), but some components request a different platform. This script includes:
     - Some sanity checks.
     - Tests of the library in various configurations. The tests are mainly unit tests (`make test`), SSL feature tests (`tests/ssl-opt.sh`) and interoperability tests (`tests/compat.sh`).
     - Some cross compilation with GCC-arm, Arm Compiler 5 (`armcc`), Arm Compiler 6 (`armclang`) and MinGW (`i686-w64-mingw32-gcc`). These are only builds, not tests.
 - Run a subset of `tests/scripts/all.sh` on FreeBSD (amd64)
 - Build on Windows with MinGW and Visual Studio. We use the following Visual Studio versions:
     - Since Mbed TLS 2.19: VS 2013, 2015, 2017. As of January 2024, we expect to drop VS 2013 soon.
+- A final job called [outcome analysis](#outcome-analysis), which performs sanity checks on test coverage across builds in different configurations.
 
 The component names are:
 
@@ -77,7 +91,74 @@ programs\test\Debug\selftest.exe
 ```
 The `win32-msvc12_64` component is identical except that it runs `cmake . -G "Visual Studio 12 Win64"`.
 
+### Outcome analysis
+
+Each build and test job saves a list of test cases and PASS/SKIP/FAIL information. The outcome analysis job collects this information and performs sanity checks on it. The collected data is called the outcome file, which is available as an artifact called `outcomes.csv.xz` on Jenkins. For example, you can download the outcome analysis for the first test run of pull request \#9999 at
+```
+https://mbedtls.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-9999-head/1/artifact/outcomes.csv.xz
+```
+
+Note that the outcome file is very large: on Mbed TLS 3.6, it is about 60MB compressed and over 2GB uncompressed.
+
+The outcome file has a simple semicolon-separated format. The format is documented in [`docs/architecture/testing/test-framework.md`](https://github.com/Mbed-TLS/mbedtls/tree/development/docs/architecture/testing/test-framework.md#outcome-file).
+
+If outcome analysis reports a failure, the logs can't be seen directly on the default view of Jenkins, due to a known limitation of Jenkins's BlueOcean interface. They can be accessed from the classic “Pipeline Steps” view. For convenience, they are also provided as an artifact, e.g.
+```
+https://mbedtls.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-999-head/1/artifact/result-analysis-analyze_outcomes.log.xz
+```
+
+Outcome analysis contains two kinds of checks:
+
+* Every test case must be executed at least once.
+* Driver builds must run the same sets of test cases as the corresponding builtin-only build (if there is one).
+
+The script has a list of exceptions, which must be justified.
+
+## Interface stability tests
+
+The interface stability tests compare some aspects of the pull request's code with the code in the target branch. They run a script called `abi_check.py`, but their scope is broader than the name indicates:
+
+* [API comparison](#api-comparison) in the default configuration;
+* [ABI comparison](#abi-comparison) in the default configuration;
+* Storage format [test case preservation](#test-case-preservation);
+* Generated [test case preservation](#test-case-preservation).
+
+These tests have many false positives. Therefore, it is not mandatory for them to pass. If GitHub marks the checks as failed, please see the logs and verify whether the reported failures are acceptable.
+
+### API comparison
+
+The API comparison checks that every API element in a public header that exists on the target branch still exists and is compatible on the pull request branch. This check is performed in the default configuration. For example, if a function exists on the main branch, there must be a function of the same name in the same header with the same prototype on the target branch.
+
+The API must be preserved between minor versions of the library (e.g. Mbed TLS 3.4.x to Mbed TLS 3.5.0). It may only change in a major release (e.g. Mbed TLS 3.6.x to Mbed TLS 4.0.0).
+
+Some changes are not considered API breaks, as described [in `BRANCHES.md`](https://github.com/Mbed-TLS/mbedtls/blob/development/BRANCHES.md#backwards-compatibility-for-application-code). There are acceptable changes which the tool flags, such as:
+
+* Changes to private fields in structures (declared using `MBEDTLS_PRIVATE`).
+* Changes to functions and macros that do not have Doxygen documentation.
+* Changes to anything that is documented as experimental.
+
+### ABI comparison
+
+The ABI comparison checks that every symbol in a build in the default configuration of the target branch remains present in the target branch.
+
+The ABI must normally be preserved between patch releases of the library (e.g. Mbed TLS 3.6.0 to Mbed TLS 3.6.1). In particular, it should be preserved in long-time support (LTS) branches. The ABI may change in minor or major releases (e.g. Mbed TLS 3.5.x to 3.6.0, or 3.6.x to 4.0.0).
+
+There are acceptable changes which the tool flags, such as changes to undocumented functions that are only meant for use inside the library.
+
+### Test case preservation
+
+We check that certain sets of test cases are preserved.
+
+* Storage format tests: the goal is to ensure that new versions of the library can read persistent keys stored by a previous version. We maintain this compatibility even across major versions. If the storage format changes, we will change the storage format version number and provide an upgrade path.
+* Generated tests: the goal is to ensure that we don't lose coverage without noticing, for example if a change to a test generation script causes it to emit fewer tests than expected.
+
+The comparison is based on lines in `.data` files containing the function name and the arguments for a test case. There are acceptable changes which the tool flags, such as adding an argument to a test function, or (not applicable to storage format tests) changes to the test data which we consider acceptable in terms of coverage.
+
 ## Tooling
+
+This section describes some of the tooling needed to reproduce CI failures locally. Typical Linux or Mac developer machines have most of the necessary tooling, but not all. Note in particular that the SSL test scripts are written with specific versions of GnuTLS and OpenSSL in mind, and tend to have spurious failure when run against different versions.
+
+For Linux-based tests, you can download Docker files with all the tools from the [mbedtls-test repository](https://github.com/Mbed-TLS/mbedtls-test/tree/main/resources/docker_files).
 
 ### Tooling for all.sh
 
@@ -91,7 +172,7 @@ To run `tests/scripts/all.sh`, you need at least the following tools:
 * `gcc` or `clang` (depending on the component) for native builds.
 * GNU make or CMake (depending on the component).
 * Perl 5.
-* Python ≥3..
+* Python ≥3.6 (different branches may have different version requirements).
 * The commands `openssl`, `gnutls-cli` and `gnutls-serv` must be present in the `$PATH` to run any test component (otherwise `all.sh` refuses to start). If you don't have them, you can still run some test components that don't do any interoperability testing with `env OPENSSL=false GNUTLS_CLI=false GNUTLS_SERV=false tests/scripts/all.sh …`.
 
 ### Running `all.sh` on Ubuntu
