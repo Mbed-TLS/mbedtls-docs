@@ -561,9 +561,9 @@ class MakefileMaker:
     @staticmethod
     def _glob2re_repl(m: typing.Match[str]) -> str:
         if m.group(0) == '*':
-            return '[^/]*'
+            return r'[^/]*'
         elif m.group(0) == '?':
-            return '[^/]'
+            return r'[^/]'
         else:
             return '\\' + m.group(0)
     @classmethod
@@ -577,11 +577,11 @@ class MakefileMaker:
     def is_already_cleaned(self, name: str) -> bool:
         if not self.clean:
             return False
-        regex = ''.join(['\A(?:',
+        regex = ''.join([r'\A(?:',
                          '|'.join([self.glob2re(pattern)
                                    for patterns in self.clean
                                    for pattern in patterns.split()]),
-                         ')\Z'])
+                         r')\Z'])
         return re.match(regex, name) is not None
 
     def add_clean(self, *elements: str) -> None:
