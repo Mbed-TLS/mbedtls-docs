@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""Language server for Mbed TLS test files
+"""
+
+# Copyright The Mbed TLS Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import re
+import sys
+from pygls.server import LanguageServer
+from lsprotocol import types
+
+server = LanguageServer('mbedtls-test-server', 'v1')
+
+TEST_FUNCTION = re.compile(r'void (?P<fn_name>[a-zA-Z_][a-zA-Z0-9_]*)\(')
+
+@server.feature(types.TEXT_DOCUMENT_DEFINITION)
+def data_file_goto_definition(ls: LanguageServer, params: types.DefinitionParams):
+    # Get data file
+    data_file = ls.workspace.get_text_document(params.text_document.uri)
+
+    # Get function name under cursor (if there is one)
+    lookup_word = data_file.word_at_position(params.position)
+
+    print(f'Looking for word {lookup_word}', file=sys.stderr)
+
+    # Substitute '.data' for '.function' in extension to get equivalent function file
+    # TODO how to deal with generated data files?
+    function_file_uri = data_file.uri[:-5] + '.function'
+    function_file = ls.workspace.get_text_document(function_file_uri)
+
+    # Look through the function file to find a match
+    for n, line in enumerate(function_file.lines):
+        test_fn_match = TEST_FUNCTION.match(line)
+        if test_fn_match is not None:
+            test_fn_name = test_fn_match.group('fn_name')
+            if test_fn_name == lookup_word:
+                match_start = test_fn_match.start('fn_name')
+                match_end = test_fn_match.end('fn_name')
+
+                match_range = types.Range(
+                        start=types.Position(line=n, character=match_start),
+                        end=types.Position(line=n, character=match_end)
+                )
+
+                return types.Location(
+                        uri=function_file_uri,
+                        range=match_range
+                )
+
+    print(f'Word {lookup_word} not found', file=sys.stderr)
+
+if __name__ == "__main__":
+    server.start_io()
+
