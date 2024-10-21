@@ -55,6 +55,7 @@ The PR tests check includes the following parts:
 - Run a subset of `tests/scripts/all.sh` on FreeBSD (amd64)
 - Build on Windows with MinGW and Visual Studio. We use the following Visual Studio versions:
     - Since Mbed TLS 2.19: VS 2013, 2015, 2017. As of January 2024, we expect to drop VS 2013 soon.
+- A final job called [outcome analysis](#outcome-analysis), which performs sanity checks on test coverage across builds in different configurations.
 
 The component names are:
 
@@ -87,6 +88,29 @@ MSBuild ALL_BUILD.vcxproj
 programs\test\Debug\selftest.exe
 ```
 The `win32-msvc12_64` component is identical except that it runs `cmake . -G "Visual Studio 12 Win64"`.
+
+### Outcome analysis
+
+Each build and test job saves a list of test cases and PASS/SKIP/FAIL information. The outcome analysis job collects this information and performs sanity checks on it. The collected data is called the outcome file, which is available as an artifact called `outcomes.csv.xz` on Jenkins. For example, you can download the outcome analysis for the first test run of pull request \#9999 at
+```
+https://mbedtls.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-9999-head/1/artifact/outcomes.csv.xz
+```
+
+Note that the outcome file is very large: on Mbed TLS 3.6, it is about 60MB compressed and over 2GB uncompressed.
+
+The outcome file has a simple semicolon-separated format. The format is documented in [`docs/architecture/testing/test-framework.md`](https://github.com/Mbed-TLS/mbedtls/tree/development/docs/architecture/testing/test-framework.md#outcome-file).
+
+If outcome analysis reports a failure, the logs can't be seen directly on the default view of Jenkins, due to a known limitation of Jenkins's BlueOcean interface. They can be accessed from the classic “Pipeline Steps” view. For convenience, they are also provided as an artifact, e.g.
+```
+https://mbedtls.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-999-head/1/artifact/result-analysis-analyze_outcomes.log.xz
+```
+
+Outcome analysis contains two kinds of checks:
+
+* Every test case must be executed at least once.
+* Driver builds must run the same sets of test cases as the corresponding builtin-only build (if there is one).
+
+The script has a list of exceptions, which must be justified.
 
 ## Tooling
 
