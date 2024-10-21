@@ -11,7 +11,7 @@ If the PR tests fail, the status on GitHub is set to a string that lists failed 
 The default view on Jenkins unfortunately truncates job names. For more convenient access to the names and logs of failed components:
 
 1. Install the GreaseMonkey/TamperMonkey user script [JenkinsPipelineSteps](https://openuserjs.org/scripts/magnushakansson/JenkinsPipelineSteps).
-2. Go to the Jenkins “classic” view by clicking the ![Go to classic](jenkins-blueocean-go-to-classic.svg) icon near the top right, then follow the “Pipeline Steps” link in the left column.
+2. Go to the Jenkins “classic” view by clicking the ![Go to classic](jenkins-blueocean-go-to-classic.png) icon near the top right, then follow the “Pipeline Steps” link in the left column.
 
 Alternatively, you can extract the list of failed components from the list of failed test cases. See [“PR tests failed. Can I get a detailed list?”](#pr-tests-failed-can-i-get-a-detailed-list).
 
