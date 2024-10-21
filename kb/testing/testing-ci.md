@@ -2,6 +2,8 @@
 
 All code that is included in Mbed TLS must be contributed in the form of [pull requests on GitHub](https://github.com/Mbed-TLS/mbedtls/pulls) and undergoes some automated testing. This page describes the continuous integration (CI) jobs that run on every pull request.
 
+For tips on investigating CI failures, see the [Mbed TLS CI failure FAQ](understanding-ci-failures.md).
+
 ## Overview of the CI
 
 The following checks are reported on GitHub:
