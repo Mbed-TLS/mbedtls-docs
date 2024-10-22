@@ -34,6 +34,18 @@ class RepoFileMover:
     GIT_EXE = 'git'
     FRAMEWORK_DEFAULT_BASE_BRANCH = 'main'
 
+    FRAMEWORK_SIDE_TEMPLATE = '''Move files from into the framework
+
+# This will be the commit message for the commit in the framework
+# repository that adds the files that were moved.
+'''
+
+    MBEDTLS_SIDE_TEMPLATE = '''Move files out of Mbed TLS
+
+# This will be the commit message for the commit in the Mbed TLS
+# repository that removes the files that were moved.
+'''
+
     def __init__(self, source_repo: str, dest_repo: str,
                  source_branch_name: str, dest_branch_name: str,
                  file_map: Dict[str, str],
@@ -58,6 +70,14 @@ class RepoFileMover:
             kwargs['universal_newlines'] = True
         cmd = [self.GIT_EXE] + git_cmd
         return subprocess.check_output(cmd, **kwargs)
+
+    def run_git_interactive(self, git_cmd: List[str], **kwargs) -> int:
+        """Run a git command that may interact with the user and return
+        its return code."""
+        if 'universal_newlines' not in kwargs:
+            kwargs['universal_newlines'] = True
+        cmd = [self.GIT_EXE] + git_cmd
+        return subprocess.run(cmd, **kwargs).returncode
 
     def add_file_move(self, src_path: str, dst_path: str) -> None:
         """Move file at relative path src_path in the source repo to dst_path
@@ -117,6 +137,18 @@ class RepoFileMover:
             # Make all required directories
             os.makedirs(dirs, exist_ok=True)
 
+    def commit_interactively_with_template(self, commit_template: str,
+                                           *extra_flags) -> None:
+        template_name = 'commit-msg-template-{pid}'.format(pid=os.getpid())
+
+        with open(template_name, 'w') as template_file:
+            template_file.write(commit_template)
+
+        self.run_git_interactive(['commit', '-t', template_name] + list(extra_flags))
+
+        os.remove(template_name)
+
+
     def create_dest_repo_branch(self):
         """Create the branch containing the moved files only"""
 
@@ -149,8 +181,7 @@ class RepoFileMover:
                 self.run_git(['mv', f, self._file_map[f]])
 
         # Commit the result
-        commit_message = "Move some files to framework repository"
-        self.run_git(['commit', '-asm', commit_message])
+        self.commit_interactively_with_template(self.FRAMEWORK_SIDE_TEMPLATE, '-as')
 
     def create_src_repo_branch(self):
         """Create the branch deleting the moved files"""
@@ -167,8 +198,7 @@ class RepoFileMover:
                 self.run_git(['rm', f])
 
         # Commit the result
-        commit_message = "Move some files to framework repository"
-        self.run_git(['commit', '-asm', commit_message])
+        self.commit_interactively_with_template(self.MBEDTLS_SIDE_TEMPLATE, '-as')
 
     def resolve_deletion_conflicts(self):
         file_statuses = self.run_git(['status', '--porcelain'])
