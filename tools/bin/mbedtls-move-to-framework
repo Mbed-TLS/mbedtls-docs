@@ -34,16 +34,21 @@ class RepoFileMover:
     GIT_EXE = 'git'
     FRAMEWORK_DEFAULT_BASE_BRANCH = 'main'
 
-    FRAMEWORK_SIDE_TEMPLATE = '''Move files from into the framework
+    # Note that commit message templates must be comments only
+    # as git requires that the user edit the template before committing.
+    FRAMEWORK_SIDE_TEMPLATE = '''# Move files into the framework
 
-# This will be the commit message for the commit in the framework
-# repository that adds the files that were moved.
+# This will be the commit message for the commit that takes Mbed TLS
+# and removes everything except the moved files. This will then be
+# merged into a branch in the framework repository.
+
 '''
 
-    MBEDTLS_SIDE_TEMPLATE = '''Move files out of Mbed TLS
+    MBEDTLS_SIDE_TEMPLATE = '''# Move files out of Mbed TLS
 
 # This will be the commit message for the commit in the Mbed TLS
 # repository that removes the files that were moved.
+
 '''
 
     def __init__(self, source_repo: str, dest_repo: str,
@@ -148,6 +153,25 @@ class RepoFileMover:
 
         os.remove(template_name)
 
+    def commit_template_file_list_src(self) -> str:
+        template_file_msg = ('# The following files will be deleted'
+                             ' (moved to the framework):\n\n')
+        for src_repo_file in self._file_map.keys():
+            template_file_msg += '# {f}\n'.format(f=src_repo_file)
+
+        template_file_msg += '\n'
+
+        return template_file_msg
+
+    def commit_template_file_list_dst(self) -> str:
+        template_file_msg = ('# The following files will be added'
+                             ' (moved from Mbed TLS):\n\n')
+        for dst_repo_file in self._file_map.values():
+            template_file_msg += '# {f}\n'.format(f=dst_repo_file)
+
+        template_file_msg += '\n'
+
+        return template_file_msg
 
     def create_dest_repo_branch(self):
         """Create the branch containing the moved files only"""
@@ -181,7 +205,9 @@ class RepoFileMover:
                 self.run_git(['mv', f, self._file_map[f]])
 
         # Commit the result
-        self.commit_interactively_with_template(self.FRAMEWORK_SIDE_TEMPLATE, '-as')
+        self.commit_interactively_with_template(self.FRAMEWORK_SIDE_TEMPLATE
+                                                + self.commit_template_file_list_dst(),
+                                                '-as')
 
     def create_src_repo_branch(self):
         """Create the branch deleting the moved files"""
@@ -198,7 +224,9 @@ class RepoFileMover:
                 self.run_git(['rm', f])
 
         # Commit the result
-        self.commit_interactively_with_template(self.MBEDTLS_SIDE_TEMPLATE, '-as')
+        self.commit_interactively_with_template(self.MBEDTLS_SIDE_TEMPLATE
+                                                + self.commit_template_file_list_src(),
+                                                '-as')
 
     def resolve_deletion_conflicts(self):
         file_statuses = self.run_git(['status', '--porcelain'])
