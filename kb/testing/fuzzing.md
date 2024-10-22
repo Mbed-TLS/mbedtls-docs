@@ -99,7 +99,7 @@ See also [Generic building documentation](https://github.com/guidovranken/crypto
 
 * To run cryptofuzz for some randomized testing, just run `./cryptofuzz`.
 * To run a specific set of operations, pass the `--operations` option with a comma-separated list of operation names. The operation names match class names in [`cryptofuzz/operations.h`](https://github.com/guidovranken/cryptofuzz/blob/master/include/cryptofuzz/operations.h).
-* To restrict the set of algorithms, you can pass `digests`, `--ciphers`, `--curves` (all with a comma-separated list of names). For the list of available names, see `repository_tbl.h` (generated during the build) or [`gen_repository.py`](https://github.com/guidovranken/cryptofuzz/blob/master/gen_repository.py) (search for `Add( Digest("...") )`, `Add( Cipher("...") )`, `Add( ECC_Curve("...", ...) )`).
+* To restrict the set of algorithms, you can pass `--digests`, `--ciphers`, `--curves` (all with a comma-separated list of names). For the list of available names, see `repository_tbl.h` (generated during the build) or [`gen_repository.py`](https://github.com/guidovranken/cryptofuzz/blob/master/gen_repository.py) (search for `Add( Digest("...") )`, `Add( Cipher("...") )`, `Add( ECC_Curve("...", ...) )`).
 
 Example:
 ```
