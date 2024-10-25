@@ -281,17 +281,7 @@ def move_to_column_project_v2(item_node_id,
                 old_proj,
                 old_proj))
 
-
-if __name__ == "__main__":
-
-    # Do not proceed if an empty epic has not been created
-    label_matches = [n for n in projectv2_get_label_ids() if n["name"] == epic]
-
-    if not label_matches:
-        print(
-            "Error, please create an epic with name \"{}\" and re-run. ".format(epic))
-        sys.exit(1)
-
+def archive_project_v1(label_matches):
     # Extract the node_id if for the match
     column_node_id = label_matches[0]["id"]
 
@@ -328,3 +318,17 @@ if __name__ == "__main__":
     for pr_no, node_id in no_stat_isues.items():
         move_to_column_project_v2(node_id, column_node_id)
         print("Moving {} to {}".format(pr_no, epic))
+
+if __name__ == "__main__":
+
+    # Do not proceed if an empty epic has not been created
+    label_matches = [n for n in projectv2_get_label_ids() if n["name"] == epic]
+
+    if not label_matches:
+        print(
+            "Error, please create an epic with name \"{}\" and re-run. ".format(epic))
+        sys.exit(1)
+
+    archive_project_v1(label_matches)
+
+
