@@ -64,12 +64,12 @@ gh project --owner Mbed-TLS field-list 13
     Status                ProjectV2SingleSelectField  PVTSSF_lADOBcuPHc4AgPo7zgVai1o
 
 """
-projectv2_project_epics_for_mbedtls = "PVT_kwDOBcuPHc4AnF0W"
-projectv2_project_past_epics = "PVT_kwDOBcuPHc4AgPo7"
-projectv2_field_status = "PVTSSF_lADOBcuPHc4AgPo7zgVai1o"
-projectv2_field_owner = "Mbed-TLS"
-projectsv1_repo = "Mbed-TLS/mbedtls"
-projects_repo = projectsv1_repo
+project_epics_for_mbedtls = "PVT_kwDOBcuPHc4AnF0W"
+project_past_epics = "PVT_kwDOBcuPHc4AgPo7"
+project_field_status = "PVTSSF_lADOBcuPHc4AgPo7zgVai1o"
+project_field_owner = "Mbed-TLS"
+
+projects_repo = "Mbed-TLS/mbedtls"
 active_project = "EPICs for Mbed TLS"
 archive_project = "Past EPICs"
 archive_project_board_no = "13"
@@ -150,7 +150,7 @@ def github_querry(query, token=token):
                 request.status_code, query))
 
 
-def projectv2_get_label_ids(project_id=projectv2_project_past_epics):
+def project_get_label_ids(project_id=project_past_epics):
     """Use a gql querry to retrieve the node-ids for the column names of projectV2 """
 
     labels = []
@@ -162,22 +162,6 @@ def projectv2_get_label_ids(project_id=projectv2_project_past_epics):
 
 
 ####################### Github Cli Wrappers #########################
-def get_issues_prs_for_project_v1(issues=True,
-                                  from_date=closed_after_date,
-                                  count=max_entries,
-                                  repo=projectsv1_repo):
-    """ Retrieve a maximum n=count number issues or pull requests closed after a date """
-
-    cmd = ("gh {0} --repo {3} list -L {1} -s all --search \"is:{0} is:closed "
-           "closed:>{2}\"  --json 'number,projectCards'").format("issue" if issues else "pr",
-                                                                 count, from_date,
-                                                                 repo)
-    ret = do_shell_exec(cmd)
-    data = json.loads(ret.stdout)
-    data = [n for n in data if n["projectCards"]]
-    data = [{n["number"]: n["projectCards"]} for n in data]
-    return data
-
 def get_issues_prs_for_project(issues=True,
                                is_closed=True,
                                from_date=closed_after_date,
@@ -239,48 +223,11 @@ def get_epic_items(column_name, status="both", projectboard=active_project, repo
         output["prs"] += link_issues_pr_linked_to_epic(prs, column_name, projectboard)
     return output
 
-def get_issues_prs_for_name_for_project_v1(column_name,
-                                           project_name=active_project,
-                                           count=max_entries):
-    """ Retrieve all issues AND pull requests under a column of a projectv1 """
-
-    output = {"epic": column_name,
-              "issues": [], "prs": []}
-
-    issues = get_issues_prs_for_project_v1(count=count)
-
-    for n in issues:
-        for issue_num, issue_proj_list in n.items():
-            # An item can have multiple projects assosiated with it.
-            for issue_proj in issue_proj_list:
-                n_pname = issue_proj["project"]["name"]
-                n_cname = issue_proj["column"]["name"]
-                # Matches the expected project board
-                if n_pname == project_name and n_cname == column_name:
-                    output["issues"].append(str(issue_num))
-                else:
-                    continue
-
-    prs = get_issues_prs_for_project_v1(issues=False, count=count)
-    for n in prs:
-        for issue_num, issue_proj_list in n.items():
-            # An item can have multiple projects assosiated with it.
-            for issue_proj in issue_proj_list:
-                n_pname = issue_proj["project"]["name"]
-                n_cname = issue_proj["column"]["name"]
-                # Matches the expected project board
-                if n_pname == project_name and n_cname == column_name:
-                    output["prs"].append(str(issue_num))
-                else:
-                    continue
-    return output
-
-
-def get_no_status_issues_prs_for_project_v2(count=100):
+def get_no_status_issues_prs_for_project(count=100):
     """ Get the contents for the No Status Column in project v2 """
 
     cmd = "gh project item-list --owner {} {} -L {} --format json".format(
-        projectv2_field_owner, archive_project_board_no, count)
+        project_field_owner, archive_project_board_no, count)
 
     output = {}
     ret = do_shell_exec(cmd)
@@ -295,7 +242,7 @@ def get_no_status_issues_prs_for_project_v2(count=100):
     return output
 
 
-def move_issue_to_proj(issue, old_proj, new_proj, is_pr=False, repo=projectsv1_repo):
+def move_issue_to_proj(issue, old_proj, new_proj, is_pr=False, repo=projects_repo):
     """ Moves an issue across projects. It works across legacy and v2 projects """
 
     # Remove the issue from old project
@@ -324,10 +271,10 @@ def move_issue_to_proj(issue, old_proj, new_proj, is_pr=False, repo=projectsv1_r
                 ret.stderr))
 
 
-def move_to_column_project_v2(item_node_id,
+def move_to_column_project(item_node_id,
                               column_node_id,
-                              field_node_id=projectv2_field_status,
-                              project_node_id=projectv2_project_past_epics):
+                              field_node_id=project_field_status,
+                              project_node_id=project_past_epics):
     """ Move an issue/pr by its' node-id on a project v2 project """
     cmd = ("gh project item-edit --id {} --field-id {} --project-id {}  "
           "--single-select-option-id {}").format(item_node_id,
@@ -338,49 +285,11 @@ def move_to_column_project_v2(item_node_id,
     if not ret.success:
         print(
             "Failed to move issue {} sterr: {}".format(
-                issue,
-                old_proj,
-                old_proj))
+                item_node_id, ret.stderr))
 
-def archive_project_v1(label_matches):
-    # Extract the node_id if for the match
+def migrate_epic_to_archive(label_matches):
+    """"Contains logic required to move a project to the archives."""
     column_node_id = label_matches[0]["id"]
-
-    # Querry all the items (prs and issues)
-    epic_items = get_issues_prs_for_name_for_project_v1(epic)
-    epic_name = epic_items["epic"]
-    epic_issues = epic_items["issues"]
-    epic_prs = epic_items["prs"]
-
-    # Ask for user confirmation
-    print("Found the following items:")
-    print("\nEpic Name:", epic_name)
-    print("\nIssues")
-    pprint(epic_issues)
-    print("\nPRs")
-    pprint(epic_prs)
-
-    usr = input("Procceed with move? Y/N?")
-    if usr.lower() != "y":
-        print("Error, aborting on user request")
-        sys.exit(1)
-
-    # Move items to new project
-    for issue in epic_issues:
-        move_issue_to_proj(issue, active_project, archive_project)
-
-    for pr in epic_prs:
-        move_issue_to_proj(pr, active_project, archive_project, is_pr=True)
-
-    # Get the new items by the No Status collumn
-    no_stat_isues = get_no_status_issues_prs_for_project_v2()
-
-    # Move them to the matching epic
-    for pr_no, node_id in no_stat_isues.items():
-        move_to_column_project_v2(node_id, column_node_id)
-        print("Moving {} to {}".format(pr_no, epic))
-
-def archive_project_v2(label_matches):
     print(label_matches)
     epic_items = get_epic_items(epic)
     from pprint import pprint
@@ -409,23 +318,23 @@ def archive_project_v2(label_matches):
         move_issue_to_proj(pr, active_project, archive_project, is_pr=True)
 
     # Get the new items by the No Status collumn
-    no_stat_isues = get_no_status_issues_prs_for_project_v2()
+    no_stat_isues = get_no_status_issues_prs_for_project()
 
     # Move them to the matching epic
     for pr_no, node_id in no_stat_isues.items():
-        move_to_column_project_v2(node_id, column_node_id)
+        move_to_column_project(node_id, column_node_id)
         print("Moving {} to {}".format(pr_no, epic))
 
 if __name__ == "__main__":
 
     # Do not proceed if an empty epic has not been created
-    label_matches = [n for n in projectv2_get_label_ids() if n["name"] == epic]
+    label_matches = [n for n in project_get_label_ids() if n["name"] == epic]
 
     if not label_matches:
         print(
             "Error, please create an epic with name \"{}\" and re-run. ".format(epic))
         sys.exit(1)
 
-    archive_project_v2(label_matches)
+    migrate_epic_to_archive(label_matches)
 
 
