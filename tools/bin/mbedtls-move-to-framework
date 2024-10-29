@@ -53,7 +53,6 @@ class RepoFileMover:
 
     def __init__(self, source_repo: str, dest_repo: str,
                  source_branch_name: str, dest_branch_name: str,
-                 file_map: Dict[str, str],
                  dest_base_branch_name: Optional[str] = None):
         self._source_repo = os.path.abspath(source_repo)
         self._dest_repo = os.path.abspath(dest_repo)
@@ -67,7 +66,7 @@ class RepoFileMover:
         else:
             self._framework_base_branch_name = dest_base_branch_name
 
-        self._file_map = {os.path.normpath(k): os.path.normpath(v) for k, v in file_map.items()}
+        self._file_map = {}
 
     def run_git(self, git_cmd: List[str], **kwargs) -> str:
         """Run a git command and return its output."""
@@ -357,7 +356,9 @@ def main() -> int:
                              'the file map created (used for debugging)')
     args = parser.parse_args()
 
-    file_map = {}
+    file_mover = RepoFileMover(args.from_repo, args.to_repo,
+                               args.src_branch, args.dst_branch,
+                               args.dst_base_branch)
     for p in args.path:
         # If the name contains a colon it is a rename,
         # otherwise just a plain path.
@@ -368,15 +369,11 @@ def main() -> int:
                       file=sys.stderr)
                 return 1
 
-            file_map[rename[0]] = rename[1]
+            file_mover.add_file_move(rename[0], rename[1])
 
         else:
-            file_map[p] = p
+            file_mover.add_file_move(p, p)
 
-    file_mover = RepoFileMover(args.from_repo, args.to_repo,
-                               args.src_branch, args.dst_branch,
-                               file_map,
-                               args.dst_base_branch)
 
     for e in args.file_exceptions:
         file_mover.add_exception(e)
