@@ -87,7 +87,7 @@ class RepoFileMover:
     def add_file_move(self, src_path: str, dst_path: str) -> None:
         """Move file at relative path src_path in the source repo to dst_path
         in the destination repo"""
-        self._file_map[src_path] = dst_path
+        self._file_map[os.path.normpath(src_path)] = os.path.normpath(dst_path)
 
     def _path_parts(self, path: str) -> List[str]:
         return path.split(os.path.sep)
