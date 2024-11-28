@@ -94,12 +94,9 @@ class RepoFileMover:
     def _direct_children(self, dir_path: str) -> List[str]:
         """Get the direct children of a subdirectory (at least the ones
         that matter to git)"""
-        leaf_files = self.run_git(['ls-files', dir_path]).split()
-        path_len = len(self._path_parts(dir_path)) + 1
+        leaf_files = self.run_git(['-C', dir_path, 'ls-files']).split()
         direct_children = set([
-            os.path.join(
-                *self._path_parts(f)[:path_len]
-            )
+            self._path_parts(f)[0]
             for f in leaf_files
         ])
         return list(direct_children)
@@ -108,11 +105,12 @@ class RepoFileMover:
         """Expand a directory move into the moves of its children"""
         if dir_path in self._file_map:
             # Get the direct children of this directory
-            expanded_paths = self._direct_children(dir_path)
+            direct_children = self._direct_children(dir_path)
             # Make an equivalent mapping for each direct child
-            for path in expanded_paths:
-                self._file_map[path] = (self._file_map[dir_path]
-                                        + path[len(dir_path):])
+            for child in direct_children:
+                src_path = os.path.join(dir_path, child)
+                dst_path = os.path.join(self._file_map[dir_path], child)
+                self._file_map[src_path] = dst_path
             # Remove the mapping for the original directory, since we want
             # some files to remain behind in it.
             self._file_map.pop(dir_path, None)
