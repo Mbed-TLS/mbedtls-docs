@@ -113,7 +113,7 @@ class RepoFileMover:
                 self._file_map[src_path] = dst_path
             # Remove the mapping for the original directory, since we want
             # some files to remain behind in it.
-            self._file_map.pop(dir_path, None)
+            del self._file_map.pop[dir_path]
 
     def add_exception(self, src_path: str) -> None:
         path_components = self._path_parts(src_path)
@@ -129,11 +129,10 @@ class RepoFileMover:
         moving a given file or directory to it."""
 
         # Remove any trailing slashes
-        while path[-1] == os.sep:
-            path = path[:-1]
+        path = path.rstrip(os.sep)
 
         # Get the directory names
-        dirs, file = os.path.split(path)
+        dirs = os.path.dirname(path)
 
         if dirs != '':
             # Make all required directories
@@ -249,10 +248,8 @@ class RepoFileMover:
                     # We can't deal with multiple-modifications etc
                     return False
 
-            if status in files_by_status:
-                files_by_status[status].append(filename)
-            else:
-                files_by_status[status] = [filename]
+            files_by_status.setdefault(status, [])
+            files_by_status[status].append(filename)
 
         # Restore any deleted files
         if 'D' in files_by_status:
