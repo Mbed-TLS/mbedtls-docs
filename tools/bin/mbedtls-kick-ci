@@ -9,6 +9,8 @@ usage () {
 Usage: $0 PR_NUMBER [all|internal|internal-pr-head|internal-pr-merge|openci|...]
 Start the CI on a pull request.
 Use just the digits of the pull request number for a pull request in mbedtls.
+Use the prefix "f" (e.g. "${0##*/} f123") for a pull request
+in mbedtls-framework.
 Default job set: $DEFAULT_SCOPE
 EOF
 }
@@ -82,6 +84,9 @@ PR="$1"
 SCOPE="$2"
 
 case "$PR" in
+    f*) PR="${PR#f}"; SCOPE="framework-$SCOPE";;
+esac
+case "$PR" in
     *[!0-9]*) echo >&2 "$0: $PR: pull request must be a number"; exit 2;;
     *) : ;;                             # Must be a number
 esac
@@ -92,17 +97,24 @@ case "$SCOPE" in
     all|internal|internal-pr-head )
         kick_one internal-pr-head $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/mbed-tls-pr-head/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
         ;;
+    framework-all|framework-internal|framework-internal-pr-head )
+        kick_one framework-internal-pr-head $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/mbed-tls-framework-multibranch/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
+        ;;
 esac
 
 case $SCOPE in
     all|internal|internal-pr-merge)
         kick_one internal-pr-merge $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/mbed-tls-pr-merge/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
         ;;
+    # No merge job in mbedtls-framework
 esac
 
 case $SCOPE in
     all|openci|openci-pr-head)
         kick_one openci-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/mbed-tls-pr-head/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
+        ;;
+    framework-all|framework-openci|framework-openci-pr-head )
+        kick_one openci-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/mbed-tls-framework-multibranch/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
         ;;
 esac
 
@@ -110,6 +122,7 @@ case $SCOPE in
     all|openci|openci-pr-merge)
         kick_one openci-pr-merge $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/mbed-tls-pr-merge/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
         ;;
+    # No merge job in mbedtls-framework
 esac
 
 if [ "$did_something" != 1 ]; then
