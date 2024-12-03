@@ -2,8 +2,18 @@
 
 set -eu
 
+DEFAULT_SCOPE=all
+
+usage () {
+    cat <<EOF
+Usage: $0 PR_NUMBER [all|internal|internal-pr-head|internal-pr-merge|openci|...]
+Start the CI on a pull request.
+Use just the digits of the pull request number for a pull request in mbedtls.
+Default job set: $DEFAULT_SCOPE
+EOF
+}
+
 script=$(basename -- "$0")
-usage="$script: usage: $script PR_NUMBER [all|internal|internal-pr-head|internal-pr-merge|openci|...]"
 
 host_internal_ci=jenkins-mbedtls.oss.arm.com
 host_open_ci=mbedtls.trustedfirmware.org
@@ -54,12 +64,17 @@ kick_one () {
     did_something=1
 }
 
+if [ "$1" = "--help" ]; then
+    usage
+    exit
+fi
+
 if [ $# -eq 1 ]; then
-    set -- "$1" all
+    set -- "$1" "$DEFAULT_SCOPE"
 fi
 
 if [ $# != 2 ]; then
-    echo $usage 1>&2
+    usage >&2
     exit 2
 fi
 
@@ -98,6 +113,7 @@ case $SCOPE in
 esac
 
 if [ "$did_something" != 1 ]; then
-    echo $usage 1>&2
+    echo 1>&2 "$0: Found nothing to do."
+    usage 1>&2
     exit 2
 fi
