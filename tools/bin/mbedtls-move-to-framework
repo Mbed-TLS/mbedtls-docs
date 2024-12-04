@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Move files from the Mbed TLS repository to the framework repository.
+"""Move files from the Mbed TLS repository to the framework repository while
+perserving their git history.
 
-Invoke this script from a Git working directory with a branch of Mbed TLS.
+Note: This script requires a separate checkout of the framework repository,
+it cannot be used to move files from an Mbed TLS checkout to its internal
+framework.
 """
 
 # Copyright The Mbed TLS Contributors
