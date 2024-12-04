@@ -327,10 +327,10 @@ class RepoFileMover:
 def main() -> int:
     """Command line entry point."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path', action='append', nargs='?',
+    parser.add_argument('--path', action='extend', nargs=1,
                         help='Path to move, (colon-separate for renames)'
                              ' (e.g. "tests/scripts" or "tests/scripts:foo")')
-    parser.add_argument('--except', action='append', nargs='?',
+    parser.add_argument('--except', action='extend', nargs=1,
                         dest='file_exceptions',
                         default=[],
                         help='Exceptions to --path arguments'
