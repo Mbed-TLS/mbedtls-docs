@@ -354,6 +354,13 @@ def main() -> int:
                              'the file map created (used for debugging)')
     args = parser.parse_args()
 
+    # Check that the destination is not internal to the source
+    if os.path.samefile(os.path.join(args.from_repo, 'framework'),
+                        os.path.normpath(args.to_repo)):
+        print("Error: Can't move files to an internal framework repository."
+              " A separate checkout of the framework is required.")
+        return 1
+
     file_mover = RepoFileMover(args.from_repo, args.to_repo,
                                args.src_branch, args.dst_branch,
                                args.dst_base_branch)
