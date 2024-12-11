@@ -44,6 +44,7 @@ class Archiver:
             output_dir: Optional[str] = None,
             run_after: Optional[str] = None,
             run_before: Optional[str] = None,
+            skip_make: bool = False,
             **kwargs
     ) -> None:
         """Configure an archiver for generated files.
@@ -52,11 +53,13 @@ class Archiver:
         `output_dir`: parent directory for the per-revision directories.
         `run_before`: shell command to run before ``make``.
         `run_after`: shell command to run after ``make``.
+        `skip_make`: if specified and true, don't run ``make``.
         """
         self.build_dir = build_dir if build_dir is not None else os.curdir
         self.output_dir = output_dir if output_dir is not None else os.curdir
         self.run_before = run_before
         self.run_after = run_after
+        self.skip_make = skip_make
         self.prepare()
 
     def prepare(self) -> None:
@@ -85,8 +88,9 @@ class Archiver:
         subprocess.check_call(['git', 'checkout', revision])
         if self.run_before:
             subprocess.check_call(self.run_before, shell=True)
-        subprocess.check_call(['make'] + files,
-                              cwd=self.build_dir)
+        if not self.skip_make:
+            subprocess.check_call(['make'] + files,
+                                  cwd=self.build_dir)
         for filename in files:
             target_dir = os.path.join(self.output_dir,
                                       target_prefix + revision,
@@ -142,7 +146,7 @@ def main() -> None:
     """Command line entry point."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--build-dir', '-b', metavar='DIR',
-                        help='Run `make` in DIR')
+                        help='Run `make` and collect files in DIR')
     parser.add_argument('--number-from', '-f', metavar='NUM',
                         type=int, default=0,
                         help='Count revisions from NUM (default 0)')
@@ -152,6 +156,9 @@ def main() -> None:
                         help='Shell command to run after each build')
     parser.add_argument('--run-before', '-r', metavar='CMD',
                         help='Shell command to run before each build')
+    parser.add_argument('--skip-make',
+                        action='store_true',
+                        help='Do not run `make` (rely on -r to build the files)')
     parser.add_argument('revisions', metavar='REVISIONS',
                         help='Comma/blank-separated list of Git revisions or ranges (see gitrevisions(7))')
     parser.add_argument('files', metavar='FILE', nargs='*',
