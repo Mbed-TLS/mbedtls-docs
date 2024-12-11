@@ -44,6 +44,7 @@ class Archiver:
             output_dir: Optional[str] = None,
             run_after: Optional[str] = None,
             run_before: Optional[str] = None,
+            **kwargs
     ) -> None:
         """Configure an archiver for generated files.
 
@@ -72,7 +73,10 @@ class Archiver:
         """Restore the working directory."""
         subprocess.check_call(['git', 'checkout', self.initial_revision])
 
-    def archive_revision(self, revision: str, files: List[str]) -> None:
+    def archive_revision(self,
+                         target_prefix: str,
+                         revision: str,
+                         files: List[str]) -> None:
         """Archive generated files for a given revision.
 
         `revision`: Git revision to check out.
@@ -85,10 +89,10 @@ class Archiver:
                               cwd=self.build_dir)
         for filename in files:
             target_dir = os.path.join(self.output_dir,
-                                      revision,
+                                      target_prefix + revision,
                                       os.path.dirname(filename))
             os.makedirs(target_dir, exist_ok=True)
-            shutil.copy2(filename, target_dir)
+            shutil.copy2(os.path.join(self.build_dir, filename), target_dir)
         if self.run_after:
             subprocess.check_call(self.run_after, shell=True)
 
@@ -98,21 +102,37 @@ class Archiver:
         If revision_or_range is a single revision, return it in a one-element
         list. Otherwise return the list of commits in that range.
         """
-        return subprocess.check_output(
-            ['git', 'rev-list', '--no-walk', revision_or_range]
-        ).decode('ascii').split()
+        subsequent = []
+        m = re.match(r'(.*)\.\.', revision_or_range)
+        if m:
+            subsequent = subprocess.check_output(
+                ['git', 'rev-list', '--no-walk', revision_or_range]
+            ).decode('ascii').split()
+            subsequent.reverse()
+            first_name = m.group(1)
+        else:
+            first_name = revision_or_range
+        first_sha = subprocess.check_output(
+                ['git', 'rev-parse', first_name]
+            ).decode('ascii').rstrip()
+        return [first_sha] + subsequent
 
-    def archive_revisions(self, revision_range: str, files: List[str]) -> None:
+    def archive_revisions(self,
+                          starting_number: int,
+                          revision_range: str,
+                          files: List[str]) -> None:
         """Archive generated files for a given revision range.
 
+        `starting_number`: number used to name the directory for the first revision.
         `revision`: Git revision range to check out.
         `files`: list of files to archive.
         """
         self.prepare()
         try:
             revisions = self.list_revisions(revision_range)
-            for revision in revisions:
-                self.archive_revision(revision, files)
+            prefix_format = '{:0' + str(len(str(len(revisions) - 1))) + '}-'
+            for n, revision in enumerate(revisions, starting_number):
+                self.archive_revision(prefix_format.format(n), revision, files)
         finally:
             self.done()
 
@@ -123,6 +143,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--build-dir', '-b', metavar='DIR',
                         help='Run `make` in DIR')
+    parser.add_argument('--number-from', '-f', metavar='NUM',
+                        type=int, default=0,
+                        help='Count revisions from NUM (default 0)')
     parser.add_argument('--output-dir', '-o', metavar='DIR',
                         help='Put output directories under DIR')
     parser.add_argument('--run-after', '-R', metavar='CMD',
@@ -140,7 +163,7 @@ def main() -> None:
     del options.files
     archiver = Archiver(**vars(options))
     for revision_range in revision_ranges:
-        archiver.archive_revisions(revision_range, files)
+        archiver.archive_revisions(options.number_from, revision_range, files)
 
 if __name__ == '__main__':
     main()
