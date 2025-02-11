@@ -5,7 +5,7 @@
 If you are interested in collaborating on any of the roadmap features or other features in the project, please mail [Mbed TLS](https://lists.trustedfirmware.org/mailman/listinfo/mbed-tls) or [PSA Crypto](https://lists.trustedfirmware.org/mailman/listinfo/psa-crypto) mailing lists.
 
 **2025 CQ1 (In Development)**
-* [Mbed TLS] Mbed TL3.6.3 Release 
+* [Mbed TLS] Mbed TLS 3.6.3 Release 
 * [Mbed TLS4.0] PSA crypto RNG support - Detailed Investigation
 * [Mbed TLS4.0] Make low level APIs internal - Detailed Investigation
 * [Mbed TLS4.0] Remove legacy types from public non-PSA interfaces - Detailed Investigation
@@ -45,13 +45,10 @@ If you are interested in collaborating on any of the roadmap features or other f
 
 
 **Completed**
-<<<<<<< HEAD
 * [PSA Crypto] TF-PSACrypto repository becomes live
 * [Mbed TLS] Mbed TLS uses PSA Crypto repository 
 * [Mbed TLS] [Mbed TL3.6.1, 3.6.2]
-=======
 * [Mbed TLS] [Mbed TLS3.6.1]
->>>>>>> 2ff523165f18e2fcf2be7f8fa954b6228ed98634
 * [PSA Crypto] [PBKDF2 PSA SW Implementation]
 * [Mbed TLS] [3.6 LTS release]
 * [Mbed TLS] [TLS1.3 early data] 
