@@ -4,32 +4,33 @@
 
 If you are interested in collaborating on any of the roadmap features or other features in the project, please mail [Mbed TLS](https://lists.trustedfirmware.org/mailman/listinfo/mbed-tls) or [PSA Crypto](https://lists.trustedfirmware.org/mailman/listinfo/psa-crypto) mailing lists.
 
-**2024 CQ4 (In Development)**
-* [PSA Crypto] TF-PSACrypto repository becomes live
-* [Mbed TLS] Mbed TLS uses PSA Crypto repository
-* [PSA Crypto] [PSA Crypto Repo split](<https://github.com/orgs/Mbed-TLS/projects/18/views/1>)
-* [PSA Crypto] [Framework for PSA Crypto Repo split](<https://github.com/orgs/Mbed-TLS/projects/18/views/1>)
-* [PSA Crypto] [Configuration Split for PSA Crypto Repo split](<https://github.com/orgs/Mbed-TLS/projects/18/views/1>)
-* [Mbed TLS] [Mbed TLS4.0 - PSA Interruptible ECC](<https://github.com/orgs/Mbed-TLS/projects/18/views/1>)
-* [Mbed TLS] [Mbed TLS4.0 - Test cases not executed](<https://github.com/orgs/Mbed-TLS/projects/18/views/1>) 
-* [Mbed TLS] [Mbed TLS4.0 - Investigate removals and deprecations](<https://github.com/orgs/Mbed-TLS/projects/18/views/1>)
-* [Mbed TLS] [Mbed TLS4.0 - PSA Crypto Always ON]<https://github.com/orgs/Mbed-TLS/projects/15/views/3>
-
-
-**2025 CQ1**
-* [Mbed TLS] Mbed TLS4.0 Alpha release   
-* [PSA Crypto] [SPAKE2+ Implementation](<https://github.com/orgs/Mbed-TLS/projects/16/views/1>)
+**2025 CQ1 (In Development)**
+* [Mbed TLS] Mbed TL3.6.3 Release 
+* [Mbed TLS4.0] PSA crypto RNG support - Detailed Investigation
+* [Mbed TLS4.0] Make low level APIs internal - Detailed Investigation
+* [Mbed TLS4.0] Remove legacy types from public non-PSA interfaces - Detailed Investigation
+* [Mbed TLS4.0] Remove legacy types
+* [Mbed TLS4.0] Remove TLS cipher suites 
+* [PSACrypto] TF-PSACrypto CI Improvements 
 
 **2025 CQ2**
-* [Mbed TLS] Mbed TLS4.0 Alpha 
+* [Mbed TLS] Mbed TLS4.0, TF-PSACrypto1.0 Beta release (Experimental Pipecleaning release for feedback)    
+
+
+**2025 CQ3**
+* [Mbed TLS] Mbed TLS4.0, TF-PSACrypto1.0 release
 * [PSA Crypto] PSA driver – Handle Opaque Persistent Key in Secure Element - Implementation
+* [PSA Crypto] [SPAKE2+ Implementation]
  
 **Future**
- * [Mbed TLS] [Bignum Improvements](<https://github.com/orgs/Mbed-TLS/projects/1#column-19853826>)
- * [PSA Crypto] [PSA Client-Server Testing](<https://github.com/orgs/Mbed-TLS/projects/1#column-19851174>) 
+ * [Mbed TLS4.0] Mbed TLS 4.x API Consolidation 
+ * [PSA Crypto] Memory Optimizations (code size)
+ * Post Quantum Crypto
+ * MbedTLS,TF-PSACrypto - Next LTS release 
+ * [Mbed TLS] [Bignum Improvements]
+ * [PSA Crypto] [PSA Client-Server Testing] 
  * PSA Crypto restartable sign enhancements
  * Multi-threading perf. improvements, testing
- * [PSA Crypto] Memory Optimizations (code size)
  * [Mbed TLS] [PSA Crypto 1.1 compliance]
  * [PSA Crypto] [Extended PSA Crypto v1.0 spec compliance]
  * [Mbed TLS] [TLS1.3 Continued]
@@ -41,10 +42,16 @@ If you are interested in collaborating on any of the roadmap features or other f
  * [PSA Crypto] Clean up and Stabilization 
  * DTLS1.3 
  * [Mbed TLS] [PKCS7 Generation]
- * Post Quantum Crypto
+
 
 **Completed**
+<<<<<<< HEAD
+* [PSA Crypto] TF-PSACrypto repository becomes live
+* [Mbed TLS] Mbed TLS uses PSA Crypto repository 
+* [Mbed TLS] [Mbed TL3.6.1, 3.6.2]
+=======
 * [Mbed TLS] [Mbed TLS3.6.1]
+>>>>>>> 2ff523165f18e2fcf2be7f8fa954b6228ed98634
 * [PSA Crypto] [PBKDF2 PSA SW Implementation]
 * [Mbed TLS] [3.6 LTS release]
 * [Mbed TLS] [TLS1.3 early data] 
