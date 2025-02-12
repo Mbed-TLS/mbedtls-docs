@@ -6,11 +6,21 @@ DEFAULT_SCOPE=all
 
 usage () {
     cat <<EOF
-Usage: $0 PR_NUMBER [all|internal|internal-pr-head|internal-pr-merge|openci|...]
+Usage: $0 [PREFIX]NUMBER [all|internal|internal-pr-head|internal-pr-merge|openci|...]
 Start the CI on a pull request.
-Use just the digits of the pull request number for a pull request in mbedtls.
-Use the prefix "f" (e.g. "${0##*/} f123") for a pull request
-in mbedtls-framework.
+
+The prefix indicates the repository:
+    <empty> mbedtls
+    c       TF-PSA-Crypto
+    f       mbedtls-framework
+    m       mbedtls
+
+Examples:
+  $0 c123 openci
+    Run OpenCI (head and merge) on https://github.com/Mbed-TLS/TF-PSA-Crypto/pull/123
+  $0 123 internal-pr-head openci-pr-head
+    Run the pr-head job on both CIs on https://github.com/Mbed-TLS/mbedtls/pull/123
+
 Default job set: $DEFAULT_SCOPE
 EOF
 }
@@ -81,10 +91,26 @@ if [ $# != 2 ]; then
 fi
 
 PR="$1"
+HEAD_JOB=
+MERGE_JOB=
 SCOPE="$2"
 
 case "$PR" in
-    f*) PR="${PR#f}"; SCOPE="framework-$SCOPE";;
+    c*)
+        PR="${PR#?}"
+        HEAD_JOB="mbed-tls-tf-psa-crypto-multibranch"
+        MERGE_JOB=$HEAD_JOB
+        ;;
+    f*)
+        PR="${PR#?}"
+        HEAD_JOB="mbed-tls-framework-multibranch"
+        # No merge job in the framework
+        ;;
+    m*|[0-9]*)
+        PR="${PR#?}"
+        HEAD_JOB="mbed-tls-pr-head"
+        MERGE_JOB="mbed-tls-pr-merge"
+        ;;
 esac
 case "$PR" in
     *[!0-9]*) echo >&2 "$0: $PR: pull request must be a number"; exit 2;;
@@ -95,35 +121,31 @@ did_something=0
 
 case "$SCOPE" in
     all|internal|internal-pr-head )
-        kick_one internal-pr-head $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/mbed-tls-pr-head/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
-        ;;
-    framework-all|framework-internal|framework-internal-pr-head )
-        kick_one framework-internal-pr-head $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/mbed-tls-framework-multibranch/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
+        kick_one internal-pr-head $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
         ;;
 esac
 
-case $SCOPE in
-    all|internal|internal-pr-merge)
-        kick_one internal-pr-merge $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/mbed-tls-pr-merge/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
-        ;;
-    # No merge job in mbedtls-framework
-esac
+if [ -n "$MERGE_JOB" ]; then
+    case $SCOPE in
+        all|internal|internal-pr-merge)
+            kick_one internal-pr-merge $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
+            ;;
+    esac
+fi
 
 case $SCOPE in
     all|openci|openci-pr-head)
-        kick_one openci-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/mbed-tls-pr-head/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
-        ;;
-    framework-all|framework-openci|framework-openci-pr-head )
-        kick_one openci-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/mbed-tls-framework-multibranch/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
+        kick_one openci-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
         ;;
 esac
 
-case $SCOPE in
-    all|openci|openci-pr-merge)
-        kick_one openci-pr-merge $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/mbed-tls-pr-merge/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
-        ;;
-    # No merge job in mbedtls-framework
-esac
+if [ -n "$MERGE_JOB" ]; then
+    case $SCOPE in
+        all|openci|openci-pr-merge)
+            kick_one openci-pr-merge $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
+            ;;
+    esac
+fi
 
 if [ "$did_something" != 1 ]; then
     echo 1>&2 "$0: Found nothing to do."
