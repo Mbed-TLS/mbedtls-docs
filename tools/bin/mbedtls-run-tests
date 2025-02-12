@@ -12,12 +12,12 @@ import os
 import re
 import subprocess
 import tempfile
-
+import typing
 
 class TestCaseFilter:
     """Test case filter."""
 
-    def __init__(self, options):
+    def __init__(self, options: argparse.Namespace) -> None:
         """Set up a test case filter.
 
         See `main` for what options are valid.
@@ -44,7 +44,7 @@ class TestCaseFilter:
                 not re.match(self.exclude, description))
 
 
-def extract_description(stanza):
+def extract_description(stanza: str) -> typing.Optional[str]:
     """Extract the description from a .data stanza."""
     m = re.match(r'(?:\n|#[^\n]*\n)*([^#\n][^\n]*)\n', stanza + '\n')
     if m:
@@ -52,7 +52,9 @@ def extract_description(stanza):
     else:
         return None
 
-def filter_test_cases(all_datax, tcf, temp_datax):
+def filter_test_cases(all_datax: str,
+                      tcf: TestCaseFilter,
+                      temp_datax: typing.IO[bytes]) -> None:
     """Filter test cases.
 
     Filter test cases from datax_file based on their description according
@@ -71,7 +73,12 @@ def filter_test_cases(all_datax, tcf, temp_datax):
             temp_datax.write(line)
     temp_datax.flush()
 
-def run_exe(keep_temp, precommand, exe, extra_options, all_datax, tcf):
+def run_exe(keep_temp: bool,
+            precommand: typing.List[str],
+            exe: str,
+            extra_options: typing.List[str],
+            all_datax: str,
+            tcf: TestCaseFilter) -> int:
     """Run one Mbed TLS test suites based on the specified options.
 
     Return the subprocess's exit status (should be 0 for success, 1 for
@@ -95,7 +102,7 @@ def run_exe(keep_temp, precommand, exe, extra_options, all_datax, tcf):
         outcome = subprocess.run(cmd, cwd=directory)
     return outcome.returncode
 
-def find_data_file(exe):
+def find_data_file(exe: str) -> str:
     """Return the .datax file for the specified test suite executable."""
     directory = os.path.dirname(exe)
     basename = os.path.basename(exe)
@@ -109,7 +116,7 @@ def find_data_file(exe):
     else:
         raise Exception('.datax file not found for ' + exe)
 
-def run(options):
+def run(options: argparse.Namespace) -> int:
     """Run Mbed TLS test suites based on the specified options.
 
     See `main` for what options are valid.
@@ -131,7 +138,7 @@ def run(options):
             global_status = max(global_status, 120)
     return global_status
 
-def main():
+def main() -> None:
     """Process the command line and run Mbed TLS tests."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--command', '-c',
