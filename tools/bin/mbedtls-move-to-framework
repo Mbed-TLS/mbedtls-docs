@@ -1,0 +1,395 @@
+#!/usr/bin/env python3
+"""Move files from the Mbed TLS repository to the framework repository while
+perserving their git history.
+
+Note: This script requires a separate checkout of the framework repository,
+it cannot be used to move files from an Mbed TLS checkout to its internal
+framework.
+"""
+
+# Copyright The Mbed TLS Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import argparse
+import os
+import pathlib
+import re
+import subprocess
+import sys
+from typing import List, Optional, Tuple, Dict
+
+
+class RepoFileMover:
+    """Move files between repos while retaining history."""
+
+    GIT_EXE = 'git'
+    FRAMEWORK_DEFAULT_BASE_BRANCH = 'main'
+
+    # Note that commit message templates must be comments only
+    # as git requires that the user edit the template before committing.
+    FRAMEWORK_SIDE_TEMPLATE = '''# Move files into the framework
+
+# This will be the commit message for the commit that takes Mbed TLS
+# and removes everything except the moved files. This will then be
+# merged into a branch in the framework repository.
+
+'''
+
+    MBEDTLS_SIDE_TEMPLATE = '''# Move files out of Mbed TLS
+
+# This will be the commit message for the commit in the Mbed TLS
+# repository that removes the files that were moved.
+
+'''
+
+    def __init__(self, source_repo: str, dest_repo: str,
+                 source_branch_name: str, dest_branch_name: str,
+                 dest_base_branch_name: Optional[str] = None):
+        self._source_repo = os.path.abspath(source_repo)
+        self._dest_repo = os.path.abspath(dest_repo)
+
+        self._src_branch_name = source_branch_name
+        self._tmp_framework_branch_name = 'tmp-branch-move-files-to-framework'
+        self._framework_branch_name = dest_branch_name
+
+        if dest_base_branch_name is None:
+            self._framework_base_branch_name = self.FRAMEWORK_DEFAULT_BASE_BRANCH
+        else:
+            self._framework_base_branch_name = dest_base_branch_name
+
+        self._file_map = {}
+
+    def run_git(self, git_cmd: List[str], **kwargs) -> str:
+        """Run a git command and return its output."""
+        if 'universal_newlines' not in kwargs:
+            kwargs['universal_newlines'] = True
+        cmd = [self.GIT_EXE] + git_cmd
+        return subprocess.check_output(cmd, **kwargs)
+
+    def run_git_interactive(self, git_cmd: List[str], **kwargs) -> int:
+        """Run a git command that may interact with the user and return
+        its return code."""
+        if 'universal_newlines' not in kwargs:
+            kwargs['universal_newlines'] = True
+        cmd = [self.GIT_EXE] + git_cmd
+        return subprocess.run(cmd, **kwargs).returncode
+
+    def add_file_move(self, src_path: str, dst_path: str) -> None:
+        """Move file at relative path src_path in the source repo to dst_path
+        in the destination repo"""
+        self._file_map[os.path.normpath(src_path)] = os.path.normpath(dst_path)
+
+    def _path_parts(self, path: str) -> List[str]:
+        return path.split(os.path.sep)
+
+    def _direct_children(self, dir_path: str) -> List[str]:
+        """Get the direct children of a subdirectory (at least the ones
+        that matter to git)"""
+        leaf_files = self.run_git(['-C', dir_path, 'ls-files']).split()
+        direct_children = set([
+            self._path_parts(f)[0]
+            for f in leaf_files
+        ])
+        return list(direct_children)
+
+    def _expand_dir_move(self, dir_path: str) -> None:
+        """Expand a directory move into the moves of its children"""
+        if dir_path in self._file_map:
+            # Get the direct children of this directory
+            direct_children = self._direct_children(dir_path)
+            # Make an equivalent mapping for each direct child
+            for child in direct_children:
+                src_path = os.path.join(dir_path, child)
+                dst_path = os.path.join(self._file_map[dir_path], child)
+                self._file_map[src_path] = dst_path
+            # Remove the mapping for the original directory, since we want
+            # some files to remain behind in it.
+            del self._file_map.pop[dir_path]
+
+    def add_exception(self, src_path: str) -> None:
+        path_components = self._path_parts(src_path)
+        # Expand the directories prefixing the exception,
+        # starting with the shortest prefix
+        for i in range(1, len(path_components)):
+            self._expand_dir_move(os.path.join(*path_components[:i]))
+        # Remove the exception
+        self._file_map.pop(src_path, None)
+
+    def ensure_dirs_exist(self, path: str) -> None:
+        """Make sure all of the required directories exist for
+        moving a given file or directory to it."""
+
+        # Remove any trailing slashes
+        path = path.rstrip(os.sep)
+
+        # Get the directory names
+        dirs = os.path.dirname(path)
+
+        if dirs != '':
+            # Make all required directories
+            os.makedirs(dirs, exist_ok=True)
+
+    def commit_interactively_with_template(self, commit_template: str,
+                                           *extra_flags) -> None:
+        template_name = 'commit-msg-template-{pid}'.format(pid=os.getpid())
+
+        with open(template_name, 'w') as template_file:
+            template_file.write(commit_template)
+
+        self.run_git_interactive(['commit', '-t', template_name] + list(extra_flags))
+
+        os.remove(template_name)
+
+    def commit_template_file_list_src(self) -> str:
+        template_file_msg = ('# The following files will be deleted'
+                             ' (moved to the framework):\n\n')
+        for src_repo_file in self._file_map.keys():
+            template_file_msg += '# {f}\n'.format(f=src_repo_file)
+
+        template_file_msg += '\n'
+
+        return template_file_msg
+
+    def commit_template_file_list_dst(self) -> str:
+        template_file_msg = ('# The following files will be added'
+                             ' (moved from Mbed TLS):\n\n')
+        for dst_repo_file in self._file_map.values():
+            template_file_msg += '# {f}\n'.format(f=dst_repo_file)
+
+        template_file_msg += '\n'
+
+        return template_file_msg
+
+    def create_dest_repo_branch(self):
+        """Create the branch containing the moved files only"""
+
+        # Create a new branch
+        self.run_git(['checkout', '-b', self._tmp_framework_branch_name])
+
+        # Get a list of all files in the repo
+        repo_files = self.run_git(['ls-files']).split()
+
+        # Get a set of the files we are moving (taking account of directories)
+        files_to_retain = set()
+        for f in self._file_map:
+            if os.path.isdir(f):
+                dir_files = self.run_git(['ls-files', f]).split()
+                dir_files = [os.path.normpath(dir_file) for dir_file in dir_files]
+                files_to_retain.update(dir_files)
+            else:
+                files_to_retain.add(os.path.normpath(f))
+
+        # Delete all files except the ones we are moving
+        for f in repo_files:
+            if os.path.normpath(f) not in files_to_retain:
+                self.run_git(['rm', f])
+
+        # Rename files as requested
+        for f in self._file_map:
+            # Git won't let us move things to themselves
+            if self._file_map[f] != f:
+                self.ensure_dirs_exist(self._file_map[f])
+                self.run_git(['mv', f, self._file_map[f]])
+
+        # Commit the result
+        self.commit_interactively_with_template(self.FRAMEWORK_SIDE_TEMPLATE
+                                                + self.commit_template_file_list_dst(),
+                                                '-as')
+
+    def create_src_repo_branch(self):
+        """Create the branch deleting the moved files"""
+
+        # Create a new branch
+        self.run_git(['checkout', '-b', self._src_branch_name])
+
+        # Delete the moved files
+        files_to_delete = self._file_map.keys()
+        for f in files_to_delete:
+            if os.path.isdir(f):
+                self.run_git(['rm', '-r', f])
+            else:
+                self.run_git(['rm', f])
+
+        # Commit the result
+        self.commit_interactively_with_template(self.MBEDTLS_SIDE_TEMPLATE
+                                                + self.commit_template_file_list_src(),
+                                                '-as')
+
+    def resolve_deletion_conflicts(self):
+        file_statuses = self.run_git(['status', '--porcelain'])
+
+        # Get conflicting files
+        files_by_status = {}
+        for line in file_statuses.splitlines():
+            # Process lines like:
+            # D dir1/myfile.txt
+            # M myfile.csv
+            # etc
+            line = line.strip().split()
+
+            if len(line) != 2:
+                continue
+            status = line[0]
+            filename = line[1]
+
+            if len(status) == 2:
+                # Check cases where conflicts need to be resolved
+                if status not in ('AD', 'DA', 'UD', 'DU'):
+                    # Resolve conflicts only if one file has been deleted.
+                    # We can't deal with multiple-modifications etc
+                    return False
+
+            files_by_status.setdefault(status, [])
+            files_by_status[status].append(filename)
+
+        # Restore any deleted files
+        if 'D' in files_by_status:
+            for f in files_by_status['D']:
+                self.run_git(['checkout', 'HEAD', '--', f])
+
+        # Add all files
+        self.run_git(['add', '.'])
+
+        return True
+
+    def merge_files_into_framework(self):
+        """Add the source repo as a remote, pull in the destination branch
+        and merge into a new branch"""
+        # Change to the desination repo
+        os.chdir(self._dest_repo)
+
+        # Fetch/checkout the branch that has the moved files on it
+        self.run_git(['fetch', self._source_repo,
+                      self._tmp_framework_branch_name + ':' + self._tmp_framework_branch_name])
+
+        # Checkout the default branch
+        self.run_git(['checkout', self._framework_base_branch_name])
+
+        # Create a new branch with checkout -b
+        self.run_git(['checkout', '-b', self._framework_branch_name])
+
+        try:
+            # Merge in the previously-fetched branch using --allow-unrelated-histories
+            self.run_git(['merge', self._tmp_framework_branch_name, '--allow-unrelated-histories'])
+        except subprocess.CalledProcessError as git_error:
+            # We have conflicts, resolve them if possible
+            if not self.resolve_deletion_conflicts():
+                raise git_error
+
+            # Continue the merge without opening an editor
+            self.run_git(['-c', 'core.editor=/bin/true',
+                          'merge', '--continue'])
+
+        # Edge case: when we are not renaming the files, their deletion in
+        # previous branches moved to the framework will take precedence without
+        # merge conficts. Treat these files specially and restore them.
+        for f in self._file_map:
+            if self._file_map[f] == f:
+                self.run_git(['checkout', self._tmp_framework_branch_name, '--', f])
+                self.run_git(['add', f])
+                self.run_git(['-c', 'core.editor=/bin/true',
+                              'commit', '--amend'])
+
+    def move_files(self):
+        os.chdir(self._source_repo)
+
+        base_commit = self.run_git(['rev-parse', 'HEAD']).strip()
+
+        self.create_dest_repo_branch()
+        # Reset state of repo
+        self.run_git(['checkout', base_commit])
+
+        self.create_src_repo_branch()
+        # Reset state of repo
+        self.run_git(['checkout', base_commit])
+
+        self.merge_files_into_framework()
+
+        # Delete the temporary branches in both repos
+        self.run_git(['branch', '-D', self._tmp_framework_branch_name])
+
+        os.chdir(self._source_repo)
+        self.run_git(['branch', '-D', self._tmp_framework_branch_name])
+
+
+def main() -> int:
+    """Command line entry point."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path', action='extend', nargs=1,
+                        help='Path to move, (colon-separate for renames)'
+                             ' (e.g. "tests/scripts" or "tests/scripts:foo")')
+    parser.add_argument('--except', action='extend', nargs=1,
+                        dest='file_exceptions',
+                        default=[],
+                        help='Exceptions to --path arguments'
+                             ' (Files or directories not to move')
+    parser.add_argument('--from', dest='from_repo',
+                        metavar='FROM', required=True,
+                        help='Path to the Mbed TLS repo to move files from')
+    parser.add_argument('--to', dest='to_repo', metavar='TO', required=True,
+                        help='Path to the framework repo to move files to')
+    parser.add_argument('--src-branch',
+                        default='move-files-from-mbedtls-to-framework',
+                        required=False,
+                        help='Name of the new branch create in the Mbed TLS repo')
+    parser.add_argument('--dst-branch', default='move-files-into-framework',
+                        required=False,
+                        help='Name of the new branch create in the framework repo')
+    parser.add_argument('--dst-base-branch', default=None, required=False,
+                        help='Base branch in the framework repo to make changes from')
+    parser.add_argument('--print-file-map', action='store_true',
+                        help='Don\'t perform the move, just print out'
+                             'the file map created (used for debugging)')
+    args = parser.parse_args()
+
+    # Check that the destination is not internal to the source
+    if os.path.samefile(os.path.join(args.from_repo, 'framework'),
+                        os.path.normpath(args.to_repo)):
+        print("Error: Can't move files to an internal framework repository."
+              " A separate checkout of the framework is required.")
+        return 1
+
+    file_mover = RepoFileMover(args.from_repo, args.to_repo,
+                               args.src_branch, args.dst_branch,
+                               args.dst_base_branch)
+    for p in args.path:
+        # If the name contains a colon it is a rename,
+        # otherwise just a plain path.
+        if ':' in p:
+            rename = p.split(':')
+            if len(rename) != 2:
+                print('Error: Path rename must be of the form "src:dest"',
+                      file=sys.stderr)
+                return 1
+
+            file_mover.add_file_move(rename[0], rename[1])
+
+        else:
+            file_mover.add_file_move(p, p)
+
+
+    for e in args.file_exceptions:
+        file_mover.add_exception(e)
+
+    if args.print_file_map:
+        for k, v in file_mover._file_map.items():
+            print(f'{k}: {v}')
+    else:
+        file_mover.move_files()
+
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())
