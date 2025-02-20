@@ -107,7 +107,7 @@ case "$PR" in
         # No merge job in the framework
         ;;
     m*|[0-9]*)
-        PR="${PR#?}"
+        PR="${PR#m}"
         HEAD_JOB="mbed-tls-pr-head"
         MERGE_JOB="mbed-tls-pr-merge"
         ;;
