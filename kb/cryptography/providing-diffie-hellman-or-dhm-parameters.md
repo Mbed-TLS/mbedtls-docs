@@ -8,10 +8,6 @@ Developers have the option to set the DHM parameters for SSL servers with `mbedt
 
 The DHM parameters that the TLS handshake uses are set by default to the 2048-bit MODP parameters from [RFC 3526](https://www.ietf.org/rfc/rfc3526.txt) (`MBEDTLS_DHM_RFC3526_MODP_2048_P_BIN` and `MBEDTLS_DHM_RFC3526_MODP_2048_G_BIN`). From a security perspective, it is desirable to use a larger value, unless you have clients for which this will cause interoperability issues. Larger values are provided in [dhm.h](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/dhm.h).
 
-## Custom parameters
-
-You can set your own parameters that you have generated in a secure way. To do that, you can use the example program `programs/pkey/dh_genprime`. Just run `dh_genprime bits=<desired size>`. The resulting parameters are in `dh_prime.txt`; use them as a C-array format in your application code and as arguments to `mbedtls_ssl_conf_dh_param_bin()`.
-
 ## Custom and standard parameters
 
 We used to recommend using standard parameters rather than generating your own. However, the team of researchers behind the [Logjam attack](https://weakdh.org/) also showed that a risk associated is with that if the parameters are not large enough. More precisely, they showed that the amount of computation required to break any number of MODP DHM key exchanges is close to the amount required to break just one of them, as long as they all use the same parameters. So if your parameter size is just at the limit of what an adversary can break, using standard parameters allows the adversary to amortize the cost of the initial computation, which is not what you want.
