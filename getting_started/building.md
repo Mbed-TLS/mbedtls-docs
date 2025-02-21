@@ -46,10 +46,6 @@ The test suites need Perl to be built. If you don't have Perl installed, you'll 
 ```sh
 cmake -DENABLE_TESTING=Off .
 ```
-If you disabled the test suites, but kept the programs enabled, you can still run a much smaller set of tests with:
-```sh
-programs/test/selftest
-```
 To configure CMake for building a shared library, use:
 ```sh
 cmake -DUSE_SHARED_MBEDTLS_LIBRARY=On .
