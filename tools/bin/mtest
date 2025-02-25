@@ -855,7 +855,7 @@ Config options: individual options are set with e.g. MBEDTLS_AESCE_C, or unset w
     Passing a file from configs/ (e.g. "config-tfm") or any ".h" file will replace the existing config file.
     Iterate over the cross-product of options X,Y,Z by specifying a comma-separated list of config options.
     The original config files will be restored when mtest exits.
-Build targets: build the library by default, or files (e.g. aes.o), programs (e.g. selftest) or tests (as above)'''
+Build targets: build the library by default, or files (e.g. aes.o), programs or tests (as above)'''
 
     parser = argparse.ArgumentParser(description=DESCRIPTION, epilog=EPILOG_TEXT, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-k', '--key-archs', action="store_true", default=False, help='build/test on key targets, including all four combinations of 32/64-bit and big/little endian')
