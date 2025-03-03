@@ -49,6 +49,7 @@ These applications demonstrate common use cases for the SSL\TLS stack APIs.
 These are some generic sample application, that can be used for testing.
 
 - `benchmark` - Benchmark demonstration program.
+- `selftest` - Self-test demonstration program.
 - `ssl_cert_test` - SSL certificate functionality test.
 - `udp_proxy` - Emulation for an unreliable UDP connection for DTLS testing.
 

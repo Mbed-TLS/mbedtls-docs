@@ -71,6 +71,7 @@ The component names are:
     * `PlatformToolset` property:
         * “Retargeted” build: set to the version corresponding to the Visual Studio version for “retargeted” builds.
         * “Non-retargeted” build: set to `v120` on `development` (C99 code base).
+    * Testing: `selftest.exe`, plus the unit tests in the CMake builds.
 
 The `win32-mingw` component runs the following bat script:
 ```
@@ -78,6 +79,7 @@ cmake . -G "MinGW Makefiles" -DCMAKE_C_COMPILER="gcc"
 mingw32-make
 mingw32-make test
 ctest -VV
+programs\test\selftest.exe
 ```
 
 The `win32_msvc12_32` component runs the following bat script:
@@ -85,6 +87,7 @@ The `win32_msvc12_32` component runs the following bat script:
 call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"
 cmake . -G "Visual Studio 12"
 MSBuild ALL_BUILD.vcxproj
+programs\test\Debug\selftest.exe
 ```
 The `win32-msvc12_64` component is identical except that it runs `cmake . -G "Visual Studio 12 Win64"`.
 

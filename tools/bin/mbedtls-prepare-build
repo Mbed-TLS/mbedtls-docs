@@ -1026,6 +1026,7 @@ class MakefileMaker:
                     phony=True)
         self.add_clean('$(programs)')
         self.add_run_target('programs/test/benchmark')
+        self.add_run_target('programs/test/selftest')
         # TODO: *_demo.sh
 
     def define_tests_common_objects(self):

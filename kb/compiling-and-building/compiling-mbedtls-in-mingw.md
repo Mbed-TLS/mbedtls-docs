@@ -76,15 +76,25 @@ If you chose not to install Perl or Python, then you can skip building the full 
 mingw32-make CC=gcc no_test
 ```
 
+You can then run a much more minimal set of unit tests with:
+
+```
+programs\test\selftest
+```
+
 ## Use Mbed TLS
 
 You can now use some of the utility programs that come with Mbed TLS, like:
 
 ```
 programs\ssl\ssl_client2 server_name=www.google.nl server_port=443
+
+programs\test\selftest
 ```
     
-You should see some HTML output if it succeeds.
+You should see some HTML output for the first program, and something like this for the selftest program:
+
+![Selftest output](https://mbed-tls-docs-images.s3.amazonaws.com/MbedTLS-Tutorial-MinGW-3_normal.png)
 
 If your client application fails, it is probably because you need to set the CA certificate file or path of `www.google.nl`, as `ca_file` or `ca_path` parameter.
 If you installed Perl and built the tests, you can run any of the executables in the `tests` directory to run the individual test suites.
