@@ -38,6 +38,8 @@ Please note that TLS client applications typically need to mention the server na
 
 We recommend that users should upgrade to Mbed TLS 2.28.10 or Mbed TLS 3.6.3. These versions disable the insecure default, and instead cause certificate authentication to fail if `mbedtls_ssl_set_hostname()` has not been called.
 
+See also [our FAQ](../kb/attacks/ssl_set_hostname/) on this vulnerability.
+
 ## Work-around
 
 TLS client applications should call `mbedtls_ssl_set_hostname()` with the expected server name, unless they only allow cipher suites (key exchange modes in TLS 1.3) based on a pre-shared key.
@@ -47,3 +49,5 @@ TLS clients are not affected if they operate in a closed ecosystem where the tru
 TLS clients are not affected if, before exchanging any data on the TLS connection, they check that the fingerprint of the server certificate matches a known good fingerprint (certificate pinning).
 
 TLS clients that only allow connections using pre-shared keys are not affected.
+
+See also [our FAQ](../kb/attacks/ssl_set_hostname/) on this vulnerability.
