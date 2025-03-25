@@ -6,6 +6,7 @@
 **Date** | 24 March 2025
 **Affects** | All versions of PolarSSL and Mbed TLS
 **Severity** | HIGH
+**Credit** | Daniel Stenberg
 
 ## Vulnerability
 
