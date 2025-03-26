@@ -38,7 +38,7 @@ You can test your TLS client application with Mbed TLS 2.28.10, 3.6.3 or newer. 
 
 Note a few unusual cases where the handshake might not fail in a vulnerable application:
 
-* If a TLS client allows both pre-shaked key (PSK) and certificate-based key exchange modes, make sure to test it with a certificate-based key exchange. A PSK handshake does not trigger the problematic case, so it is an inconclusive test.
+* If a TLS client allows both pre-shared key (PSK) and certificate-based key exchange modes, make sure to test it with a certificate-based key exchange. A PSK handshake does not trigger the problematic case, so it is an inconclusive test.
 * If a TLS client changes the certificate verification mode to `NONE` or `OPTIONAL` (from the default `REQUIRED`) with `mbedtls_ssl_conf_authmode()`, Mbed TLS assumes that you know what you're doing and does not raise `MBEDTLS_ERR_SSL_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME`. TLS clients that don't require server authentication should call `mbedtls_ssl_get_verify_result()` and perform all required checks after the handshake and before exchanging data, including checking the server name in the certificate.
 
 ### Are all TLS clients vulnerable if they don't call `mbedtls_ssl_set_hostname`?
