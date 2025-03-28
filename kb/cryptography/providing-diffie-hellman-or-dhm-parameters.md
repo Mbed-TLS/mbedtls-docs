@@ -1,4 +1,4 @@
-# Providing Diffie-Hellman-Merkle (DHM) parameters
+# Providing Diffie-Hellman-Merkle (DHM) parameters in versions before 4.0
 
 ## Choosing DHM parameters
 

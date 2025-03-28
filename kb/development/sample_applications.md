@@ -11,46 +11,46 @@ For more information, check the applications' `usage`.
 These example programs demonstrate the usage of the symmetric cipher API.
   
 - `aescrypt2` - A sample application that performs authenticated encryption and decryption of a buffer, using `mbedtls_aes_crypt_ecb`, with AES-256. The application reads from a file, ciphers it and writes output to a file.
-- `crypt_and_hash` - A file encryption application using the generic cipher and message digest (`md`) modules.
+- `crypt_and_hash` - A file encryption application using the generic cipher and message digest (`md`) modules (only available in versions prior to 4.0).
 
 ## *`hash`*
 
-These examples demonstrate `checksum` functionality.
+ Prior to 4.0 these examples demonstrate `checksum` functionality.
 
-- `generic_sum` - Generic message digest layer demonstration program. 
+- `generic_sum` - Generic message digest layer demonstration program.
 - `hello` - A "Hello, World!" `checksum` application.
 
 ## *`pkey`*
 
 These sample applications demonstrate the usage of asymmetric cryptography APIs for key exchange and message signing, verification, encryption and decryption.
 
-- `dh_client` - A program demonstrating the [Diffie-Hellman-Merkle](https://www.ietf.org/rfc/rfc2631.txt) key exchange on the client side.
-- `dh_genprime` - A program demonstrating the [Diffie-Hellman-Merkle](https://www.ietf.org/rfc/rfc2631.txt) key exchange prime generation.
-- `dh_server` - A program demonstrating the [Diffie-Hellman-Merkle](https://www.ietf.org/rfc/rfc2631.txt) key exchange on the server side.
-- `ecdh_curve25519` - A reference program that shows how to use Curve25519, a special use case of ECDHE.
-- `ecdsa` - An example [ECDSA](https://tools.ietf.org/html/rfc6979) program.
-- `gen_key` - An example of how to generate a private key.
-- `key_app_writer` - An example that demonstrates how to write a key file in different formats (`PEM` and `DER`), from a given key.
-- `key_app` - A program demonstrating how to read and parse a key.
-- `mpi_demo` - An application demonstrating how to use the multiple precision integers (`mpi`) APIs.
-- `pk_decrypt` - A reference application that demonstrates how to use the Public key-based decryption, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
-- `pk_encrypt` - A reference application that demonstrates how to use the Public key-based encryption, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
+- `dh_client` - A program demonstrating the [Diffie-Hellman-Merkle](https://www.ietf.org/rfc/rfc2631.txt) key exchange on the client side. (only available in versions prior to 4.0)
+- `dh_genprime` - A program demonstrating the [Diffie-Hellman-Merkle](https://www.ietf.org/rfc/rfc2631.txt) key exchange prime generation. (only available in versions prior to 4.0)
+- `dh_server` - A program demonstrating the [Diffie-Hellman-Merkle](https://www.ietf.org/rfc/rfc2631.txt) key exchange on the server side. (only available in versions prior to 4.0)
+- `ecdh_curve25519` - A reference program that shows how to use Curve25519, a special use case of ECDHE. (only available in versions prior to 4.0)
+- `ecdsa` - An example [ECDSA](https://tools.ietf.org/html/rfc6979) program. (only available in versions prior to 4.0)
+- `gen_key` - An example of how to generate a private key. (only available in versions prior to 4.0)
+- `key_app_writer` - An example that demonstrates how to write a key file in different formats (`PEM` and `DER`), from a given key. (only available in versions prior to 4.0)
+- `key_app` - A program demonstrating how to read and parse a key. (only available in versions prior to 4.0)
+- `mpi_demo` - An application demonstrating how to use the multiple precision integers (`mpi`) APIs. (only available in versions prior to 4.0)
+- `pk_decrypt` - A reference application that demonstrates how to use the Public key-based decryption, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs. (only available in versions prior to 4.0)
+- `pk_encrypt` - A reference application that demonstrates how to use the Public key-based encryption, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs. (only available in versions prior to 4.0)
 - `pk_sign` - A reference application that demonstrates how to use the Public key-based signature creation, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
 - `pk_verify` - A reference application that demonstrates how to use the Public key-based signature verification, using the [`pk`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/pk.h) wrapper APIs.
-- `rsa_decrypt` - An RSA decryption reference program, using the [`rsa`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/rsa.h) APIs.
-- `rsa_encrypt` - An RSA encryption reference program, using the [`rsa`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/rsa.h) APIs.
-- `rsa_genkey` - An application demonstrating how to generate an RSA key pair.
+- `rsa_decrypt` - An RSA decryption reference program, using the [`rsa`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/rsa.h) APIs. (only available in versions prior to 4.0)
+- `rsa_encrypt` - An RSA encryption reference program, using the [`rsa`](https://github.com/Mbed-TLS/mbedtls/blob/development/include/mbedtls/rsa.h) APIs. (only available in versions prior to 4.0)
+- `rsa_genkey` - An application demonstrating how to generate an RSA key pair. (only available in versions prior to 4.0)
 - `rsa_sign_pss` - An application demonstrating how to create a signature with the [PKCS #1 v2.1](https://www.ietf.org/rfc/rfc3447.txt) padding scheme.
-- `rsa_sign` - An application demonstrating how create a signature with the [PKCS #1 v1.5](https://tools.ietf.org/html/rfc2313) padding scheme.
+- `rsa_sign` - An application demonstrating how create a signature with the [PKCS #1 v1.5](https://tools.ietf.org/html/rfc2313) padding scheme. (only available in versions prior to 4.0)
 - `rsa_verify_pss` - An application demonstrating how to verify a signature with the [PKCS #1 v2.1](https://www.ietf.org/rfc/rfc3447.txt) padding scheme.
-- `rsa_verify` - An application demonstrating how to verify a signature with the [PKCS #1 v1.5](https://tools.ietf.org/html/rfc2313) padding scheme.
+- `rsa_verify` - An application demonstrating how to verify a signature with the [PKCS #1 v1.5](https://tools.ietf.org/html/rfc2313) padding scheme. (only available in versions prior to 4.0)
 
 ## *`random`*
 
 These applications demonstrate how to use Mbed TLS TRNG and PRNG APIs.
 
-- `gen_entropy` - An application that generates multiple entropy calls from the TRNG engine, writing them to a file.
-- `gen_random_ctr_drbg` - An application demonstrating how to use the Mbed TLS Deterministic Random Bit Generators (DRBG) API, using AES, defined in NIST [800-90A](http://csrc.nist.gov/publications/nistpubs/800-90A/SP800-90A.pdf).
+- `gen_entropy` - An application that generates multiple entropy calls from the TRNG engine, writing them to a file. (only available in versions prior to 4.0)
+- `gen_random_ctr_drbg` - An application demonstrating how to use the Mbed TLS Deterministic Random Bit Generators (DRBG) API, using AES, defined in NIST [800-90A](http://csrc.nist.gov/publications/nistpubs/800-90A/SP800-90A.pdf). (only available in versions prior to 4.0)
 - `gen_random_havege` - An application demonstrating how to use the HArdware Volatile Entropy Gathering and Expansion ([havege](http://www.irisa.fr/caps/projects/hipsor/)) entropy API.
 
 ## *`ssl`*
