@@ -1,0 +1,30 @@
+#compdef dh_genprime gen_key key_app key_app_writer ssl_client2 ssl_mail_client ssl_server2 pem2der cert_app cert_req cert_write crl_app req_app
+## Completion for Mbed TLS SSL sample and test programs.
+
+_ssl_client2 () {
+  local param
+  local -a params values
+  params=("${(@)${(@)${(@M)${(@f)$(_call_program help $words[1] help)}:# #[a-z][0-9A-Z_a-z]#=*}%%=*}## ##}")
+  if [[ $PREFIX$SUFFIX == *=* ]]; then
+    IPREFIX="${PREFIX%%\=*}="
+    PREFIX="${PREFIX#*=}"
+    param=${${IPREFIX%=}##[!0-9A-Z_a-z]##}
+    case $param in
+      auth_mode)
+        _values $param none optional required;;
+      force_ciphersuite)
+        values=("${(@M)${=$(_call_program help_ciphersuites $words[1] help_ciphersuites)}:#TLS-*}")
+        _values $param $values;;
+      *path*|output_file)
+        _files -/;;
+      *file*|*_crt|*_key)
+        _files;;
+      *version)
+        _values $param ssl3 tls10 tls11 tls12 tls13 dtls10 dtls12;;
+    esac
+  else
+    _values -s= parameter $params
+  fi
+}
+
+_ssl_client2 "$@"
