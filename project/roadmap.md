@@ -16,8 +16,6 @@ If you are interested in collaborating on any of the roadmap features or other f
 
 **2025 CQ4**
 * [Mbed TLS4.0] Mbed TLS 4.x API Consolidation 
-* [PSA Crypto] PSA driver – Handle Opaque Persistent Key in Secure Element - Implementation
-* [PSA Crypto] [SPAKE2+ Implementation]
  
 **Future**
  * [Mbed TLS4.0] Mbed TLS 4.x API Consolidation 
@@ -46,7 +44,6 @@ If you are interested in collaborating on any of the roadmap features or other f
 * [PSA Crypto] TF-PSACrypto repository becomes live
 * [Mbed TLS] Mbed TLS uses PSA Crypto repository 
 * [Mbed TLS] [Mbed TL3.6.1, 3.6.2,3.6.3]
-* [Mbed TLS] [Mbed TLS3.6.1]
 * [PSA Crypto] [PBKDF2 PSA SW Implementation]
 * [Mbed TLS] [3.6 LTS release]
 * [Mbed TLS] [TLS1.3 early data] 
