@@ -4,28 +4,23 @@
 
 If you are interested in collaborating on any of the roadmap features or other features in the project, please mail [Mbed TLS](https://lists.trustedfirmware.org/mailman/listinfo/mbed-tls) or [PSA Crypto](https://lists.trustedfirmware.org/mailman/listinfo/psa-crypto) mailing lists.
 
-**2025 CQ1 (In Development)**
-* [Mbed TLS] Mbed TLS 3.6.3 Release  
-* [Mbed TLS4.0] PSA crypto RNG support - Detailed Investigation
-* [Mbed TLS4.0] Make low level APIs internal - Detailed Investigation
-* [Mbed TLS4.0] Remove legacy types from public non-PSA interfaces - Detailed Investigation
-* [Mbed TLS4.0] Remove legacy types
-* [Mbed TLS4.0] Remove TLS cipher suites 
-* [PSACrypto] TF-PSACrypto CI Improvements 
-
-**2025 CQ2**
+**2025 CQ2 (In Development)**
 * [Mbed TLS] Mbed TLS4.0, TF-PSACrypto1.0 Beta release (Experimental Pipecleaning release for feedback)    
-
+* [Mbed TLS4.0] PSA crypto RNG support
+* [Mbed TLS4.0] Make low level APIs internal
+* [Mbed TLS4.0] Remove legacy types from public non-PSA interfaces
+* [Mbed TLS4.0] Remove legacy types
 
 **2025 CQ3**
 * [Mbed TLS] Mbed TLS4.0, TF-PSACrypto1.0 release
-* [PSA Crypto] PSA driver – Handle Opaque Persistent Key in Secure Element - Implementation
-* [PSA Crypto] [SPAKE2+ Implementation]
+
+**2025 CQ4**
+* [Mbed TLS4.0] Mbed TLS 4.x API Consolidation 
  
 **Future**
  * [Mbed TLS4.0] Mbed TLS 4.x API Consolidation 
  * [PSA Crypto] Memory Optimizations (code size)
- * Post Quantum Crypto
+ * Post Quantum Crypto - Investigations 
  * MbedTLS,TF-PSACrypto - Next LTS release 
  * [Mbed TLS] [Bignum Improvements]
  * [PSA Crypto] [PSA Client-Server Testing] 
@@ -45,10 +40,10 @@ If you are interested in collaborating on any of the roadmap features or other f
 
 
 **Completed**
+* [Mbed TLS4.0] Remove TLS cipher suites 
 * [PSA Crypto] TF-PSACrypto repository becomes live
 * [Mbed TLS] Mbed TLS uses PSA Crypto repository 
-* [Mbed TLS] [Mbed TL3.6.1, 3.6.2]
-* [Mbed TLS] [Mbed TLS3.6.1]
+* [Mbed TLS] [Mbed TL3.6.1, 3.6.2,3.6.3]
 * [PSA Crypto] [PBKDF2 PSA SW Implementation]
 * [Mbed TLS] [3.6 LTS release]
 * [Mbed TLS] [TLS1.3 early data] 
