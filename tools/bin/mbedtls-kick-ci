@@ -1,0 +1,154 @@
+#!/bin/sh
+
+set -eu
+
+DEFAULT_SCOPE=all
+
+usage () {
+    cat <<EOF
+Usage: $0 [PREFIX]NUMBER [all|internal|internal-pr-head|internal-pr-merge|openci|...]
+Start the CI on a pull request.
+
+The prefix indicates the repository:
+    <empty> mbedtls
+    c       TF-PSA-Crypto
+    f       mbedtls-framework
+    m       mbedtls
+
+Examples:
+  $0 c123 openci
+    Run OpenCI (head and merge) on https://github.com/Mbed-TLS/TF-PSA-Crypto/pull/123
+  $0 123 internal-pr-head openci-pr-head
+    Run the pr-head job on both CIs on https://github.com/Mbed-TLS/mbedtls/pull/123
+
+Default job set: $DEFAULT_SCOPE
+EOF
+}
+
+script=$(basename -- "$0")
+
+host_internal_ci=jenkins-mbedtls.oss.arm.com
+host_open_ci=mbedtls.trustedfirmware.org
+
+: ${XDG_CONFIG_HOME:=~/.config}
+
+# ~/.config/mbedtls/ci-tokens.sh needs to contain the Jenkins user and API
+# token for each CI, e.g.
+#
+# JENKINS_INTERNAL_USER_ID=user-id-for-internal-ci
+# JENKINS_INTERNAL_API_TOKEN=1111111111111111111111111111111111
+# JENKINS_OPENCI_USER_ID=user-id-for-open-ci
+# JENKINS_OPENCI_API_TOKEN=2222222222222222222222222222222222
+#
+# To get the user ID, go to Jenkins, e.g. https://mbedtls.trustedfirmware.org/,
+# click your name in the top right, then the Status page should show your Jenkins
+# user ID. Both internal and OpenCI user names will almost certainly be the same
+# as your GitHub ID.
+#
+# To get an API token, choose Configure from your user page, click Add new Token,
+# give it a name, then click Generate. You get one chance to copy it, so do it
+# now! Then put it into ~/.config/mbedtls/ci-tokens.sh.
+#
+# Make sure ~/.config/mbedtls/ci-tokens.sh is chmod 0600.
+
+. "$XDG_CONFIG_HOME/mbedtls/ci-tokens.sh"
+
+kick_one () {
+    # kick_one DESC USER TOKEN URL
+    desc="$1"
+    user="$2"
+    token="$3"
+    url="$4"
+    echo "$desc\\c"
+    OUTPUT=$(curl -s -X POST --user $user:$token "$url")
+    if [ -z "$OUTPUT" ]; then
+        echo " started"
+    else
+        if echo "$OUTPUT" | fgrep -q "Error 404 Not Found"; then
+            echo " - PR $PR not found"
+            exit 1
+        else
+            echo " - FAILED: \\c"
+            echo "$OUTPUT" | perl -n -e 'print "$1\n" if /<title>(.*?)<.title>/;'
+            exit 2
+        fi
+    fi
+    did_something=1
+}
+
+if [ "$1" = "--help" ]; then
+    usage
+    exit
+fi
+
+if [ $# -eq 1 ]; then
+    set -- "$1" "$DEFAULT_SCOPE"
+fi
+
+if [ $# != 2 ]; then
+    usage >&2
+    exit 2
+fi
+
+PR="$1"
+HEAD_JOB=
+MERGE_JOB=
+SCOPE="$2"
+
+case "$PR" in
+    c*)
+        PR="${PR#?}"
+        HEAD_JOB="mbed-tls-tf-psa-crypto-multibranch"
+        MERGE_JOB=$HEAD_JOB
+        ;;
+    f*)
+        PR="${PR#?}"
+        HEAD_JOB="mbed-tls-framework-multibranch"
+        # No merge job in the framework
+        ;;
+    m*|[0-9]*)
+        PR="${PR#?}"
+        HEAD_JOB="mbed-tls-pr-head"
+        MERGE_JOB="mbed-tls-pr-merge"
+        ;;
+esac
+case "$PR" in
+    *[!0-9]*) echo >&2 "$0: $PR: pull request must be a number"; exit 2;;
+    *) : ;;                             # Must be a number
+esac
+
+did_something=0
+
+case "$SCOPE" in
+    all|internal|internal-pr-head )
+        kick_one internal-pr-head $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
+        ;;
+esac
+
+if [ -n "$MERGE_JOB" ]; then
+    case $SCOPE in
+        all|internal|internal-pr-merge)
+            kick_one internal-pr-merge $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
+            ;;
+    esac
+fi
+
+case $SCOPE in
+    all|openci|openci-pr-head)
+        kick_one openci-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
+        ;;
+esac
+
+if [ -n "$MERGE_JOB" ]; then
+    case $SCOPE in
+        all|openci|openci-pr-merge)
+            kick_one openci-pr-merge $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
+            ;;
+    esac
+fi
+
+if [ "$did_something" != 1 ]; then
+    echo 1>&2 "$0: Found nothing to do."
+    usage 1>&2
+    exit 2
+fi

@@ -10,7 +10,7 @@ Mbed TLS is designed in the portable C language with embedded environments as a 
 
 The aim of this tutorial is to show you how to secure your client and server communication with Mbed TLS. The following major components  are involved:
 
-![Mbed TLS Stack.png](https://mbed-tls-docs-images.s3.amazonaws.com/mbedtls-stack.png)
+![Mbed TLS Stack.png](../assets/mbedtls-stack.png)
 
 From the bottom up:
 
@@ -188,7 +188,7 @@ Mbed TLS requires a good random number generator and its own SSL context and SSL
 
 The headers required for Mbed TLS:
 
-    #include "mbedtls/net.h"
+    #include "mbedtls/net_sockets.h"
     #include "mbedtls/ssl.h"
     #include "mbedtls/entropy.h"
     #include "mbedtls/ctr_drbg.h"
