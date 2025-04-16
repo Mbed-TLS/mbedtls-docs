@@ -106,8 +106,12 @@ case "$PR" in
         HEAD_JOB="mbed-tls-framework-multibranch"
         # No merge job in the framework
         ;;
-    m*|[0-9]*)
+    m*)
         PR="${PR#?}"
+        HEAD_JOB="mbed-tls-pr-head"
+        MERGE_JOB="mbed-tls-pr-merge"
+        ;;
+    [0-9]*)
         HEAD_JOB="mbed-tls-pr-head"
         MERGE_JOB="mbed-tls-pr-merge"
         ;;
