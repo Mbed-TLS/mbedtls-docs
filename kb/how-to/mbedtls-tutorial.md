@@ -24,7 +24,7 @@ The operating system provides the Ethernet driver and standard services. Dependi
 
 **Network stack**
 
-Depending on the operating system, the network stack is either fully integrated or is a separate module that provides an abstraction layer from the network interface. The most commonly used are the [lwIP TCP/IP stack](http://savannah.nongnu.org/projects/lwip/) and the [uIP TCP/IP stack](https://www.sics.se/projects/uip-tcpip-connectivity-for-embedded-8-bit-microcontrollers).
+Depending on the operating system, the network stack is either fully integrated or is a separate module that provides an abstraction layer from the network interface. The most commonly used are the [lwIP TCP/IP stack](http://savannah.nongnu.org/projects/lwip/) and the [uIP TCP/IP stack](https://en.wikipedia.org/wiki/UIP_(software)).
 
 **Mbed TLS SSL/TLS library**
 
