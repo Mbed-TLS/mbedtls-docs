@@ -126,4 +126,6 @@ Due to an insecure default in Mbed TLS up to 2.8.9 and Mbed TLS 3.x up to 3.6.2,
 
 ### History
 
-The vulnerability was identified in Curl and led to [CVE-2016-3739](https://curl.haxx.se/docs/adv_20160518.html). The Curl maintainers [reported the issue to Mbed TLS](https://github.com/Mbed-TLS/mbedtls/issues/466), but unfortunately the Mbed TLS maintainers only noticed a functional limitation at the time, and not the deeper security issue. Renewed activity on the issue led the Mbed TLS maintainers to reexamine the problem and make Mbed TLS more robust.
+Belated thanks to Moti Avrahami and Daniel Stenberg for identifying the problem.
+
+The vulnerability was identified in Curl by Moti Avrahami, disclosed as [CVE-2016-3739](https://curl.haxx.se/docs/adv_20160518.html). Daniel Stenberg [reported the issue to Mbed TLS](https://github.com/Mbed-TLS/mbedtls/issues/466), but unfortunately the Mbed TLS maintainers only noticed a functional limitation at the time, and not the deeper security issue. Renewed activity on the issue led the Mbed TLS maintainers to reexamine the problem and make Mbed TLS more robust.
