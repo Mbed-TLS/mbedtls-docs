@@ -583,6 +583,14 @@ With mbedtls-prepare-build, you can pass multiple `.run` targets and use `make -
 make -C build-debug -k test_suite_x509parse.run test_suite_x509write.run
 ```
 
+#### Run a test suite and hide passes
+
+In large test suites, failures can be tedious to locate among passing and skipped tests. The following snippet hides `----` and `PASS` lines, but preserves all information about failure as well as test suite summaries.
+
+```
+tests/test_suite_ssl |& grep -Ev '(PASS|----)$'
+```
+
 #### Run all unit tests
 
 With CMake, note that you need to build the unit tests before running `make test`. To build the unit tests ???
