@@ -86,6 +86,15 @@ class Archiver:
         `files`: list of files to archive.
         """
         subprocess.check_call(['git', 'checkout', revision])
+        # In case the make command doesn't have correct dependencies,
+        # make sure that it at least regenerates the targets. This isn't
+        # enough if intermediate files need to be updated as well, but
+        # it's the best we can do here. If make doesn't have correct
+        # dependencies, make sure to delete all relevant intermediate files
+        # in the run_before command.
+        for filename in files:
+            if os.path.exists(filename):
+                os.remove(filename)
         if self.run_before:
             subprocess.check_call(self.run_before, shell=True)
         if not self.skip_make:
@@ -134,7 +143,8 @@ class Archiver:
         self.prepare()
         try:
             revisions = self.list_revisions(revision_range)
-            prefix_format = '{:0' + str(len(str(len(revisions) - 1))) + '}-'
+            max_number = starting_number + len(revisions) - 1
+            prefix_format = '{:0' + str(len(str(max_number))) + '}-'
             for n, revision in enumerate(revisions, starting_number):
                 self.archive_revision(prefix_format.format(n), revision, files)
         finally:
