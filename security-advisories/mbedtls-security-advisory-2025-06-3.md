@@ -1,3 +1,5 @@
+# Unchecked return value in LMS verification allows signature bypass
+
 **Title** | Unchecked return value in LMS verification allows signature bypass
 --------- | ----------------------------------------------------------
 **CVE** | CVE-2025-49600

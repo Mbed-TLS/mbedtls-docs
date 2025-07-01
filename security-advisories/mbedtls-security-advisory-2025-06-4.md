@@ -1,3 +1,5 @@
+# Out-of-bounds read in mbedtls_lms_import_public_key()
+
 **Title** | Out-of-bounds read in mbedtls_lms_import_public_key()
 --------- | ----------------------------------------------------------
 **CVE** | CVE-2025-49601
