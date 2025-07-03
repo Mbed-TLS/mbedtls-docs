@@ -256,6 +256,19 @@ In a test case that uses PSA crypto only when building with `MBEDTLS_USE_PSA_CRY
 
 See [`<test/psa_crypto_helpers.h>`](https://github.com/Mbed-TLS/mbedtls-framework/blob/development/tests/include/test/psa_crypto_helpers.h) for more complex cases.
 
+### Constant-flow testing
+
+We run some tests with [MemorySanitizer (MSan)](https://github.com/google/sanitizers/wiki/memorysanitizer) and [Valgrind](https://valgrind.org/docs/manual/mc-manual.html) configured to detect secret-dependent control flow: branches or memory addresses computed from secret data. These tests detect library code that could leak secret data through timing side channels to local attackers via shared hardware components such as a memory cache or a branch predictor. We refer to such tests as “constant-time” or more accurately “constant-flow” testing.
+
+Constant-flow testing was added relatively recently in the history of the project, and many functions that should be constant-flow are not tested. However, constant-flow testing is preferred when writing new code that claims to be constant-flow, and especially when fixing a timing side channel.
+
+In unit tests, use the following macros, from [`<test/constant_flow.h>`](https://github.com/Mbed-TLS/mbedtls-framework/blob/main/tests/include/test/constant_flow.h):
+
+* `TEST_CF_SECRET(buffer, size)`: marks the given buffer as secret. Call this on keys, plaintext and other confidential data before passing it to library functions.
+* `TEST_CF_PUBLIC(buffer, size)`: marks the given buffer as public. Call this on outputs before testing their content.
+
+Note that you need to call `TEST_CF_PUBLIC` before `TEST_MEMORY_COMPARE`. However, it is not needed with scalar comparison assertions (`TEST_EQUAL`, etc.), which make a public copy of its argument before comparing them.
+
 ## Guidance on writing unit test data
 
 ### Document the test data
