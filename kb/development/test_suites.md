@@ -164,6 +164,31 @@ The header file [`<test/macros.h>`](https://github.com/Mbed-TLS/mbedtls-framewor
 * `TEST_FAIL("explanation of why this shouldn't happen")` for code that should be unreachable.
 * `TEST_ASSERT(condition)` for a condition that doesn't fit any of the special cases.
 
+Older test code only had `TEST_ASSERT`. But in new test code, please use higher-level macros where applicable, as they have additional conveniences.
+
+These macros can be used in the `.function` file, but also in auxiliary functions. If the assertion fails, in addition to marking the test case as failed, the macros cause `goto exit` to happen, thus the function must have an `exit` label. Often you'll need to write some code after the `exit:` label, but as a convenience, if you have no cleanup code, the test framework will add `exit:;` to test entry points that don't have an `exit:` label.
+
+### Output on failure
+
+If a test fails, the location of the error is displayed, as well as the failed assertion.
+
+If the test code runs into more than one failed assertion, only information about the first one is displayed. This is usually the right thing because as soon as one assertion has failed, the data is probably in a bad state anyway.
+
+When a test assertion is in a loop, or in an auxiliary function that is called multiple times, the location is not enough to know exactly where the failure happened. You can call `mbedtls_test_set_step()` to declare a “step number” which is displayed together with the location on failure. For example:
+
+```
+for (int i = 0; i < max; i++) {
+    mbedtls_test_set_step(i);
+    one_iteration(i);
+    TEST_ASSERT(intermediate_check());
+}
+
+mbedtls_test_set_step(max);
+final_checks(left_output);
+mbedtls_test_set_step(max + 1);
+final_checks(right_output);
+```
+
 ### Buffer allocation
 
 When a function expects an input or an output to have a certain size, you should pass it an allocated buffer with exactly the expected size. The continuous integration system runs tests in many configurations with Asan or Valgrind, and these will cause test failures if there is a buffer overflow or underflow.
