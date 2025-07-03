@@ -121,7 +121,7 @@ void test_function_example( char *input, char *expected_output, int expected_ret
 
 Calls to library functions in test code should always check the function's return status. Fail the test if anything is unexpected.
 
-The header file [`tests/include/test/macros.h`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/include/test/macros.h) declares several useful macros, including:
+The header file [`<test/macros.h>`](https://github.com/Mbed-TLS/mbedtls-framework/blob/development/tests/include/test/macros.h) declares several useful macros, including:
 
 * `TEST_EQUAL(x, y)` when two integer values are expected to be equal, for example `TEST_EQUAL(mbedtls_library_function(), 0)` when expecting a success or `TEST_EQUAL(mbedtls_library_function(), MBEDTLS_ERR_xxx)` when expecting an error.
 * `TEST_LE_U(x, y)` to test that the unsigned integers `x` and `y` satisfy `x <= y`, and `TEST_LE_S(x, y)` when `x` and `y` are signed integers.
@@ -195,7 +195,7 @@ In a test case that always uses PSA crypto, call `PSA_INIT()` at the beginning a
 
 In a test case that uses PSA crypto only when building with `MBEDTLS_USE_PSA_CRYPTO`, call `USE_PSA_INIT()` at the beginning and `USE_PSA_DONE()` at the end.
 
-See [`tests/include/test/psa_crypto_helpers.h`](https://github.com/Mbed-TLS/mbedtls/blob/development/tests/include/test/macros.h) for more complex cases.
+See [`<test/psa_crypto_helpers.h>`](https://github.com/Mbed-TLS/mbedtls-framework/blob/development/tests/include/test/psa_crypto_helpers.h) for more complex cases.
 
 ## Guidance on writing unit test data
 
