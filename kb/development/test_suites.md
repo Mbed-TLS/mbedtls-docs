@@ -68,8 +68,7 @@ When you want to introduce a new test, if the test function:
 
 You should write your test code in the same platform abstraction as the library, and should not assume the existence of platform-specific functions.
 
-Note that SSL is tested differently, with sample programs under the `programs/ssl/` folder. These are executed when you run the scripts `tests/ssl-opt.sh` and `tests/compat.sh`.
-
+Note that historically, most of SSL was tested differently, with sample programs under the `programs/ssl/` folder. These are executed when you run the scripts `tests/ssl-opt.sh` and `tests/compat.sh`. However, for new code, we prefer to have unit tests as well.
 
 ## `.function` example
 
