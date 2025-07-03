@@ -125,7 +125,7 @@ The header file [`<test/macros.h>`](https://github.com/Mbed-TLS/mbedtls-framewor
 
 * `TEST_EQUAL(x, y)` when two integer values are expected to be equal, for example `TEST_EQUAL(mbedtls_library_function(), 0)` when expecting a success or `TEST_EQUAL(mbedtls_library_function(), MBEDTLS_ERR_xxx)` when expecting an error.
 * `TEST_LE_U(x, y)` to test that the unsigned integers `x` and `y` satisfy `x <= y`, and `TEST_LE_S(x, y)` when `x` and `y` are signed integers.
-* `ASSERT_COMPARE(buffer1, size1, buffer2, size2)` to compare the actual output from a function with the expected output.
+* `TEST_MEMORY_COMPARE(buffer1, size1, buffer2, size2)` to compare the actual output from a function with the expected output.
 * `PSA_ASSERT(psa_function_call())` when calling a function that returns a `psa_status_t` and is expected to return `PSA_SUCCESS`.
 * `TEST_ASSERT(condition)` for a condition that doesn't fit any of the special cases.
     * In rare cases where a part of the test code shouldn't be reached, the convention is to use `TEST_ASSERT(!"explanation of why this shouldn't be reached")`.
@@ -141,21 +141,21 @@ Here is an example of a test function that checks that a library function has th
 /* BEGIN_CASE */
 void test_function( data_t *input, data_t *expected_output )
 {
-// must be set to NULL both for ASSERT_ALLOC and so that mbedtls_free(actual_output) is safe
+// must be set to NULL both for TEST_CALLOC and so that mbedtls_free(actual_output) is safe
     unsigned char *actual_output = NULL;
     size_t output_size;
     size_t output_length;
 
     /* Good case: exact-size output buffer */
     output_size = expected_output->len;
-    ASSERT_ALLOC( actual_output, output_size );
+    TEST_CALLOC( actual_output, output_size );
 // set output_length to a bad value to ensure mbedtls_library_function updates it
     output_length = 0xdeadbeef;
     TEST_EQUAL( mbedtls_library_function( input->x, input->len,
                                           actual_output, output_size,
                                           &output_length ), 0 );
 // Check both the output length and the buffer contents
-    ASSERT_COMPARE( expected_output->x, expected_output->len,
+    TEST_MEMORY_COMPARE( expected_output->x, expected_output->len,
                     actual_output, output_length );
 // Free the output buffer to prepare it for the next subtest
     mbedtls_free( actual_output );
@@ -163,19 +163,19 @@ void test_function( data_t *input, data_t *expected_output )
 
     /* Good case: larger output buffer */
     output_size = expected_output->len + 1;
-    ASSERT_ALLOC( actual_output, output_size );
+    TEST_CALLOC( actual_output, output_size );
     output_length = 0xdeadbeef;
     TEST_EQUAL( mbedtls_library_function( input->x, input->len,
                                           actual_output, output_size,
                                           &output_length ), 0 );
-    ASSERT_COMPARE( expected_output->x, expected_output->len,
+    TEST_MEMORY_COMPARE( expected_output->x, expected_output->len,
                     actual_output, output_length );
     mbedtls_free( actual_output );
     actual_output = NULL;
 
     /* Bad case: output buffer too small */
     output_size = expected_output->len - 1;
-    ASSERT_ALLOC( actual_output, output_size );
+    TEST_CALLOC( actual_output, output_size );
     TEST_EQUAL( mbedtls_library_function( input->x, input->len,
                                           actual_output, output_size,
                                           &output_length ),
