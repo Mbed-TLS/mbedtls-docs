@@ -94,22 +94,21 @@ Note that SSL is tested differently, with sample programs under the `programs/ss
  */
 
 /* BEGIN_CASE depends_on:MBEDTLS_DEPENDENT_MODULE */
-void test_function_example( char *input, char *expected_output, int expected_ret )
+void test_function_example(char *input, char *expected_output, int expected_ret)
 {
     int ilen, olen;
     unsigned char buf[MAX_SIZE];
     unsigned char output[MAX_SIZE], output_str[MAX_SIZE];
 
-    memset( buf, 0, sizeof( buf ) );
+    memset(buf, 0, sizeof(buf));
 
-    ilen = unhexify( buf, input );
+    ilen = unhexify(buf, input);
 
-    TEST_ASSERT( mbedtls_module_tested_function( buf, len, output ) == expected_ret );
+    TEST_ASSERT(mbedtls_module_tested_function(buf, len, output) == expected_ret);
 
-    if( ret == 0 )
-    {
-        hexify( output_str, output, olen );
-        TEST_ASSERT( strcasecmp( (char *) output_str, output ) == 0 );
+    if (ret == 0) {
+        hexify(output_str, output, olen);
+        TEST_ASSERT(strcasecmp((char *) output_str, output) == 0);
     }
 }
 /* END_CASE */
@@ -139,7 +138,7 @@ For output buffers, it's usually desirable to also check that the function works
 Here is an example of a test function that checks that a library function has the desired output for a given input.
 ```c
 /* BEGIN_CASE */
-void test_function( data_t *input, data_t *expected_output )
+void test_function(data_t *input, data_t *expected_output)
 {
 // must be set to NULL both for TEST_CALLOC and so that mbedtls_free(actual_output) is safe
     unsigned char *actual_output = NULL;
@@ -148,43 +147,43 @@ void test_function( data_t *input, data_t *expected_output )
 
     /* Good case: exact-size output buffer */
     output_size = expected_output->len;
-    TEST_CALLOC( actual_output, output_size );
+    TEST_CALLOC(actual_output, output_size);
 // set output_length to a bad value to ensure mbedtls_library_function updates it
     output_length = 0xdeadbeef;
-    TEST_EQUAL( mbedtls_library_function( input->x, input->len,
-                                          actual_output, output_size,
-                                          &output_length ), 0 );
+    TEST_EQUAL(mbedtls_library_function(input->x, input->len,
+                                        actual_output, output_size,
+                                        &output_length), 0);
 // Check both the output length and the buffer contents
-    TEST_MEMORY_COMPARE( expected_output->x, expected_output->len,
-                    actual_output, output_length );
+    TEST_MEMORY_COMPARE(expected_output->x, expected_output->len,
+                        actual_output, output_length);
 // Free the output buffer to prepare it for the next subtest
-    mbedtls_free( actual_output );
+    mbedtls_free(actual_output);
     actual_output = NULL;
 
     /* Good case: larger output buffer */
     output_size = expected_output->len + 1;
-    TEST_CALLOC( actual_output, output_size );
+    TEST_CALLOC(actual_output, output_size);
     output_length = 0xdeadbeef;
-    TEST_EQUAL( mbedtls_library_function( input->x, input->len,
-                                          actual_output, output_size,
-                                          &output_length ), 0 );
-    TEST_MEMORY_COMPARE( expected_output->x, expected_output->len,
-                    actual_output, output_length );
-    mbedtls_free( actual_output );
+    TEST_EQUAL(mbedtls_library_function(input->x, input->len,
+                                        actual_output, output_size,
+                                        &output_length), 0);
+    TEST_MEMORY_COMPARE(expected_output->x, expected_output->len,
+                        actual_output, output_length);
+    mbedtls_free(actual_output);
     actual_output = NULL;
 
     /* Bad case: output buffer too small */
     output_size = expected_output->len - 1;
-    TEST_CALLOC( actual_output, output_size );
-    TEST_EQUAL( mbedtls_library_function( input->x, input->len,
-                                          actual_output, output_size,
-                                          &output_length ),
-                MBEDTLS_ERR_XXX_BUFFER_TOO_SMALL );
-    mbedtls_free( actual_output );
+    TEST_CALLOC(actual_output, output_size);
+    TEST_EQUAL(mbedtls_library_function(input->x, input->len,
+                                        actual_output, output_size,
+                                        &output_length),
+               MBEDTLS_ERR_XXX_BUFFER_TOO_SMALL);
+    mbedtls_free(actual_output);
     actual_output = NULL;
 
 exit:
-    mbedtls_free( actual_output );
+    mbedtls_free(actual_output);
 }
 /* END_CASE */
 ```
