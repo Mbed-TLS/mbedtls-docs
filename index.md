@@ -40,5 +40,6 @@ project/index.md
 reviews/index.md
 security-advisories/index.md
 CONTRIBUTING.md
+docs/index.md
 kb/index.md
 ```
