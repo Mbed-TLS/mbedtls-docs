@@ -8,7 +8,8 @@
 **Not affected** | Mbed TLS 3.6.5 and later, TF-PSA-Crypto 1.0 and later
 **Impact** | Disclosure of private key material
 **Severity** | MEDIUM
-**Credits** | Independently: SSBleed: Chang Liu from Tsinghua University and Trevor E. Carlson from National University of Singapore; M-Step: Cristiano Rodrigues (University of Minho), Marton Bognar (DistriNet, KU Leuven), Sandro Pinto (University of Minho), Jo Van Bulck (DistriNet, KU Leuven)
+**Credits** | Independently: SSBleed team, M-Step team (see below)
+
 
 ## Vulnerability
 
@@ -85,6 +86,12 @@ allowing to trace a victim process, recover the inputs to
 The same functions are most probably also vulnerable in other circumstances
 using similar attack techniques: SGX-Step, SEV-Step, microarchitectural
 attacks similar to SSBleed...
+
+### Credits
+
+**SSBleed:** Chang Liu from Tsinghua University and Trevor E. Carlson from National University of Singapore
+
+**M-Step:** Cristiano Rodrigues (University of Minho), Marton Bognar (DistriNet, KU Leuven), Sandro Pinto (University of Minho), Jo Van Bulck (DistriNet, KU Leuven)
 
 ## Affected versions
 
