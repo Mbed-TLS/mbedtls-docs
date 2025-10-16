@@ -3,7 +3,7 @@
 **Title** | Side channel in RSA key generation and operations (SSBleed, M-Step)
 --------- | ----------------------------------------------------------
 **CVE** | CVE-2025-54764
-**Date** | TODO(18 Oct 2025 at the latest)
+**Date** | 15 October 2025
 **Affects** | all version of Mbed TLS up to 3.6.4
 **Not affected** | Mbed TLS 3.6.5 and later, TF-PSA-Crypto 1.0 and later
 **Impact** | Disclosure of private key material

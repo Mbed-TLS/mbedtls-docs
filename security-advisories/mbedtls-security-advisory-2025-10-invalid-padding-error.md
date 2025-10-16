@@ -3,7 +3,7 @@
 **Title** | Padding oracle through timing of cipher error reporting
 --------- | ----------------------------------------------------------
 **CVE** | CVE-2025-59438
-**Date** | October 2025
+**Date** | 15 October 2025
 **Affects** | All versions of Mbed TLS up to 3.6.4
 **Not affected** | Mbed TLS 3.6.5 and later 3.6 versions, TF-PSA-Crypto 1.0.0 and later
 **Impact** | Possible (partial) recovery of plaintext encrypted with CBC-PKCS7
