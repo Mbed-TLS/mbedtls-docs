@@ -29,15 +29,15 @@ If you are interested in collaborating on any of the roadmap features or other f
  * PSA Client-Server Testing
  * PSA Crypto restartable sign enhancements
  * Multi-threading perf. improvements, testing
- * PSA Crypto 1.1 compliance
- * Extended PSA Crypto v1.0 spec compliance
+ * PSA Crypto 1.2 compliance
  * PSA Secure Element, Crypto Accelerator Support Enhancements
  * Raw Public Key Mode
  * EdDSA
- * SHA3
  * Performance Optimization - ECP and Bignum
 
 **Completed**
+* [PSA Crypto] SHA3
+* [PSA Crypto] PSA Crypto 1.1 compliance
 * [Mbed TLS] Mbed TLS 4.0, TF-PSA-Crypto 1.0 release
 * [Mbed TLS4.0] Remove TLS cipher suites
 * [PSA Crypto] TF-PSACrypto repository becomes live
