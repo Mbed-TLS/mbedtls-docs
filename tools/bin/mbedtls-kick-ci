@@ -28,7 +28,8 @@ EOF
 script=$(basename -- "$0")
 
 host_internal_ci=jenkins-mbedtls.oss.arm.com
-host_open_ci=mbedtls.trustedfirmware.org
+host_linaro_ci=mbedtls.trustedfirmware.org
+host_openci_ci=ci.trustedfirmware.org
 
 : ${XDG_CONFIG_HOME:=~/.config}
 
@@ -39,6 +40,12 @@ host_open_ci=mbedtls.trustedfirmware.org
 # JENKINS_INTERNAL_API_TOKEN=1111111111111111111111111111111111
 # JENKINS_OPENCI_USER_ID=user-id-for-open-ci
 # JENKINS_OPENCI_API_TOKEN=2222222222222222222222222222222222
+# JENKINS_CLOUDBEES_USER_ID=user-id-for-open-ci
+# JENKINS_CLOUDBEES_API_TOKEN=3333333333333333333333333333333333
+#
+# Note that OPENCI is the OpenCI instance maintained by Linaro on behalf
+# of TrustedFirmware discontinued in late 2025, and CLOUDBEES is the OpenCI
+# instance maintained by Arm on behalf of TrustedFirmware since July 2025.
 #
 # To get the user ID, go to Jenkins, e.g. https://mbedtls.trustedfirmware.org/,
 # click your name in the top right, then the Status page should show your Jenkins
@@ -134,15 +141,29 @@ if [ -n "$MERGE_JOB" ]; then
 fi
 
 case $SCOPE in
+    all|linaro|linaro-pr-head)
+        kick_one linaro-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_linaro_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
+        ;;
+esac
+
+if [ -n "$MERGE_JOB" ]; then
+    case $SCOPE in
+        all|linaro|linaro-pr-merge)
+            kick_one linaro-pr-merge $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_linaro_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
+            ;;
+    esac
+fi
+
+case $SCOPE in
     all|openci|openci-pr-head)
-        kick_one openci-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
+        kick_one openci-pr-head $JENKINS_CLOUDBEES_USER_ID $JENKINS_CLOUDBEES_API_TOKEN "https://$host_openci_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
         ;;
 esac
 
 if [ -n "$MERGE_JOB" ]; then
     case $SCOPE in
         all|openci|openci-pr-merge)
-            kick_one openci-pr-merge $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_open_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
+            kick_one openci-pr-merge $JENKINS_CLOUDBEES_USER_ID $JENKINS_CLOUDBEES_API_TOKEN "https://$host_openci_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
             ;;
     esac
 fi

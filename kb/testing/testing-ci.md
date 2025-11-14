@@ -95,7 +95,7 @@ The `win32-msvc12_64` component is identical except that it runs `cmake . -G "Vi
 
 Each build and test job saves a list of test cases and PASS/SKIP/FAIL information. The outcome analysis job collects this information and performs sanity checks on it. The collected data is called the outcome file, which is available as an artifact called `outcomes.csv.xz` on Jenkins. For example, you can download the outcome analysis for the first test run of pull request \#9999 at
 ```
-https://mbedtls.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-9999-head/1/artifact/outcomes.csv.xz
+https://ci.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-9999-head/1/artifact/outcomes.csv.xz
 ```
 
 Note that the outcome file is very large: on Mbed TLS 3.6, it is about 60MB compressed and over 2GB uncompressed.
@@ -104,7 +104,7 @@ The outcome file has a simple semicolon-separated format. The format is document
 
 If outcome analysis reports a failure, the logs can't be seen directly on the default view of Jenkins, due to a known limitation of Jenkins's BlueOcean interface. They can be accessed from the classic “Pipeline Steps” view. For convenience, they are also provided as an artifact, e.g.
 ```
-https://mbedtls.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-999-head/1/artifact/result-analysis-analyze_outcomes.log.xz
+https://ci.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-999-head/1/artifact/result-analysis-analyze_outcomes.log.xz
 ```
 
 Outcome analysis contains two kinds of checks:
