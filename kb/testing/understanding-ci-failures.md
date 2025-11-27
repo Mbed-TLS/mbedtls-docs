@@ -19,7 +19,7 @@ Alternatively, you can extract the list of failed components from the list of fa
 
 You can download the list of failed test cases as an artifact on Jenkins. For example, the list of failures for the first test run of pull request \#9999 is at
 ```
-https://mbedtls.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-9999-head/1/artifact/failures.csv
+https://ci.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-9999-head/1/artifact/failures.csv
 ```
 
 If there are a large number of failures, the file will be compressed: add a `.xz` suffix to the URL.
@@ -88,7 +88,7 @@ Outcome analysis may fail due to earlier failures, in which case you should reso
 
 The first step is generally to read the outcome analysis logs, which are available as an artifact, e.g.
 ```
-https://mbedtls.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-999-head/1/artifact/result-analysis-analyze_outcomes.log.xz
+https://ci.trustedfirmware.org/job/mbed-tls-pr-head/job/PR-999-head/1/artifact/result-analysis-analyze_outcomes.log.xz
 ```
 
 If a test case is reported as not executed: in which configurations would you expect it to run? Pick one and dive into the code to figure out why it isn't executed. If there is a good reason to have a test case that is not executed, add an exception. File an issue if the reason is temporary.
