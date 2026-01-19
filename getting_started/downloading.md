@@ -4,5 +4,5 @@ Mbed TLS releases are available in the [public GitHub repository](https://github
 To download directly, use the following Git command:
 
 ```sh
-git clone https://github.com/Mbed-TLS/mbedtls.git
+git clone --recurse-submodules https://github.com/Mbed-TLS/mbedtls.git
 ```
