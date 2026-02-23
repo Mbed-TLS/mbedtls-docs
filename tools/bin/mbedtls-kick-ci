@@ -2,11 +2,11 @@
 
 set -eu
 
-DEFAULT_SCOPE=all
+DEFAULT_SCOPE=openci
 
 usage () {
     cat <<EOF
-Usage: $0 [PREFIX]NUMBER [all|internal|internal-pr-head|internal-pr-merge|openci|...]
+Usage: $0 [PREFIX]NUMBER [all|openci|openci-pr-head|openci-pr-merge]
 Start the CI on a pull request.
 
 The prefix indicates the repository:
@@ -18,8 +18,8 @@ The prefix indicates the repository:
 Examples:
   $0 c123 openci
     Run OpenCI (head and merge) on https://github.com/Mbed-TLS/TF-PSA-Crypto/pull/123
-  $0 123 internal-pr-head openci-pr-head
-    Run the pr-head job on both CIs on https://github.com/Mbed-TLS/mbedtls/pull/123
+  $0 123 openci-pr-head
+    Run the pr-head job on https://github.com/Mbed-TLS/mbedtls/pull/123
 
 Default job set: $DEFAULT_SCOPE
 EOF
@@ -27,8 +27,6 @@ EOF
 
 script=$(basename -- "$0")
 
-host_internal_ci=jenkins-mbedtls.oss.arm.com
-host_linaro_ci=mbedtls.trustedfirmware.org
 host_openci_ci=ci.trustedfirmware.org
 
 : ${XDG_CONFIG_HOME:=~/.config}
@@ -36,18 +34,15 @@ host_openci_ci=ci.trustedfirmware.org
 # ~/.config/mbedtls/ci-tokens.sh needs to contain the Jenkins user and API
 # token for each CI, e.g.
 #
-# JENKINS_INTERNAL_USER_ID=user-id-for-internal-ci
-# JENKINS_INTERNAL_API_TOKEN=1111111111111111111111111111111111
-# JENKINS_OPENCI_USER_ID=user-id-for-open-ci
-# JENKINS_OPENCI_API_TOKEN=2222222222222222222222222222222222
 # JENKINS_CLOUDBEES_USER_ID=user-id-for-open-ci
 # JENKINS_CLOUDBEES_API_TOKEN=3333333333333333333333333333333333
 #
-# Note that OPENCI is the OpenCI instance maintained by Linaro on behalf
-# of TrustedFirmware discontinued in late 2025, and CLOUDBEES is the OpenCI
-# instance maintained by Arm on behalf of TrustedFirmware since July 2025.
+# Note that for historical reasons, the variables for OpenCI credentials
+# in the configuration have CLOUDBEES in their name. The OPENCI variables
+# are for the OpenCI instance maintained by Linaro on behalf of TrustedFirmware
+# which was discontinued in late 2025.
 #
-# To get the user ID, go to Jenkins, e.g. https://mbedtls.trustedfirmware.org/,
+# To get the user ID, go to Jenkins, e.g. https://ci.trustedfirmware.org/,
 # click your name in the top right, then the Status page should show your Jenkins
 # user ID. Both internal and OpenCI user names will almost certainly be the same
 # as your GitHub ID.
@@ -125,34 +120,6 @@ case "$PR" in
 esac
 
 did_something=0
-
-case "$SCOPE" in
-    all|internal|internal-pr-head )
-        kick_one internal-pr-head $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
-        ;;
-esac
-
-if [ -n "$MERGE_JOB" ]; then
-    case $SCOPE in
-        all|internal|internal-pr-merge)
-            kick_one internal-pr-merge $JENKINS_INTERNAL_USER_ID $JENKINS_INTERNAL_API_TOKEN "https://$host_internal_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
-            ;;
-    esac
-fi
-
-case $SCOPE in
-    all|linaro|linaro-pr-head)
-        kick_one linaro-pr-head $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_linaro_ci/job/$HEAD_JOB/view/change-requests/job/PR-$PR-head/build/api/json?delay=0sec"
-        ;;
-esac
-
-if [ -n "$MERGE_JOB" ]; then
-    case $SCOPE in
-        all|linaro|linaro-pr-merge)
-            kick_one linaro-pr-merge $JENKINS_OPENCI_USER_ID $JENKINS_OPENCI_API_TOKEN "https://$host_linaro_ci/job/$MERGE_JOB/view/change-requests/job/PR-$PR-merge/build/api/json?delay=0sec"
-            ;;
-    esac
-fi
 
 case $SCOPE in
     all|openci|openci-pr-head)
