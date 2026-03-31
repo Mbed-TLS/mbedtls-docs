@@ -56,4 +56,4 @@ We recommend that users upgrade to a release including the fix. However, if you 
 | Branch | Mbed TLS 3.6.x | TF-PSA-Crypto 1.x | Mbed TLS 4.x |
 | ------ | -------------- | ----------------- | ------------ |
 | Basic fix | 53ab8a5 | c519064 | n.a |
-| With tests and documentation | branch up to d6f635e..73c6d6d | branch up to d6f1bad..b856f85 | n.a |
+| With tests and documentation | branch up to d6f635e^..73c6d6d | branch up to d6f1bad^..b856f85 | n.a |
