@@ -63,7 +63,7 @@ Since TF-PSA-Crypto 1.1.0 (and Mbed TLS 3.6.6 for the 3.6 long-time support bran
 - When the child is moved to a new or existing PID namespace before any call to the PSA random generator, and the PID in the child's namespace might match the PID of the original process.
 - When using the Linux `clone3()` system call with a `set_tid` array to force the PID of the new process.
 
-If your application might be concerned by these edge cases, you will need to treat forking as an external cloning event, as discussed in “TODO”.
+If your application might be concerned by these edge cases, you will need to treat forking as an external cloning event, as discussed in “[Protecting an application on a cloned system](#protecting-an-application-on-a-cloned-system)”.
 
 ### Protecting the PSA random generator with older library versions
 
@@ -80,7 +80,7 @@ Here are some workarounds that you can use if your application uses PSA (either 
 
 If your application instantiates a [legacy random generator](#legacy-random-generators) in a parent process and uses them in a child created by `fork()`, you must reseed the random generator after forking, before using it. Call `mbedtls_ctr_drbg_reseed()` or `mbedtls_hmac_drbg_reseed()` in both the parent process and the child process, before using the random generator.
 
-Note that additional considerations apply in configurations where the only entropy source is a nonvolatile seed. See “TODO”.
+Note that additional considerations apply in configurations where the only entropy source is a nonvolatile seed. See “[Cloning with only a nonvolatile seed](#cloning-with-only-a-nonvolatile-seed)”.
 
 ## Protecting an application on a cloned system
 
@@ -88,7 +88,7 @@ This section discusses how to protect the random generator in an application tha
 
 To give each instance of the application a distinct random generator state, you need to reseed the random generator after cloning. This section discusses how to do it.
 
-Note that additional considerations apply in configurations where the only entropy source is a nonvolatile seed. See “TODO”.
+Note that additional considerations apply in configurations where the only entropy source is a nonvolatile seed. See “[Cloning with only a nonvolatile seed](#cloning-with-only-a-nonvolatile-seed)”.
 
 ### Reseeding the PSA random generator with modern library versions
 
@@ -111,7 +111,7 @@ Here are some workarounds that you can use if your application uses PSA (either 
 
 If your application instantiates a [legacy random generator](#legacy-random-generators) and is cloned, call `mbedtls_ctr_drbg_reseed()` or `mbedtls_hmac_drbg_reseed()` after cloning, before using the random generator.
 
-Note that additional considerations apply in configurations where the only entropy source is a nonvolatile seed. See “TODO”.
+Note that additional considerations apply in configurations where the only entropy source is a nonvolatile seed. See “[Cloning with only a nonvolatile seed](#cloning-with-only-a-nonvolatile-seed)”.
 
 ### Operating system random generator after virtual machine cloning
 
