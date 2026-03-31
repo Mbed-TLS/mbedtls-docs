@@ -1,8 +1,8 @@
-# Entropy on Linux can fall back to /dev/urandom (CVE pending)
+# Entropy on Linux can fall back to /dev/urandom (CVE-2026-34871)
 
 **Title** | Entropy on Linux can fall back to `/dev/urandom`
 --------- | ----------------------------------------------------------
-**CVE** | Pending
+**CVE** | CVE-2026-34871
 **Date** | 31 March 2026
 **Affects** | All versions of Mbed TLS up to 3.6.5; all versions of TF-PSA-Crypto up to 1.0.0
 **Not affected** | Mbed TLS 3.6.6 and later 3.6 versions; TF-PSA-Crypto 1.1.0 and later versions

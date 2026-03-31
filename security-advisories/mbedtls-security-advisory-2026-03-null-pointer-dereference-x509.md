@@ -1,8 +1,8 @@
-# Null pointer dereference when setting a distinguished name (CVE pending)
+# Null pointer dereference when setting a distinguished name (CVE-2026-34874)
 
 **Title** | Null pointer dereference when setting a distinguished name
 --------- | ----------------------------------------------------------
-**CVE** | Pending
+**CVE** | CVE-2026-34874
 **Date** | 31 March 2026
 **Affects** | All versions of Mbed TLS from 3.5.0 up to 3.6.5, Mbed TLS 4.0.0
 **Not affected** | Mbed TLS 3.6.6 and later 3.6 versions, Mbed TLS 4.1.0 and later 4.x versions

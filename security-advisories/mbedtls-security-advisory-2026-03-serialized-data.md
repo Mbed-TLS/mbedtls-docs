@@ -1,8 +1,8 @@
-# Risk of insufficient protection of serialized session or context data leading to potential memory safety issues (CVE pending)
+# Risk of insufficient protection of serialized session or context data leading to potential memory safety issues (CVE-2026-34877)
 
 **Title** | Risk of insufficient protection of serialized session or context data leading to potential memory safety issues
 --------- | ---------------------------------------------------------------------------------------------------------------
-**CVE** | Pending
+**CVE** | CVE-2026-34877
 **Date** | 31 March 2026
 **Affects** | All Mbed TLS versions supporting session or context serialization
 **Severity** | LOW

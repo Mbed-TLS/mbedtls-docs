@@ -1,8 +1,8 @@
-# Client impersonation while resuming a TLS 1.3 session (CVE pending)
+# Client impersonation while resuming a TLS 1.3 session (CVE-2026-34873)
 
 **Title** | Client impersonation while resuming a TLS 1.3 session
 --------- | -----------------------------------------------------
-**CVE** | Pending
+**CVE** | CVE-2026-34873
 **Date** | 31 March 2026
 **Affects** | Mbed TLS versions 3.5.0 up to and including 3.6.5, and 4.0.0
 **Impact** | Client impersonation

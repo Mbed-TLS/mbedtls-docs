@@ -1,8 +1,8 @@
-# CCM multipart finish tag-length validation bypass (CVE pending)
+# CCM multipart finish tag-length validation bypass (CVE-2026-34876)
 
 **Title** | CCM multipart finish tag-length validation bypass
 --------- | ----------------------------------------------------------
-**CVE** | Pending
+**CVE** | CVE-2026-34876
 **Date** | 31 March 2026
 **Affects** | All versions of Mbed TLS from 3.1.0 to 3.6.5
 **Not affected** | Mbed TLS 3.6.6 and later 3.6 versions, Mbed TLS 4.0.0 and later 4.x versions

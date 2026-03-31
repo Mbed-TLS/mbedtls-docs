@@ -1,8 +1,8 @@
-# Buffer overflow in FFDH public key export (CVE pending)
+# Buffer overflow in FFDH public key export (CVE-2026-34875)
 
 **Title** | Buffer overflow in FFDH public key export
 --------- | ----------------------------------------------------------
-**CVE** | Pending
+**CVE** | CVE-2026-34875
 **Date** | 31 March 2026
 **Affects** | All versions of Mbed TLS from 3.5.0 up to 3.6.5, TF-PSA-Crypto 1.0.0
 **Not affected** | Mbed TLS 3.6.6 and later 3.6 versions, TF-PSA-Crypto 1.1.0 and later versions
