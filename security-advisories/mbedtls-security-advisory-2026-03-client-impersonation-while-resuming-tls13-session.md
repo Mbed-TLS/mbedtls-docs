@@ -89,4 +89,4 @@ We recommend that users upgrade to a release including the fix. However, if you 
 | Branch | Mbed TLS 3.6.x | TF-PSA-Crypto 1.x | Mbed TLS 4.x |
 | ------ | -------------- | ----------------- | ------------ |
 | Basic fix | 365a16dc384203f8a75982cc4b47e20e804b2d1a,500c155de96607445783a83c35365a9473512d65 | N/A | ed767bada9108fb7e15a1012f384a08e2cd637f2,8731587e41379e8ea5cd7ddda7e418059947ed7a |
-| With tests and documentation | branch up to 0d48c34169a1235c5656c968019027d32e7aad40 | N/A | branch up to d8868c432fcf2cea29922fcb51c5892c1d3536f2 |
+| With tests and documentation | 7c2f7281781ce2c6c16fe097d47e1117836acc18..0be90b44e2ffe98525bec55545d87399dfc1b96e | N/A | 5e54829b685e7c2cf2b9e46dcfc97edf9775cee4..622b69d1d059d5e5b6dd5792cf8402f22908baab |
