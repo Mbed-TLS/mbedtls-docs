@@ -67,7 +67,7 @@ If your application might be concerned by these edge cases, you will need to tre
 
 ### Protecting the PSA random generator with older library versions
 
-TF-PSA-Crypto 1.0.0, Mbed TLS 4.0.0, and versions of Mbed TLS up to 3.6.x, do not protect the [PSA random generator](#psa-random-generator) against `fork()`. (If you obtain Mbed TLS from an operating system distribution package, it may have backported the fix — consult the package documentation.)
+TF-PSA-Crypto 1.0.0, Mbed TLS 4.0.0, and versions of Mbed TLS up to 3.6.5, do not protect the [PSA random generator](#psa-random-generator) against `fork()`. (If you obtain Mbed TLS from an operating system distribution package, it may have backported the fix — consult the package documentation.)
 
 Here are some workarounds that you can use if your application uses PSA (either directly, or indirectly via TLS 1.3, or indirectly when `MBEDTLS_USE_PSA_CRYPTO` is enabled).
 
@@ -100,7 +100,7 @@ In Mbed TLS 3.6.6 and later 3.6.x version, in TF-PSA-Crypto 1.1.0 and later vers
 
 ### Protecting the PSA random generator with older library versions
 
-TF-PSA-Crypto 1.0.0, Mbed TLS 4.0.0, and versions of Mbed TLS up to 3.6.x, do not offer APIs to control the reseeding of the [PSA random generator](#psa-random-generator). (If you obtain Mbed TLS from an operating system distribution package, it may have backported these functions — consult the package documentation.)
+TF-PSA-Crypto 1.0.0, Mbed TLS 4.0.0, and versions of Mbed TLS up to 3.6.5, do not offer APIs to control the reseeding of the [PSA random generator](#psa-random-generator). (If you obtain Mbed TLS from an operating system distribution package, it may have backported these functions — consult the package documentation.)
 
 Here are some workarounds that you can use if your application uses PSA (either directly, or indirectly via TLS 1.3, or indirectly when `MBEDTLS_USE_PSA_CRYPTO` is enabled).
 
