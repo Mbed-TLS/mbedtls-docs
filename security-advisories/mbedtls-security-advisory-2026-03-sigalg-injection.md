@@ -1,4 +1,4 @@
-# Signature Algorithm Injection
+# Signature Algorithm Injection (CVE-2026-25834)
 
 **Title** | Signature Algorithm Injection
 --------- | ----------------------------------------------------------

@@ -1,4 +1,4 @@
-# PSA random generator cloning CVE-2026-25835
+# PSA random generator cloning (CVE-2026-25835)
 
 **Title** | PSA random generator cloning
 --------- | ----------------------------------------------------------

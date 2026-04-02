@@ -4,7 +4,7 @@
 --------- | ---------------------------------------------------------------------------------------------------------------
 **CVE** | CVE-2026-34877
 **Date** | 31 March 2026
-**Affects** | All Mbed TLS versions supporting session or context serialization
+**Affects** | All Mbed TLS versions from 2.19.0 up to 3.6.5, Mbed TLS 4.0.0
 **Severity** | LOW
 **Credits** | Haruto Kimura (Stella) and Eva Crystal (0xiviel)
 
