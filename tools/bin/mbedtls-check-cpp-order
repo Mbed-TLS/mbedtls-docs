@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""Check that macros are defined before conditionals on these macros.
+
+When a project macro (MBEDTLS_xxx, PSA_xxx, TF_PSA_CRYPTO_xxx) is used in
+a preprocessor conditional, there should normally be a conditional #define
+before the #if directive that uses this macro. This script prints macros
+used in conditionals for which there is no previous #define.
+
+#line 42 "crypto_config.h"
+//#define MBEDTLS_OPTION    // the script works as with config.py realfull
+#line 1 "some_header.h"
+#if MBEDTLS_OPTION          // <-- ok (commented-out define in config.h)
+#define MBEDTLS_INTERNAL
+#endif
+#if MBEDTLS_INTERNAL        // <-- ok (conditional define above)
+#endif
+#if MBEDTLS_VALUE           // <-- flagged
+#endif
+int x = MBEDTLS_VALUE;      // <-- ignored (only pp directives are checked)
+#define MBEDTLS_VALUE
+"""
+
+# Copyright The Mbed TLS Contributors
+# SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later
+
+import argparse
+import glob
+import io
+import os
+import re
+import sys
+import typing
+from typing import Set
+
+import pcpp.preprocessor # pip install pcpp
+
+
+class Preprocessor(pcpp.preprocessor.Preprocessor):
+
+    CONDITIONAL_DIRECTIVES = frozenset(['elif', 'else', 'endif', 'if',
+                                         'ifdef', 'ifndef'])
+
+    PROJECT_IDENTIFIER_RE = re.compile(r'(?:MBEDTLS|PSA|TF_PSA_CRYPTO)_')
+    COMMENTED_OUT_DEFINE_RE = re.compile(r'^( *)//( *# *define )', re.M)
+
+    SKIP_INCLUDES = frozenset([
+        '/usr/include/stdarg.h',
+        '/usr/include/stddef.h',
+    ])
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.already_included = set() #type: Set[str]
+        self.define_seen = set() #type: Set[str]
+
+    def note_suspicious_identifier_in_conditional(self,
+                                                  filename: str, lineno: int,
+                                                  ident: str) -> None:
+        """Invoked when a macro is used before a conditional definition."""
+        sys.stdout.write(f'{filename}:{lineno}:{ident}\n')
+
+    def on_file_open(self, is_system_include, includepath):
+        if includepath in self.SKIP_INCLUDES:
+            return io.StringIO()
+        # Crude way to block multiple inclusions of the same file, since we
+        # don't honor preprocessor conditionals.
+        if includepath in self.already_included:
+            return io.StringIO()
+        self.already_included.add(includepath)
+        with super().on_file_open(is_system_include, includepath) as file_:
+            content = file_.read()
+            # Do the equivalent of `config.py realfull`
+            if includepath.endswith('/mbedtls/mbedtls_config.h') or \
+               includepath.endswith('/psa/crypto_config.h'):
+                content = self.COMMENTED_OUT_DEFINE_RE.sub(r'\1\2', content)
+        return io.StringIO(content)
+
+    def on_directive_handle(self, directive, toks, *args, **kwargs):
+        if directive.value == 'include' and \
+           toks[0].type != 'CPP_ID':
+            return super().on_directive_handle(directive, toks, *args, **kwargs)
+        elif directive.value == 'define':
+            self.define_seen.add(toks[0].value)
+        elif directive.value in self.CONDITIONAL_DIRECTIVES:
+            for tok in toks[1:]:
+                if not self.PROJECT_IDENTIFIER_RE.match(tok.value):
+                    continue
+                if tok.type == 'CPP_ID' and tok.value not in self.define_seen:
+                    self.note_suspicious_identifier_in_conditional(tok.source, tok.lineno, tok.value)
+        raise pcpp.preprocessor.OutputDirective(pcpp.preprocessor.Action.IgnoreAndPassThrough)
+
+    def process_silently(self, code: str) -> None:
+        """Run the C preprocessor without writing the result anywhere."""
+        self.parse(code)
+        io_null = io.StringIO()
+        self.write(io_null)
+
+
+class Checker:
+    """C preprocessor sanity checker."""
+
+    def __init__(self, include_dirs) -> None:
+        self.pp = Preprocessor()
+        for dir in include_dirs:
+            self.pp.add_path(dir)
+        self.pp.add_path('/usr/include')
+
+    def check(self, filename: str) -> None:
+        """Check one file."""
+        self.pp.process_silently(f'#include "{os.path.abspath(filename)}"')
+
+
+INCLUDE_DIRS = [
+    'include',
+    'drivers/builtin/include',
+    'drivers/everest/include',
+    'drivers/p256-m',
+    'tf-psa-crypto/include',
+    'tf-psa-crypto/drivers/builtin/include',
+    'tf-psa-crypto/drivers/everest/include',
+    'tf-psa-crypto/drivers/p256-m',
+]
+
+
+class ResetIncludeAction(argparse.Action):
+    def __call__(self, parser, namespace, *args, **kwargs):
+        namespace.include_dirs = []
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--reset-include',
+                        action=ResetIncludeAction, nargs=0,
+                        help='Reset -I list')
+    parser.add_argument('-I', metavar='DIR',
+                        action='append', dest='include_dirs',
+                        default=INCLUDE_DIRS,
+                        help=('Directory to add to include path '
+                              '(default: sensible for TF-PSA-Crypto or Mbed TLS)'))
+    parser.add_argument('files', metavar='FILE', nargs='*',
+                        help='Files to check (default: build_info.h)')
+    args = parser.parse_args()
+    checker = Checker(args.include_dirs)
+    if not args.files:
+        args.files = glob.glob('include/*/build_info.h')
+    for filename in args.files:
+        checker.check(filename)
+
+if __name__ == "__main__":
+    main()
