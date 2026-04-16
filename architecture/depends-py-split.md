@@ -91,8 +91,6 @@ This leads us to the following file architecture:
 
 Create a directory where TF-PSA-Crypto can put Python code that can be used by both TF-PSA-Crypto and Mbed TLS. This directory is intended for _project knowledge_, i.e. data that describes TF-PSA-Crypto in a form that Mbed TLS can consume.
 
-Code in this directory may call standard Python functions (e.g. set/list/dict functions, `re` functions, …) but should generally not do I/O or import `mbedtls_framework` modules. This way the code is flexible with respect to how it's consumed.
-
 We do not put `tf-psa-crypto/scripts` or `tf-psa-crypto/tests/scripts` on the Python import path in Mbed TLS because file names in these directories are likely to clash with file names in the corresponding directories of Mbed TLS, and this could cause confusion as to which module gets loaded.
 
 To avoid any confusion between Mbed TLS knowledge modules and TF-PSA-Crypto knowledge modules when they're accessed from Mbed TLS, modules in the TF-PSA-Crypto project knowledge directory should have a name that start with `tf_psa_crypto_`.
