@@ -89,6 +89,9 @@ This leads us to the following file architecture:
 
 ### Export TF-PSA-Crypto knowledge to Mbed TLS
 
+https://github.com/Mbed-TLS/TF-PSA-Crypto/issues/764
+https://github.com/Mbed-TLS/mbedtls/issues/10698
+
 Create a directory where TF-PSA-Crypto can put Python code that can be used by both TF-PSA-Crypto and Mbed TLS. This directory is intended for _project knowledge_, i.e. data that describes TF-PSA-Crypto in a form that Mbed TLS can consume.
 
 We do not put `tf-psa-crypto/scripts` or `tf-psa-crypto/tests/scripts` on the Python import path in Mbed TLS because file names in these directories are likely to clash with file names in the corresponding directories of Mbed TLS, and this could cause confusion as to which module gets loaded.
@@ -170,6 +173,9 @@ Validate this on the CI, but wait a few weeks to merge it, so that Mbed TLS keep
 Prerequisites: [Export TF-PSA-Crypto knowledge to Mbed TLS](#export-tf-psa-crypto-knowledge-to-mbed-tls), [Switch to CMake](#switch-to-cmake), [Refactor in place](#refactor-in-place).
 
 ### Cleanup
+
+https://github.com/Mbed-TLS/TF-PSA-Crypto/issues/765
+https://github.com/Mbed-TLS/mbedtls/issues/10699
 
 * In TF-PSA-Crypto, remove the temporary redirection `tests/scripts/tf_psa_crypto_test_case_info.py`.
 * In Mbed TLS, in `tests/scripts/analyze_outcomes.py`, import `tf_psa_crypto_test_case_info.py` and remove the hacks to load the old script dynamically.
