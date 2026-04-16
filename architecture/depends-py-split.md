@@ -98,14 +98,14 @@ To avoid any confusion between Mbed TLS knowledge modules and TF-PSA-Crypto know
 In TF-PSA-Crypto:
 
 * Create a directory `scripts/project_knowledge` containing `__init__.py` with just a comment explaining the directory's purpose.
-* Move `tests/scripts/tf_psa_crypto_test_case_info.py` to `scripts/project_knowledge/tf_psa_crypto_test_coverage_info.py`.
-* Re-create `tests/scripts/tf_psa_crypto_test_case_info.py` containing a temporary stub that re-exports `project_knowledge.tf_psa_crypto_test_coverage_info.INTERNAL_TEST_CASES`.
+* Move `tests/scripts/tf_psa_crypto_test_case_info.py` to `scripts/project_knowledge/tf_psa_crypto_test_case_info.py`.
+* Re-create `tests/scripts/tf_psa_crypto_test_case_info.py` containing a temporary stub that re-exports `project_knowledge.tf_psa_crypto_test_case_info.INTERNAL_TEST_CASES`.
 
 In Mbed TLS:
 
 * Add `tf-psa-crypto/scripts/project_knowledge` to the various places with a Python search path (`.mypy.ini`, `.pylintrc`, `scripts/framework_scripts_path.py`, `tests/scripts/scripts_path.py`).
 
-Note: we will wait a few weeks between the creation of `scripts/project_knowledge/tf_psa_crypto_test_coverage_info.py` and starting to use it in Mbed TLS, for the sake of existing TF-PSA-Crypto branches under development (they still need to pass the CI with Mbed TLS's `development` branch).
+Note: we will wait a few weeks between the creation of `scripts/project_knowledge/tf_psa_crypto_test_case_info.py` and starting to use it in Mbed TLS, for the sake of existing TF-PSA-Crypto branches under development (they still need to pass the CI with Mbed TLS's `development` branch).
 
 Identical backports in 1.1/4.1.
 
@@ -172,6 +172,6 @@ Prerequisites: [Export TF-PSA-Crypto knowledge to Mbed TLS](#export-tf-psa-crypt
 ### Cleanup
 
 * In TF-PSA-Crypto, remove the temporary redirection `tests/scripts/tf_psa_crypto_test_case_info.py`.
-* In Mbed TLS, in `tests/scripts/analyze_outcomes.py`, import `tf_psa_crypto_test_coverage_info.py` and remove the hacks to load the old script dynamically.
+* In Mbed TLS, in `tests/scripts/analyze_outcomes.py`, import `tf_psa_crypto_test_case_info.py` and remove the hacks to load the old script dynamically.
 
 Prerequisites: all of the above, and wait a little so that Mbed TLS keeps working with slightly older TF-PSA-Crypto branches.
