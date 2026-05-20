@@ -6,8 +6,7 @@
 **Date** | 31 March 2026
 **Affects** | TF-PSA-Crypto 1.0 and all versions of Mbed TLS up to 3.6.5
 **Not affected** | TF-PSA-Crypto 1.1 and Mbed TLS 3.6.6
-**Impact** | FFDH does not guarantee contributory behaviour, which some
-protocols may require
+**Impact** | FFDH does not guarantee contributory behaviour, which some protocols may require
 **Severity** | MEDIUM
 **Credits** | Found independently by Eva Crystal (0xiviel) and another reporter
 
