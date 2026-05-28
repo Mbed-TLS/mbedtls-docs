@@ -44,7 +44,7 @@ host_openci_ci=ci.trustedfirmware.org
 #
 # To get the user ID, go to Jenkins, e.g. https://ci.trustedfirmware.org/,
 # click your name in the top right, then the Status page should show your Jenkins
-# user ID. Both internal and OpenCI user names will almost certainly be the same
+# user ID. Your OpenCI user name will almost certainly be the same
 # as your GitHub ID.
 #
 # To get an API token, choose Configure from your user page, click Add new Token,
