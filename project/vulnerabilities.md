@@ -13,6 +13,14 @@ If you think you have found a security vulnerability in Mbed TLS or in TF-PSA-Cr
 
 Mbed TLS and TF-PSA-Crypto are part of Arm's Trusted Firmware [bug bounty program](https://app.intigriti.com/programs/arm/trustedfirmware/detail).
 
+Please report your findings either through the bug bounty program, or via the security alias above - but preferably not both, to simplify tracking on our side.
+
+Here are a few differences between those two ways of reporting:
+- Only the bug bounty gives out money.
+- If you go through the bug bounty program, you abandon control over disclosure, per the program's [terms and conditions](https://kb.intigriti.com/en/articles/5466165-researcher-terms-conditions#h_aa5c8fa808).
+- The bug bounty program requires a proof of concept (PoC). Reporting to the alias lets you choose how to establish the report's credibility.
+- Reports through the bug bounty program have an intake delay. The alias reaches the developers directly.
+
 ## Advisories
 
 Please see [the security advisories page](../security-advisories/index.md) for a complete list of Mbed TLS and TF-PSA-Crypto security advisories.
