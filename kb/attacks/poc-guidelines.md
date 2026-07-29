@@ -36,6 +36,16 @@ The victim program must only use documented APIs, and must use them correctly ac
 
 Any violation of these rules disqualifies the PoC.
 
+### Reproduction instructions
+
+Please provide complete instructions to reproduce the problem, such as:
+
+* The exact version of the product that the PoC works against. This should be the latest release in a supported branch of [TF-PSA-Crypto](https://github.com/Mbed-TLS/TF-PSA-Crypto/blob/development/BRANCHES.md) or [Mbed TLS](https://github.com/Mbed-TLS/mbedtls/blob/development/BRANCHES.md), or a more recent commit on a supported branch.
+* The compile-time configuration of the library.
+* The platform and compiler that you used.
+* Instructions for compiling the PoC, if it's in the form of a separate program.
+* Instructions for running the PoC, if it's more complicated than building and running a program with no arguments.
+
 ## Structure of a PoC
 
 This section discusses the preferred structure of a PoC. These are guidelines, not requirements. You do not have to follow them, but they make our life easier.
