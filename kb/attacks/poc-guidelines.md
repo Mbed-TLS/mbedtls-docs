@@ -16,7 +16,7 @@ The Intigriti bounty program requires a PoC.
 
 ## Requirements on a PoC
 
-This section discusses requirements on a PoC. We have found that submissions based on LLM (large language models, “AI”) often violates these requirements, and that leads to unfounded claims. Please pay careful attention to these requirements in any LLM-assisted report.
+This section discusses requirements on a PoC. We have found that submissions based on LLM (large language models, “AI”) often violate these requirements, and that leads to unfounded claims. Please pay careful attention to these requirements in any LLM-assisted report.
 
 ### Separate the victim from the attacker
 
@@ -40,7 +40,7 @@ Any violation of these rules disqualifies the PoC.
 
 This section discusses the preferred structure of a PoC. These are guidelines, not requirements. You do not have to follow them, but they make our life easier.
 
-Note that LLM tend to be fairly good at picking up the structure of our test code, including finding poorly documented auxiliary functions. However, without proper guidance, LLM tends to use internal functions. Internal functions should not be used in victim code, since their behavior is not part of the library's contract.
+Note that LLM tend to be fairly good at picking up the structure of our test code, including finding poorly documented auxiliary functions. However, without proper guidance, LLM tend to use internal functions. Internal functions should not be used in victim code, since their behavior is not part of the library's contract.
 
 ### PoC using a sample program
 
@@ -54,7 +54,7 @@ Depending on how close the existing test functions come to reaching the bug, you
 
 * add a new test case for an existing function;
 * or add an assertion to the existing code;
-* or write a new test fnuction.
+* or write a new test function.
 
 If you write a new test function, it is helpful if you can provide a variant of the test that passes, to help locate the cause of the bug.
 
@@ -62,11 +62,11 @@ Note that unit tests have easy access to internal interfaces of individual libra
 
 ### PoC using SSL test programs
 
-For TLS bugs, depending on the way the vulnerability can be triggered, it may be more convenient to use the test programs `programs/ssl/ssl_client2` and `programs/ss/ssl_server2`. For bugs involving non-nominal DTLS traffic, `programs/test/udp_proxy` can be useful. These programs are normally invoked via `tests/ssl-opt.sh`. A test case in `tests/ssl-opt.sh` is a convenient way to demonstrate a TLS bug. Our tooling is set up to either run `ssl_client2` against `ssl_server2`, or run one of them against an OpenSSL or GnuTLS peer.
+For TLS bugs, depending on the way the vulnerability can be triggered, it may be more convenient to use the test programs `programs/ssl/ssl_client2` and `programs/ssl/ssl_server2`. For bugs involving non-nominal DTLS traffic, `programs/test/udp_proxy` can be useful. These programs are normally invoked via `tests/ssl-opt.sh`. A test case in `tests/ssl-opt.sh` is a convenient way to demonstrate a TLS bug. Our tooling is set up to either run `ssl_client2` against `ssl_server2`, or run one of them against an OpenSSL or GnuTLS peer.
 
 Note that if the bug causes memory corruption, you should not try to detect it in the code: instead, rely on compile-time or run-time instrumentation such as AddressSanitizer (ASan) or Valgrind.
 
-Note that `ssl_client2` and `ssl_server2` have access to internal functions that can create malformed traffic or put the SSL context in unexpected states. When demonstrating a vulnerability, the attaker side may use whatever is convenient, but the victim side must not rely on calls to internal functions. If the vulnerability affects a client or server in the default runtime configuration, you may use `programs/ssl/ssl_client1` or `programs/ssl/ssl_server` as the victim.
+Note that `ssl_client2` and `ssl_server2` have access to internal functions that can create malformed traffic or put the SSL context in unexpected states. When demonstrating a vulnerability, the attacker side may use whatever is convenient, but the victim side must not rely on calls to internal functions. If the vulnerability affects a client or server in the default runtime configuration, you may use `programs/ssl/ssl_client1` or `programs/ssl/ssl_server` as the victim.
 
 ## Considerations for particular classes of vulnerabilities
 
