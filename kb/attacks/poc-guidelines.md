@@ -4,9 +4,9 @@ This document provides some guidelines on writing a proof-of-concept (PoC) when 
 
 ## What is a proof-of-concept (PoC)?
 
-A PoC for a security issue is a small program that demonstrates a vulnerability. It should illustrate how an attacker can cause a security property to be violated in a victim program.
+A PoC for a security issue is an artifact that demonstrates a vulnerability. It can take different forms, typically an input file, a small program, or a test case. It should illustrate how an attacker can cause a security property to be violated in a victim program.
 
-A PoC does not need to be a full exploit: it only needs to reach the stage where a property or invariant is violated.
+A PoC does not need to be a full exploit. It only needs to produce observable evidence that a security property is violated.
 
 ## Is a PoC needed?
 
@@ -16,7 +16,7 @@ The Intigriti bounty program requires a PoC.
 
 ## Requirements on a PoC
 
-This section discusses requirements on a PoC. We have found that submissions based on LLM (large language models, “AI”) often violate these requirements, and that leads to unfounded claims. Please pay careful attention to these requirements in any LLM-assisted report.
+This section discusses requirements on a PoC. We have found that submissions based on LLM (large language models, “AI”) often fail to distinguish an attacker from the victim, or target internal interfaces in the victim, and that leads to unfounded claims. Please pay careful attention to these requirements in any LLM-assisted report.
 
 ### Separate the victim from the attacker
 
@@ -48,7 +48,7 @@ For parser bugs, an input that causes a sample program to crash is sufficient as
 
 ### PoC as a unit test
 
-For TF-PSA-Crypto and Mbed TLS maintainers, the ideal form of a PoC is a non-regression test for the bug. This means a new test case in `tests/suites/test_suite_*.data` which either fails or causes memory corruption inside the library. Note that if the bug causes memory corruption, you should not try to detect it in the code: instead, rely on compile-time or run-time instrumentation such as AddressSanitizer (ASan) or Valgrind.
+For TF-PSA-Crypto and Mbed TLS maintainers, the ideal form of a PoC is a non-regression test for the bug. This means a new test case in `tests/suites/test_suite_*.data` which either fails at a clearly valid assertion, or causes memory corruption inside the library. Note that if the bug causes memory corruption, you should not try to detect it in the code: instead, rely on compile-time or run-time instrumentation such as AddressSanitizer (ASan) or Valgrind.
 
 Depending on how close the existing test functions come to reaching the bug, you might either:
 
@@ -58,7 +58,7 @@ Depending on how close the existing test functions come to reaching the bug, you
 
 If you write a new test function, it is helpful if you can provide a variant of the test that passes, to help locate the cause of the bug.
 
-Note that unit tests have easy access to internal interfaces of individual library modules. When demonstrating a vulnerability, make sure that the victim code only uses public interfaces.
+Note that unit tests have easy access to internal interfaces of individual library modules. A violation of an internal contract does not demonstrate a vulnerability. A violation of a public contract, reached by using internal functions, does not demonstrate a vulnerability either. To demonstrate a vulnerability, make sure that the victim code only uses public interfaces.
 
 ### PoC using SSL test programs
 
@@ -66,7 +66,7 @@ For TLS bugs, depending on the way the vulnerability can be triggered, it may be
 
 Note that if the bug causes memory corruption, you should not try to detect it in the code: instead, rely on compile-time or run-time instrumentation such as AddressSanitizer (ASan) or Valgrind.
 
-Note that `ssl_client2` and `ssl_server2` have access to internal functions that can create malformed traffic or put the SSL context in unexpected states. When demonstrating a vulnerability, the attacker side may use whatever is convenient, but the victim side must not rely on calls to internal functions. If the vulnerability affects a client or server in the default runtime configuration, you may use `programs/ssl/ssl_client1` or `programs/ssl/ssl_server` as the victim.
+Note that `ssl_client2` and `ssl_server2` have access to internal functions that can create malformed traffic or put the SSL context in unexpected states. When demonstrating a vulnerability, the attacker side may use whatever is convenient to construct malformed traffic. On the other hand, the victim side must not rely on calls to internal functions, since that would fail to demonstrate a security impact. If the vulnerability affects a client or server in the default runtime configuration, you may use `programs/ssl/ssl_client1` or `programs/ssl/ssl_server` as the victim.
 
 ## Considerations for particular classes of vulnerabilities
 
