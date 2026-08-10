@@ -1,12 +1,20 @@
-# RSA key pair generator
+# Generating an RSA key pair
 
 To use RSA with Mbed TLS or any other application, you will most likely need an RSA key pair. An RSA key pair is often stored in [either a PEM file or a DER file](asn1-key-structures-in-der-and-pem.md).
 
-## Building the RSA key pair generator
+Mbed TLS 4 does not provide a command-line program for generating RSA key pairs. Use a dedicated tool such as OpenSSL to create a key file for use with Mbed TLS:
 
-Mbed TLS ships with the source code for an RSA key pair generator application, called **gen_key**. To build the executable for the application, please check out the [building Mbed TLS](../compiling-and-building/how-do-i-build-compile-mbedtls.md).
+```
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out private.key
+```
 
-After the compilation, the executable is often located in `programs/pkey/gen_key`.
+The rest of this article documents the `gen_key` program that was available in Mbed TLS versions before 4.0.
+
+## Building the legacy RSA key pair generator
+
+Before 4.0, Mbed TLS shipped the source code for an RSA key pair generator application, called **gen_key**. To build the executable for the application, please check out the [building Mbed TLS](../compiling-and-building/how-do-i-build-compile-mbedtls.md).
+
+After the compilation, the legacy executable is often located in the `programs/pkey` directory.
 
 The **gen_key** application has the following arguments and options:
     

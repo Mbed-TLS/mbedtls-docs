@@ -2,7 +2,7 @@
 
 This tutorial outlines how to generate your own keys and certificates for your system.
 
-Mbed TLS includes the core and applications for generating keys and certificates without relying on other libraries and applications, giving you a command-line alternative to OpenSSL for generating their keys and (self-signed) certificates.
+Mbed TLS includes the core and applications for generating and using certificates. Mbed TLS 4 does not provide a command-line program for generating keys, so this tutorial uses OpenSSL to create the key file.
 
 This article assumes you have compiled and installed the Mbed TLS library on your system.
 
@@ -10,21 +10,9 @@ This article assumes you have compiled and installed the Mbed TLS library on you
 
 The first step for generating a self-signed certificate is to generate a private/public key pair for the certificate.
 
-For generating key files, Mbed TLS includes the `gen_key` application in `programs/pkey`.
-
-This key generation application accepts the following arguments:
+Use OpenSSL to generate a 4096-bit RSA key file, as explained [here](../cryptography/rsa-key-pair-generator.md):
 ```
- usage: gen_key param=<>...
-
- acceptable parameters:
-    type=rsa              default: rsa
-    rsa_keysize=%d        default: 4096
-    filename=%s           default: keyfile.key
-    format=pem|der        default: pem
-```
-The following command generates a 4096 bit RSA key file, as explained [here](../cryptography/rsa-key-pair-generator.md):
-```
-programs/pkey/gen_key type=rsa rsa_keysize=4096 filename=our_key.key
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out our_key.key
 ```
 
 ## Generating a self-signed certificate
