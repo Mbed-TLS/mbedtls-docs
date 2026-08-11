@@ -1,8 +1,8 @@
-# A random generator fault can compromise TLS data integrity (CVE pending)
+# A random generator fault can compromise TLS data integrity (CVE-2026-73064)
 
 **Title** | A random generator fault can compromise TLS data integrity
 --------- | ----------------------------------------------------------
-**CVE** | CVE pending
+**CVE** | CVE-2026-73064
 **Date** | 7th of July, 2026
 **Affects** | All versions of Mbed TLS from 3.2.0 to 3.6.6; Mbed TLS 4.0.0; Mbed TLS 4.1.0
 **Not affected** | Mbed TLS 3.6.7 and later 3.6.x versions; Mbed TLS 4.1.1 and later 4.1.x version; Mbed TLS 4.2.0 and later 4.x versions
