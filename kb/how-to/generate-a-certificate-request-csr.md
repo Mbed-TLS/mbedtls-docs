@@ -2,7 +2,7 @@
 
 This tutorial describes how to generate your own certificate request for use in an online SSL certificate request.
 
-Mbed TLS includes the core and applications for generating keys and certificate requests without relying on other libraries and applications, offering users a command-line alternative to OpenSSL for generating their keys and certificate requests.
+Mbed TLS includes the core and applications for generating and using certificate requests. Mbed TLS 4 does not provide a command-line program for generating keys, so this tutorial uses OpenSSL to create the key file.
 
 This article assumes you have compiled and installed the Mbed TLS library and example programs on your system.
 
@@ -18,21 +18,9 @@ The CA will determine the validity of the certificate they generate based on how
 
 The first step for generating a certificate request, is to generate a private-public key pair for the certificate.
 
-For generating key files, Mbed TLS includes the `gen_key` application in `programs/pkey`.
-
-This key generation application accepts the following arguments:
+Use OpenSSL to generate a 2048-bit RSA key file, as explained [here](../cryptography/rsa-key-pair-generator.md):
 ```
- usage: gen_key param=<>...
-
- acceptable parameters:
-    type=rsa              default: rsa
-    rsa_keysize=%d        default: 4096
-    filename=%s           default: keyfile.key
-    format=pem|der        default: pem
-```
-The following command generates a 2048 bit RSA key file, as explained [here](../cryptography/rsa-key-pair-generator.md):
-```
-programs/pkey/gen_key type=rsa rsa_keysize=2048 filename=example.com.key
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out example.com.key
 ```
 
 ## Generating certificate request

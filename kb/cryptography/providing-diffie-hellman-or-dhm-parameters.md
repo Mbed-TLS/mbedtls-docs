@@ -10,7 +10,9 @@ The DHM parameters that the TLS handshake uses are set by default to the 2048-bi
 
 ## Custom parameters
 
-You can set your own parameters that you have generated in a secure way. To do that, you can use the example program `programs/pkey/dh_genprime`. Just run `dh_genprime bits=<desired size>`. The resulting parameters are in `dh_prime.txt`; use them as a C-array format in your application code and as arguments to `mbedtls_ssl_conf_dh_param_bin()`.
+Before 4.0, you could use the example program `programs/pkey/dh_genprime`. Run `dh_genprime bits=<desired size>` to generate parameters in `dh_prime.txt`, then use them as C arrays with `mbedtls_ssl_conf_dh_param_bin()`.
+
+Mbed TLS 4 does not include the `dh_genprime` example program and no longer supports finite-field DHE in TLS 1.2 and DTLS 1.2. For TLS 1.2 and DTLS 1.2 applications with Mbed TLS 4, use ECDHE instead.
 
 ## Custom and standard parameters
 
