@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import subprocess
+import sys
+
+def build_tfa(options: list[str], tfa_dir: str):
+    tfa_build = ['make'] + options + 'all fip fiptool'.split()
+
+    try:
+        subprocess.check_call(tfa_build, cwd=tfa_dir)
+    except:
+        pass
+
+def bl_subpaths(options: list[str]):
+    debug_or_release = 'debug' if 'DEBUG=1' in options else 'release'
+
+    bl1 = 'build/fvp/' + debug_or_release + '/bl1/bl1.elf'
+    bl2 = 'build/fvp/' + debug_or_release + '/bl2/bl2.elf'
+
+    return bl1, bl2
+
+def measure_size(binary: str, cwd: str):
+    size_cmd = 'aarch64-none-elf-nm --size-sort --radix=d --print-size'.split()
+    cmd = size_cmd + [binary]
+    out = str(subprocess.check_output(cmd, cwd=cwd), 'utf-8')
+
+    symbol_sizes = {}
+    for line in out.splitlines():
+        size_line = line.split()
+        if len(size_line) != 4:
+            continue
+        symbol_sizes[size_line[3]] = int(size_line[1])
+
+    return symbol_sizes
+
+def save_sizes(sizes, filename):
+    with open(filename, 'w') as f:
+        f.write(json.dumps(sizes, sort_keys=True, indent=4))
+
+def main():
+
+    parser = argparse.ArgumentParser(prog=sys.argv[0],
+                                     description='Generate a code size report for TF-A')
+
+    parser.add_argument('tfa_dir')
+    args = parser.parse_args()
+
+
+    #TODO Set dir from command line arg with argparse
+    tfa_dir = args.tfa_dir
+
+    # TODO Get opts from tf_config
+    opts = 'ARM_ROTPK_LOCATION=devel_ecdsa CROSS_COMPILE=aarch64-none-elf- GENERATE_COT=1 HASH_ALG=sha512 KEY_ALG=ecdsa PLAT=fvp ROT_KEY=plat/arm/board/common/rotpk/arm_rotprivk_ecdsa.pem TRUSTED_BOARD_BOOT=1 FVP_TRUSTED_SRAM_SIZE=384 DEBUG=1'.split()
+    build_tfa(opts, tfa_dir)
+
+    bl1, bl2 = bl_subpaths(opts)
+
+    sizes = {}
+    sizes['bl1'] = measure_size(bl1, tfa_dir)
+    sizes['bl2'] = measure_size(bl2, tfa_dir)
+    save_sizes(sizes, 'tfa-symbol-sizes.json')
+
+if __name__ == '__main__':
+    sys.exit(main())
