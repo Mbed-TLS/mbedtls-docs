@@ -96,9 +96,13 @@ def main():
     parser.add_argument('tfa_dir', help='Path to trusted-firmware-a repository')
     parser.add_argument('tfa_ci_dir', help='Path to tf-a-ci-scripts repository')
     parser.add_argument('mbedtls_dir', help='Path to Mbed TLS repository to build with')
+
+    parser.add_argument('--tfa-commit', nargs='?', default=None)
+    parser.add_argument('--mbedtls-commit', nargs='?', default=None)
     args = parser.parse_args()
 
-    conf = Configuration(args.tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir)
+    conf = Configuration(args.tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir,
+                         args.tfa_commit, args.mbedtls_commit)
     conf.generate_size_report()
 
 if __name__ == '__main__':
