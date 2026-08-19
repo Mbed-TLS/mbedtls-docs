@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 
@@ -55,9 +56,14 @@ def main():
     parser.add_argument('tfa_build_config', help='Build config for TF-A (e.g. fvp-tbb-mbedtls-ecdsa)')
     parser.add_argument('tfa_dir', help='Path to trusted-firmware-a repository')
     parser.add_argument('tfa_ci_dir', help='Path to tf-a-ci-scripts repository')
+    parser.add_argument('mbedtls_dir', help='Path to Mbed TLS repository to build with')
     args = parser.parse_args()
 
     opts = make_opts_from_tf_config(args.tfa_build_config, args.tfa_ci_dir)
+
+    abs_mbedtls_dir = os.path.abspath(args.mbedtls_dir)
+
+    opts = opts + ['MBEDTLS_DIR=' + abs_mbedtls_dir]
     build_tfa(opts, args.tfa_dir)
 
     bl1, bl2 = bl_subpaths(opts)
