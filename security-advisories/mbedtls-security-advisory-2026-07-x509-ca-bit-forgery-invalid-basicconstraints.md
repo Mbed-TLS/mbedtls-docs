@@ -8,7 +8,7 @@
 **Not affected** | Mbed TLS 3.6.7 and later 3.6.x versions; Mbed TLS 4.1.1 and later 4.1.x versions; Mbed TLS 4.2.0 and later 4.x versions
 **Impact** | end-entity certificates may be read as CA certificates
 **Severity** | HIGH
-**Credits** | Mohammad Seet (mhdsait101); Pablo Ruiz García; NVIDIA Project Vanessa
+**Credits** | Mohammad Seet (mhdsait101); Pablo Ruiz García; Felix Graf Lange, Maximilian Radoy, Niklas Niere, Juraj Somorovsky (all Paderborn University), Marcel Maehren and Jörg Schwenk (both Ruhr University Bochum); NVIDIA Project Vanessa
 
 ## Vulnerability
 
