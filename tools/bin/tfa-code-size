@@ -42,6 +42,11 @@ class Configuration:
 
         return bl1, bl2
 
+    def ensure_git_ref_checked_out(self, directory, ref):
+        if self.get_git_commit(directory) != ref:
+            git_cmd = ['git', 'checkout', ref]
+            subprocess.check_call(git_cmd, cwd=directory)
+
     def measure_size(self, binary: str, cwd: str):
         size_cmd = 'aarch64-none-elf-nm --size-sort --radix=d --print-size'.split()
         cmd = size_cmd + [binary]
@@ -69,6 +74,9 @@ class Configuration:
         return make_opts
 
     def generate_size_report(self):
+        self.ensure_git_ref_checked_out(self.tfa_dir, self.tfa_commit)
+        self.ensure_git_ref_checked_out(self.mbedtls_dir, self.mbedtls_commit)
+
         opts = self.make_opts_from_tf_config(self.tfa_build_config, self.tfa_ci_dir)
 
         abs_mbedtls_dir = os.path.abspath(self.mbedtls_dir)
