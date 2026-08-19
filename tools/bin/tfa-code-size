@@ -6,47 +6,82 @@ import os
 import subprocess
 import sys
 
-def build_tfa(options: list[str], tfa_dir: str):
-    tfa_build = ['make'] + options + 'all fip fiptool'.split()
+class Configuration:
+    def __init__(self,
+                 tfa_build_config, tfa_dir, tfa_ci_dir, mbedtls_dir,
+                 tfa_commit=None, mbedtls_commit=None):
+        self.tfa_build_config = tfa_build_config
+        self.tfa_dir = tfa_dir
+        self.tfa_ci_dir = tfa_ci_dir
+        self.mbedtls_dir = mbedtls_dir
+        self.tfa_commit = tfa_commit
+        self.mbedtls_commit = mbedtls_commit
 
-    try:
-        subprocess.check_call(tfa_build, cwd=tfa_dir)
-    except:
-        pass
+        if self.tfa_commit == None:
+            self.tfa_commit = self.get_git_commit(self.tfa_dir)
+        if self.mbedtls_commit == None:
+            self.mbedtls_commit = self.get_git_commit(self.mbedtls_dir)
 
-def bl_subpaths(options: list[str]):
-    debug_or_release = 'debug' if 'DEBUG=1' in options else 'release'
+    def get_git_commit(self, directory: str):
+        git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
+        return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
 
-    bl1 = 'build/fvp/' + debug_or_release + '/bl1/bl1.elf'
-    bl2 = 'build/fvp/' + debug_or_release + '/bl2/bl2.elf'
+    def build_tfa(self, options: list[str], tfa_dir: str):
+        tfa_build = ['make'] + options + 'all fip fiptool'.split()
 
-    return bl1, bl2
+        try:
+            subprocess.check_call(tfa_build, cwd=tfa_dir)
+        except:
+            pass
 
-def measure_size(binary: str, cwd: str):
-    size_cmd = 'aarch64-none-elf-nm --size-sort --radix=d --print-size'.split()
-    cmd = size_cmd + [binary]
-    out = str(subprocess.check_output(cmd, cwd=cwd), 'utf-8')
+    def bl_subpaths(self, options: list[str]):
+        debug_or_release = 'debug' if 'DEBUG=1' in options else 'release'
 
-    symbol_sizes = {}
-    for line in out.splitlines():
-        size_line = line.split()
-        if len(size_line) != 4:
-            continue
-        symbol_sizes[size_line[3]] = int(size_line[1])
+        bl1 = 'build/fvp/' + debug_or_release + '/bl1/bl1.elf'
+        bl2 = 'build/fvp/' + debug_or_release + '/bl2/bl2.elf'
 
-    return symbol_sizes
+        return bl1, bl2
 
-def save_sizes(sizes, filename):
-    with open(filename, 'w') as f:
-        f.write(json.dumps(sizes, sort_keys=True, indent=4))
+    def measure_size(self, binary: str, cwd: str):
+        size_cmd = 'aarch64-none-elf-nm --size-sort --radix=d --print-size'.split()
+        cmd = size_cmd + [binary]
+        out = str(subprocess.check_output(cmd, cwd=cwd), 'utf-8')
 
-def make_opts_from_tf_config(tf_config_name: str, tfa_ci_dir: str):
-    opts_filename = tfa_ci_dir + '/tf_config/' + tf_config_name
+        symbol_sizes = {}
+        for line in out.splitlines():
+            size_line = line.split()
+            if len(size_line) != 4:
+                continue
+            symbol_sizes[size_line[3]] = int(size_line[1])
 
-    with open(opts_filename) as opts_file:
-        make_opts = opts_file.read().splitlines()
+        return symbol_sizes
 
-    return make_opts
+    def save_sizes(self, sizes, filename):
+        with open(filename, 'w') as f:
+            f.write(json.dumps(sizes, sort_keys=True, indent=4))
+
+    def make_opts_from_tf_config(self, tf_config_name: str, tfa_ci_dir: str):
+        opts_filename = tfa_ci_dir + '/tf_config/' + tf_config_name
+
+        with open(opts_filename) as opts_file:
+            make_opts = opts_file.read().splitlines()
+
+        return make_opts
+
+    def generate_size_report(self):
+        opts = self.make_opts_from_tf_config(self.tfa_build_config, self.tfa_ci_dir)
+
+        abs_mbedtls_dir = os.path.abspath(self.mbedtls_dir)
+
+        opts = opts + ['MBEDTLS_DIR=' + abs_mbedtls_dir]
+        self.build_tfa(opts, self.tfa_dir)
+
+        bl1, bl2 = self.bl_subpaths(opts)
+
+        sizes = {}
+        sizes['bl1'] = self.measure_size(bl1, self.tfa_dir)
+        sizes['bl2'] = self.measure_size(bl2, self.tfa_dir)
+        self.save_sizes(sizes, 'tfa-symbol-sizes.json')
 
 def main():
 
@@ -59,19 +94,8 @@ def main():
     parser.add_argument('mbedtls_dir', help='Path to Mbed TLS repository to build with')
     args = parser.parse_args()
 
-    opts = make_opts_from_tf_config(args.tfa_build_config, args.tfa_ci_dir)
-
-    abs_mbedtls_dir = os.path.abspath(args.mbedtls_dir)
-
-    opts = opts + ['MBEDTLS_DIR=' + abs_mbedtls_dir]
-    build_tfa(opts, args.tfa_dir)
-
-    bl1, bl2 = bl_subpaths(opts)
-
-    sizes = {}
-    sizes['bl1'] = measure_size(bl1, args.tfa_dir)
-    sizes['bl2'] = measure_size(bl2, args.tfa_dir)
-    save_sizes(sizes, 'tfa-symbol-sizes.json')
+    conf = Configuration(args.tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir)
+    conf.generate_size_report()
 
 if __name__ == '__main__':
     sys.exit(main())
