@@ -19,11 +19,19 @@ class Configuration:
 
         if self.tfa_commit == None:
             self.tfa_commit = self.get_git_commit(self.tfa_dir)
+        else:
+            self.tfa_commit = self.get_git_short_ref(self.tfa_dir, self.tfa_commit)
         if self.mbedtls_commit == None:
             self.mbedtls_commit = self.get_git_commit(self.mbedtls_dir)
+        else:
+            self.mbedtls_commit = self.get_git_short_ref(self.mbedtls_dir, self.mbedtls_commit)
 
     def get_git_commit(self, directory: str):
         git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
+        return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
+
+    def get_git_short_ref(self, directory: str, ref: str):
+        git_cmd = ['git', 'rev-parse', '--short', ref]
         return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
 
     def build_tfa(self, options: list[str], tfa_dir: str):
