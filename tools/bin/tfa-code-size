@@ -57,16 +57,14 @@ def main():
     parser.add_argument('tfa_ci_dir', help='Path to tf-a-ci-scripts repository')
     args = parser.parse_args()
 
-    tfa_dir = args.tfa_dir
-
     opts = make_opts_from_tf_config(args.tfa_build_config, args.tfa_ci_dir)
-    build_tfa(opts, tfa_dir)
+    build_tfa(opts, args.tfa_dir)
 
     bl1, bl2 = bl_subpaths(opts)
 
     sizes = {}
-    sizes['bl1'] = measure_size(bl1, tfa_dir)
-    sizes['bl2'] = measure_size(bl2, tfa_dir)
+    sizes['bl1'] = measure_size(bl1, args.tfa_dir)
+    sizes['bl2'] = measure_size(bl2, args.tfa_dir)
     save_sizes(sizes, 'tfa-symbol-sizes.json')
 
 if __name__ == '__main__':
