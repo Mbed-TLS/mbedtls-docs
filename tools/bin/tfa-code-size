@@ -150,28 +150,29 @@ class Configuration:
 
         return make_opts
 
-    def generate_size_report(self):
-        self.ensure_git_ref_checked_out(self.tfa_dir, self.tfa_commit)
-        self.ensure_git_ref_checked_out(self.mbedtls_dir, self.mbedtls_commit)
+    def generate_size_report_if_required(self):
+        code_size_report_name = ('code-size-' +
+                                 'tfa-' + self.tfa_commit +
+                                 '-mbedtls-' + self.mbedtls_commit +
+                                 '-' + self.tfa_build_config +
+                                 '-sizes.json')
+        if not os.path.exists(code_size_report_name):
+            self.ensure_git_ref_checked_out(self.tfa_dir, self.tfa_commit)
+            self.ensure_git_ref_checked_out(self.mbedtls_dir, self.mbedtls_commit)
 
-        opts = self.make_opts_from_tf_config(self.tfa_build_config, self.tfa_ci_dir)
+            opts = self.make_opts_from_tf_config(self.tfa_build_config, self.tfa_ci_dir)
 
-        abs_mbedtls_dir = os.path.abspath(self.mbedtls_dir)
+            abs_mbedtls_dir = os.path.abspath(self.mbedtls_dir)
 
-        opts = opts + ['MBEDTLS_DIR=' + abs_mbedtls_dir]
-        self.build_tfa(opts, self.tfa_dir)
+            opts = opts + ['MBEDTLS_DIR=' + abs_mbedtls_dir]
+            self.build_tfa(opts, self.tfa_dir)
 
-        bl1, bl2 = self.bl_subpaths(opts)
+            bl1, bl2 = self.bl_subpaths(opts)
 
-        sizes = {}
-        sizes['bl1'] = self.measure_size(bl1, self.tfa_dir)
-        sizes['bl2'] = self.measure_size(bl2, self.tfa_dir)
-        self.save_sizes(sizes,
-                        'code-size-' +
-                        'tfa-' + self.tfa_commit +
-                        '-mbedtls-' + self.mbedtls_commit +
-                        '-' + self.tfa_build_config +
-                        '-sizes.json')
+            sizes = {}
+            sizes['bl1'] = self.measure_size(bl1, self.tfa_dir)
+            sizes['bl2'] = self.measure_size(bl2, self.tfa_dir)
+            self.save_sizes(sizes, code_size_report_name)
 
 def main():
 
@@ -211,7 +212,7 @@ def main():
 
         conf = Configuration(tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir,
                              tfa_commit, mbedtls_commit)
-        conf.generate_size_report()
+        conf.generate_size_report_if_required()
 
 if __name__ == '__main__':
     sys.exit(main())
