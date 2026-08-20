@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -55,6 +56,12 @@ class Configuration:
             git_cmd = ['git', 'checkout', ref]
             subprocess.check_call(git_cmd, cwd=directory)
 
+    def is_start_end_symbol(self, symbol: str):
+        START_END_SYMBOL = r'^__[A-Z0-9_]+(START|END)[A-Z0-9_]*$'
+
+        return re.match(START_END_SYMBOL, symbol)
+
+
     def measure_size(self, binary: str, cwd: str):
         size_cmd = 'aarch64-none-elf-nm --size-sort --radix=d --print-size'.split()
         cmd = size_cmd + [binary]
@@ -76,9 +83,12 @@ class Configuration:
                 or sym_type == 'R'
                 or sym_type == 'D'
                 or sym_type == 'B'):
+
                 sym_name = size_line[3]
-                sym_size = int(size_line[1])
-                symbol_sizes[sym_type][sym_name] = sym_size
+
+                if not self.is_start_end_symbol(sym_name):
+                    sym_size = int(size_line[1])
+                    symbol_sizes[sym_type][sym_name] = sym_size
 
         return symbol_sizes
 
