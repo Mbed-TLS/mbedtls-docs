@@ -121,6 +121,7 @@ class Configuration:
         sizes['bl1'] = self.measure_size(bl1, self.tfa_dir)
         sizes['bl2'] = self.measure_size(bl2, self.tfa_dir)
         self.save_sizes(sizes,
+                        'code-size-' +
                         'tfa-' + self.tfa_commit +
                         '-mbedtls-' + self.mbedtls_commit +
                         '-' + self.tfa_build_config +
