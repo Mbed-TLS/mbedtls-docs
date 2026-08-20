@@ -184,6 +184,22 @@ class Configuration:
             report = json.loads(f.read())
         return report
 
+    def get_size_report_flattened_types(self):
+        # Flatten out the report to remove the symbol type
+        # (which denotes if the symbol appears in text, bss, etc).
+        # We may use this so we should store it but it may
+        # not always be relevant.
+        report = self.get_size_report()
+        flattened_report = {}
+        for bl_stage in report:
+            flattened_stage = {}
+            for sym_type in report[bl_stage]:
+                flattened_stage = flattened_stage | report[bl_stage][sym_type]
+
+            flattened_report[bl_stage] = flattened_stage
+
+        return flattened_report
+
 
 def symbols_of_interest(base_sym_sizes: dict, other_sym_sizes_list: list[dict]):
     interesting_symbols = set()
@@ -202,6 +218,25 @@ def symbols_of_interest(base_sym_sizes: dict, other_sym_sizes_list: list[dict]):
 
     return interesting_symbols
 
+def sum_sizes(symbol_sizes):
+    total = 0
+    for sym in symbol_sizes:
+        total += symbol_sizes[sym]
+
+    return total
+
+def gen_comparison_table(base: Configuration, other_configs: list[Configuration], bl_stage: str):
+    base_sizes = base.get_size_report_flattened_types()[bl_stage]
+    total_row = [sum_sizes(base_sizes)]
+
+    other_configs_sizes = []
+    for config in other_configs:
+        config_sizes = config.get_size_report_flattened_types()[bl_stage]
+        total_row.append(sum_sizes(config_sizes))
+        other_configs_sizes.append(config_sizes)
+
+    return total_row
+
 def main():
 
     parser = argparse.ArgumentParser(prog=sys.argv[0],
@@ -218,6 +253,8 @@ def main():
                         help='Config to build, of the form: '
                         'tfa:<TF-A commit>:<TF-A config>+mbedtls:<Mbed TLS commit>')
     args = parser.parse_args()
+
+    confs = []
 
     for config in args.config:
         conf_parts = config.split('+')
@@ -240,8 +277,10 @@ def main():
 
         conf = Configuration(tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir,
                              tfa_commit, mbedtls_commit)
+        confs.append(conf)
 
-        print(conf.get_size_report())
+    print(gen_comparison_table(confs[0], confs[1:], 'bl1'))
+    print(gen_comparison_table(confs[0], confs[1:], 'bl2'))
 
 if __name__ == '__main__':
     sys.exit(main())
