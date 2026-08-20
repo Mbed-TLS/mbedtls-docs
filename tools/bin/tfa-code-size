@@ -178,7 +178,6 @@ def main():
     parser = argparse.ArgumentParser(prog=sys.argv[0],
                                      description='Generate a code size report for TF-A')
 
-    parser.add_argument('tfa_build_config', help='Build config for TF-A (e.g. fvp-tbb-mbedtls-ecdsa)')
     parser.add_argument('--tfa-dir', nargs='?', default=None,
                         help='Path to trusted-firmware-a repository')
     parser.add_argument('--tfa-ci-dir', nargs='?', default=None,
@@ -186,13 +185,33 @@ def main():
     parser.add_argument('--mbedtls-dir', nargs='?', default=None,
                         help='Path to Mbed TLS repository to build with')
 
-    parser.add_argument('--tfa-commit', nargs='?', default=None)
-    parser.add_argument('--mbedtls-commit', nargs='?', default=None)
+    parser.add_argument('config', nargs='+',
+                        help='Config to build, of the form: '
+                        'tfa:<TF-A commit>:<TF-A config>+mbedtls:<Mbed TLS commit>')
     args = parser.parse_args()
 
-    conf = Configuration(args.tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir,
-                         args.tfa_commit, args.mbedtls_commit)
-    conf.generate_size_report()
+    for config in args.config:
+        conf_parts = config.split('+')
+        if len(conf_parts) != 2:
+            print('Error: Invalid config \'' + config + '\'')
+            return 1
+
+        mbedtls_conf = conf_parts[1].split(':')
+        if len(mbedtls_conf) != 2 or mbedtls_conf[0] != 'mbedtls':
+            print('Error: Invalid config \'' + config + '\'')
+            return 1
+        mbedtls_commit = mbedtls_conf[1]
+
+        tfa_conf = conf_parts[0].split(':')
+        if len(tfa_conf) != 3 or tfa_conf[0] != 'tfa':
+            print('Error: Invalid config \'' + config + '\'')
+            return 1
+        tfa_commit = tfa_conf[1]
+        tfa_build_config = tfa_conf[2]
+
+        conf = Configuration(tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir,
+                             tfa_commit, mbedtls_commit)
+        conf.generate_size_report()
 
 if __name__ == '__main__':
     sys.exit(main())
