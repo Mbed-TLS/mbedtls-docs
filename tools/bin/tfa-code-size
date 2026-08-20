@@ -156,7 +156,8 @@ class Configuration:
                                  '-mbedtls-' + self.mbedtls_commit +
                                  '-' + self.tfa_build_config +
                                  '-sizes.json')
-        if not os.path.exists(code_size_report_name):
+        code_size_report = self.working_dir + '/' + code_size_report_name
+        if not os.path.exists(code_size_report):
             self.ensure_git_ref_checked_out(self.tfa_dir, self.tfa_commit)
             self.ensure_git_ref_checked_out(self.mbedtls_dir, self.mbedtls_commit)
 
@@ -172,7 +173,7 @@ class Configuration:
             sizes = {}
             sizes['bl1'] = self.measure_size(bl1, self.tfa_dir)
             sizes['bl2'] = self.measure_size(bl2, self.tfa_dir)
-            self.save_sizes(sizes, code_size_report_name)
+            self.save_sizes(sizes, code_size_report)
 
 def main():
 
