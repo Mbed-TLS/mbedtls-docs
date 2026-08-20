@@ -7,6 +7,10 @@ import re
 import subprocess
 import sys
 
+TFA_URL = 'https://review.trustedfirmware.org/TF-A/trusted-firmware-a'
+TFA_CI_URL = 'https://review.trustedfirmware.org/ci/tf-a-ci-scripts'
+MBEDTLS_URL = 'https://github.com/Mbed-TLS/mbedtls.git'
+
 class Configuration:
     def __init__(self,
                  tfa_build_config, tfa_dir, tfa_ci_dir, mbedtls_dir,
@@ -18,6 +22,16 @@ class Configuration:
         self.tfa_commit = tfa_commit
         self.mbedtls_commit = mbedtls_commit
 
+        # Set up working directory
+        self.working_dir = self.ensure_working_dir()
+
+        if self.tfa_dir == None:
+            self.tfa_dir = self.ensure_cloned(TFA_URL, 'trusted-firmware-a')
+        if self.tfa_ci_dir == None:
+            self.tfa_ci_dir = self.ensure_cloned(TFA_CI_URL, 'tf-a-ci-scripts')
+        if self.mbedtls_dir == None:
+            self.mbedtls_dir = self.ensure_cloned(MBEDTLS_URL, 'mbedtls')
+
         if self.tfa_commit == None:
             self.tfa_commit = self.get_git_commit(self.tfa_dir)
         else:
@@ -26,6 +40,24 @@ class Configuration:
             self.mbedtls_commit = self.get_git_commit(self.mbedtls_dir)
         else:
             self.mbedtls_commit = self.get_git_short_ref(self.mbedtls_dir, self.mbedtls_commit)
+
+    def ensure_working_dir(self):
+        working_dir_name = 'TF-A-code-size'
+        if not os.path.isdir(working_dir_name):
+            os.mkdir(working_dir_name)
+        return working_dir_name
+
+    def ensure_cloned(self, url: str, name: str):
+        clone_dir = self.working_dir + '/' + name
+        if not os.path.isdir(clone_dir):
+            git_cmd = ['git', 'clone', url, clone_dir]
+            subprocess.check_call(git_cmd)
+
+            git_cmd = ['git', 'submodule', 'update',
+                       '--init', '--recursive']
+            subprocess.check_call(git_cmd)
+
+        return clone_dir
 
     def get_git_commit(self, directory: str):
         git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
@@ -133,9 +165,12 @@ def main():
                                      description='Generate a code size report for TF-A')
 
     parser.add_argument('tfa_build_config', help='Build config for TF-A (e.g. fvp-tbb-mbedtls-ecdsa)')
-    parser.add_argument('tfa_dir', help='Path to trusted-firmware-a repository')
-    parser.add_argument('tfa_ci_dir', help='Path to tf-a-ci-scripts repository')
-    parser.add_argument('mbedtls_dir', help='Path to Mbed TLS repository to build with')
+    parser.add_argument('--tfa-dir', nargs='?', default=None,
+                        help='Path to trusted-firmware-a repository')
+    parser.add_argument('--tfa-ci-dir', nargs='?', default=None,
+                        help='Path to tf-a-ci-scripts repository')
+    parser.add_argument('--mbedtls-dir', nargs='?', default=None,
+                        help='Path to Mbed TLS repository to build with')
 
     parser.add_argument('--tfa-commit', nargs='?', default=None)
     parser.add_argument('--mbedtls-commit', nargs='?', default=None)
