@@ -60,12 +60,25 @@ class Configuration:
         cmd = size_cmd + [binary]
         out = str(subprocess.check_output(cmd, cwd=cwd), 'utf-8')
 
-        symbol_sizes = {}
+        symbol_sizes = {
+                'T': {},
+                'R': {},
+                'D': {},
+                'B': {}
+        }
         for line in out.splitlines():
             size_line = line.split()
             if len(size_line) != 4:
                 continue
-            symbol_sizes[size_line[3]] = int(size_line[1])
+
+            sym_type = size_line[2].upper()
+            if (sym_type == 'T'
+                or sym_type == 'R'
+                or sym_type == 'D'
+                or sym_type == 'B'):
+                sym_name = size_line[3]
+                sym_size = int(size_line[1])
+                symbol_sizes[sym_type][sym_name] = sym_size
 
         return symbol_sizes
 
