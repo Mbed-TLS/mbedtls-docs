@@ -103,7 +103,7 @@ class Configuration:
             subprocess.check_call(git_cmd)
 
     def is_start_end_symbol(self, symbol: str):
-        START_END_SYMBOL = r'^__[A-Z0-9_]+(START|END)[A-Z0-9_]*$'
+        START_END_SYMBOL = r'^[A-Z0-9_]+(START|END)[A-Z0-9_]*$'
 
         return re.match(START_END_SYMBOL, symbol)
 
