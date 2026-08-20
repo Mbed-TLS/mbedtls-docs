@@ -57,6 +57,10 @@ class Configuration:
                        '--init', '--recursive']
             subprocess.check_call(git_cmd)
 
+        # In all cases ensure we have fresh information
+        git_cmd = ['git', 'fetch', '--all']
+        subprocess.check_call(git_cmd, cwd=clone_dir)
+
         return clone_dir
 
     def get_git_commit(self, directory: str):
@@ -65,7 +69,12 @@ class Configuration:
 
     def get_git_short_ref(self, directory: str, ref: str):
         git_cmd = ['git', 'rev-parse', '--short', ref]
-        return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
+        try:
+            return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
+        except:
+            # The commit may be a branch name in origin. Try prepending 'origin/'.
+            git_cmd = ['git', 'rev-parse', '--short', 'origin/' + ref]
+            return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
 
     def build_tfa(self, options: list[str], tfa_dir: str):
         tfa_build = ['make'] + options + 'all fip fiptool'.split()
@@ -85,6 +94,7 @@ class Configuration:
 
     def ensure_git_ref_checked_out(self, directory, ref):
         if self.get_git_commit(directory) != ref:
+            ref = self.get_git_short_ref(directory, ref)
             git_cmd = ['git', 'checkout', ref]
             subprocess.check_call(git_cmd, cwd=directory)
             # Update submodules, just in case
