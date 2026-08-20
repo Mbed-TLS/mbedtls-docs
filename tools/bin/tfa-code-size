@@ -175,6 +175,23 @@ class Configuration:
             sizes['bl2'] = self.measure_size(bl2, self.tfa_dir)
             self.save_sizes(sizes, code_size_report)
 
+def symbols_of_interest(base_sym_sizes: dict, other_sym_sizes_list: list[dict]):
+    interesting_symbols = set()
+    for other_sym_sizes in other_sym_sizes_list:
+        base_syms = base_sym_sizes.keys()
+        other_syms = other_sym_sizes.keys()
+
+        # Any symbols not shared with the base config are interesting
+        non_common_symbols = base_syms ^ other_syms
+        interesting_symbols = interesting_symbols | non_common_symbols
+
+        # Any symbols whose sizes differ from the base config are interesting
+        for sym in base_syms & other_syms:
+            if base_sym_sizes[sym] != other_sym_sizes[sym]:
+                interesting_symbols.add(sym)
+
+    return interesting_symbols
+
 def main():
 
     parser = argparse.ArgumentParser(prog=sys.argv[0],
