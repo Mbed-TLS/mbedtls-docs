@@ -150,13 +150,15 @@ class Configuration:
 
         return make_opts
 
+    def code_size_report_name(self):
+        return ('code-size-' +
+                'tfa-' + self.tfa_commit +
+                '-mbedtls-' + self.mbedtls_commit +
+                '-' + self.tfa_build_config +
+                '-sizes.json')
+
     def generate_size_report_if_required(self):
-        code_size_report_name = ('code-size-' +
-                                 'tfa-' + self.tfa_commit +
-                                 '-mbedtls-' + self.mbedtls_commit +
-                                 '-' + self.tfa_build_config +
-                                 '-sizes.json')
-        code_size_report = self.working_dir + '/' + code_size_report_name
+        code_size_report = self.working_dir + '/' + self.code_size_report_name()
         if not os.path.exists(code_size_report):
             self.ensure_git_ref_checked_out(self.tfa_dir, self.tfa_commit)
             self.ensure_git_ref_checked_out(self.mbedtls_dir, self.mbedtls_commit)
@@ -174,6 +176,14 @@ class Configuration:
             sizes['bl1'] = self.measure_size(bl1, self.tfa_dir)
             sizes['bl2'] = self.measure_size(bl2, self.tfa_dir)
             self.save_sizes(sizes, code_size_report)
+
+    def get_size_report(self):
+        self.generate_size_report_if_required()
+
+        with open(self.working_dir + '/' + self.code_size_report_name()) as f:
+            report = json.loads(f.read())
+        return report
+
 
 def symbols_of_interest(base_sym_sizes: dict, other_sym_sizes_list: list[dict]):
     interesting_symbols = set()
@@ -230,7 +240,8 @@ def main():
 
         conf = Configuration(tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir,
                              tfa_commit, mbedtls_commit)
-        conf.generate_size_report_if_required()
+
+        print(conf.get_size_report())
 
 if __name__ == '__main__':
     sys.exit(main())
