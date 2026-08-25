@@ -19,8 +19,12 @@ class Configuration:
         self.tfa_dir = tfa_dir
         self.tfa_ci_dir = tfa_ci_dir
         self.mbedtls_dir = mbedtls_dir
-        self.tfa_commit = tfa_commit
-        self.mbedtls_commit = mbedtls_commit
+        # Keep track of the user-specified names of commits
+        # - this will be important when we pretty-print
+        # tables, since 'development' is more recognizable than
+        # 'a5f325c64'.
+        self.tfa_commit_name = tfa_commit
+        self.mbedtls_commit_name = mbedtls_commit
 
         # Set up working directory
         self.working_dir = self.ensure_working_dir()
@@ -32,14 +36,14 @@ class Configuration:
         if self.mbedtls_dir == None:
             self.mbedtls_dir = self.ensure_cloned(MBEDTLS_URL, 'mbedtls')
 
-        if self.tfa_commit == None:
+        if self.tfa_commit_name == None:
             self.tfa_commit = self.get_git_commit(self.tfa_dir)
         else:
-            self.tfa_commit = self.get_git_short_ref(self.tfa_dir, self.tfa_commit)
-        if self.mbedtls_commit == None:
+            self.tfa_commit = self.get_git_short_ref(self.tfa_dir, self.tfa_commit_name)
+        if self.mbedtls_commit_name == None:
             self.mbedtls_commit = self.get_git_commit(self.mbedtls_dir)
         else:
-            self.mbedtls_commit = self.get_git_short_ref(self.mbedtls_dir, self.mbedtls_commit)
+            self.mbedtls_commit = self.get_git_short_ref(self.mbedtls_dir, self.mbedtls_commit_name)
 
     def ensure_working_dir(self):
         working_dir_name = 'TF-A-code-size'
