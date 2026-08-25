@@ -227,15 +227,44 @@ def sum_sizes(symbol_sizes):
 
 def gen_comparison_table(base: Configuration, other_configs: list[Configuration], bl_stage: str):
     base_sizes = base.get_size_report_flattened_types()[bl_stage]
-    total_row = [sum_sizes(base_sizes)]
+    total_row = ['Total', sum_sizes(base_sizes)]
+
+    table_titles = ['', 'Base']
+    table_title_format = ['{:<40}', '{:<8}']
+    table_line_format = ['{:<40}', '{:>8}']
 
     other_configs_sizes = []
     for config in other_configs:
         config_sizes = config.get_size_report_flattened_types()[bl_stage]
         total_row.append(sum_sizes(config_sizes))
+        # Calculate and append the difference from the base config
+        total_row.append(total_row[-1] - sum_sizes(base_sizes))
         other_configs_sizes.append(config_sizes)
 
-    return total_row
+        table_titles = table_titles + ['Other', 'Diff']
+        table_title_format = table_title_format + ['{:<8}', '{:<9}']
+        table_line_format = table_line_format + ['{:>8}', '{:>+8}B']
+
+    interesting_syms = symbols_of_interest(base_sizes, other_configs_sizes)
+
+    sym_rows = []
+    for sym in interesting_syms:
+        sym_row = [sym, base_sizes[sym]]
+
+        for config_sizes in other_configs_sizes:
+            sym_row.append(config_sizes[sym])
+            sym_diff = config_sizes[sym] - base_sizes[sym]
+            sym_row.append(sym_diff)
+
+        sym_rows.append(sym_row)
+
+    final_table = [[f.format(title) for f, title in zip(table_title_format, table_titles)]]
+    final_table.append([f.format(total) for f, total in zip(table_line_format, total_row)])
+
+    for row in sym_rows:
+        final_table.append([f.format(s) for f, s in zip(table_line_format, row)])
+
+    return final_table
 
 def main():
 
@@ -279,8 +308,13 @@ def main():
                              tfa_commit, mbedtls_commit)
         confs.append(conf)
 
-    print(gen_comparison_table(confs[0], confs[1:], 'bl1'))
-    print(gen_comparison_table(confs[0], confs[1:], 'bl2'))
+    bl1_tab = gen_comparison_table(confs[0], confs[1:], 'bl1')
+    for line in bl1_tab:
+        print(line)
+
+    bl2_tab = gen_comparison_table(confs[0], confs[1:], 'bl2')
+    for line in bl2_tab:
+        print(line)
 
 if __name__ == '__main__':
     sys.exit(main())
