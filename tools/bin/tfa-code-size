@@ -297,8 +297,10 @@ def gen_comparison_table(base: Configuration, other_configs: list[Configuration]
             return sizes[sym] - base[sym]
         elif sym in sizes and sym not in base:
             return sizes[sym]
-        else:
+        elif sym in base and sym not in sizes:
             return -base[sym]
+        else:
+            return 0
 
     sym_rows = []
     for sym in interesting_syms:
