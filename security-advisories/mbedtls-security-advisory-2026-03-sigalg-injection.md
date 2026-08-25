@@ -8,7 +8,7 @@
 **Not affected** | Mbed TLS 3.6.6 and later 3.6 versions, 4.1.0 and later 4.x versions
 **Impact** | Policy bypass
 **Severity** | LOW
-**Credits** | EFR-GmbH and M. Heuft of Security-Research-Consulting GmbH
+**Credits** | EFR-GmbH and M. Heuft of Security-Research-Consulting GmbH; George
 
 ## Vulnerability
 
