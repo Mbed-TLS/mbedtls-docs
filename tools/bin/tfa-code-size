@@ -251,13 +251,27 @@ def gen_comparison_table(base: Configuration, other_configs: list[Configuration]
 
     interesting_syms = symbols_of_interest(base_sizes, other_configs_sizes)
 
+    def size_if_there(sym, sizes: dict):
+        if sym in sizes:
+            return sizes[sym]
+        else:
+            return '-'
+
+    def diff_if_there(sym, sizes: dict, base: dict):
+        if sym in sizes and sym in base:
+            return sizes[sym] - base[sym]
+        elif sym in sizes and sym not in base:
+            return sizes[sym]
+        else:
+            return -base[sym]
+
     sym_rows = []
     for sym in interesting_syms:
-        sym_row = [sym, base_sizes[sym]]
+        sym_row = [sym, size_if_there(sym, base_sizes)]
 
         for config_sizes in other_configs_sizes:
-            sym_row.append(config_sizes[sym])
-            sym_diff = config_sizes[sym] - base_sizes[sym]
+            sym_row.append(size_if_there(sym, config_sizes))
+            sym_diff = diff_if_there(sym, config_sizes, base_sizes)
             sym_row.append(sym_diff)
 
         sym_rows.append(sym_row)
