@@ -204,6 +204,41 @@ class Configuration:
 
         return flattened_report
 
+    def name_diff(self, others: list):
+        # Work out which elements of the configs of 'others' differ from 'self'.
+        # Return a list of sensible table headings based on the differing parts.
+        # For example, if the configs all differ only in their mbedtls commit
+        # then we can title each row based on that, but if they differ in
+        # multiple elements all of them will need to be included.
+        tfa_commit_in_title = False
+        tfa_config_in_title = False
+        mbedtls_commit_in_title = False
+        for other in others:
+            if other.tfa_commit_name != self.tfa_commit_name:
+                tfa_commit_in_title = True
+            if other.mbedtls_commit_name != self.mbedtls_commit_name:
+                mbedtls_commit_in_title = True
+            if other.tfa_build_config != self.tfa_build_config:
+                tfa_config_in_title = True
+
+        def create_title(config):
+            title = ''
+            if tfa_commit_in_title:
+                title += 'TF-A@' + config.tfa_commit_name + ' '
+            if tfa_config_in_title:
+                title += config.tfa_build_config + ' '
+            if mbedtls_commit_in_title:
+                title += 'MbedTLS@' + config.mbedtls_commit_name
+            if title == '':
+                title = '[Equal]'
+            title = title.strip()
+            return title
+
+        titles = [create_title(self)]
+        for other in others:
+            titles.append(create_title(other))
+
+        return titles
 
 def symbols_of_interest(base_sym_sizes: dict, other_sym_sizes_list: list[dict]):
     interesting_symbols = set()
@@ -333,6 +368,8 @@ def main():
     bl2_tab = gen_comparison_table(confs[0], confs[1:], 'bl2')
     for line in bl2_tab:
         print(line)
+
+    print(confs[0].name_diff(confs[1:]))
 
 if __name__ == '__main__':
     sys.exit(main())
