@@ -268,9 +268,15 @@ def gen_comparison_table(base: Configuration, other_configs: list[Configuration]
     base_sizes = base.get_size_report_flattened_types()[bl_stage]
     total_row = ['Total', sum_sizes(base_sizes)]
 
-    table_titles = ['', 'Base']
-    table_title_format = ['{:<40}', '{:<8}']
-    table_line_format = ['{:<40}', '{:>8}']
+    table_titles = [bl_stage] + base.name_diff(other_configs)
+
+    single_title_width = 0
+    for title in table_titles:
+        if single_title_width < len(title):
+            single_title_width = len(title)
+
+    table_title_format = ['{:<40}', '{:<' + str(single_title_width) + '}']
+    table_line_format = ['{:<40}', '{:>' + str(single_title_width) + '}']
 
     other_configs_sizes = []
     for config in other_configs:
@@ -280,9 +286,8 @@ def gen_comparison_table(base: Configuration, other_configs: list[Configuration]
         total_row.append(total_row[-1] - sum_sizes(base_sizes))
         other_configs_sizes.append(config_sizes)
 
-        table_titles = table_titles + ['Other', 'Diff']
-        table_title_format = table_title_format + ['{:<8}', '{:<9}']
-        table_line_format = table_line_format + ['{:>8}', '{:>+8}B']
+        table_title_format = table_title_format + ['  {:<' + str(single_title_width) + '}']
+        table_line_format = table_line_format + ['  {:>' + str(single_title_width - 10) + '}' ,'{:>+8}B']
 
     interesting_syms = symbols_of_interest(base_sizes, other_configs_sizes)
 
@@ -365,13 +370,13 @@ def main():
 
     bl1_tab = gen_comparison_table(confs[0], confs[1:], 'bl1')
     for line in bl1_tab:
-        print(line)
+        print(' '.join(line))
+    print()
 
     bl2_tab = gen_comparison_table(confs[0], confs[1:], 'bl2')
     for line in bl2_tab:
-        print(line)
-
-    print(confs[0].name_diff(confs[1:]))
+        print(' '.join(line))
+    print()
 
 if __name__ == '__main__':
     sys.exit(main())
