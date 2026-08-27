@@ -296,6 +296,35 @@ class Table:
 
         return '\n'.join([titles] + content_lines)
 
+    def format_table_md(self):
+        # For Markdown we must have exactly the same number of columns on each
+        # row (which is not true for CLI) so we must add a 'diff' column behind
+        # each size column
+        md_titles = []
+
+        for i in range(len(self.content_rows[0])):
+            md_titles.append(self.title_row[i])
+            if isinstance(self.content_rows[0][i], tuple):
+                md_titles.append('diff')
+
+        lines = ['| ' + ' | '.join(md_titles) + ' |']
+        lines += ['| ' + ' | '.join(['---' for t in md_titles]) + ' |']
+
+        content_row_format = []
+        for col in self.content_rows[0]:
+            if isinstance(col, tuple):
+                content_row_format += ['{} | {:+}B']
+            else:
+                content_row_format += ['{}']
+        for row in self.content_rows:
+            lines += ['| ' + ' | '.join([f.format(*c)
+                                         if isinstance(c, tuple)
+                                         else f.format(c)
+                                         for f, c in zip(content_row_format, row)])
+                      + ' |']
+
+        return '\n'.join(lines)
+
 def gen_comparison_table(base: Configuration, other_configs: list[Configuration], bl_stage: str):
     base_sizes = base.get_size_report_flattened_types()[bl_stage]
     total_row = ['Total', sum_sizes(base_sizes)]
@@ -385,12 +414,12 @@ def main():
         confs.append(conf)
 
     bl1_tab = gen_comparison_table(confs[0], confs[1:], 'bl1')
-    print(bl1_tab.format_table_cli())
+    print(bl1_tab.format_table_md())
 
     print()
 
     bl2_tab = gen_comparison_table(confs[0], confs[1:], 'bl2')
-    print(bl2_tab.format_table_cli())
+    print(bl2_tab.format_table_md())
 
 if __name__ == '__main__':
     sys.exit(main())
