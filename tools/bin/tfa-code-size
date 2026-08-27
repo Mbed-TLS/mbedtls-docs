@@ -264,30 +264,52 @@ def sum_sizes(symbol_sizes):
 
     return total
 
+
+class Table:
+    def __init__(self, title_row: list, content_rows: list[list]):
+        self.title_row = title_row
+        self.content_rows = content_rows
+
+    def format_table_cli(self):
+        single_title_width = 0
+        for title in self.title_row:
+            if single_title_width < len(title):
+                single_title_width = len(title)
+
+        table_title_format = ['{:<40}']
+        table_line_format = ['{:<40}']
+
+        for column in self.content_rows[0][1:]:
+            table_title_format += ['  {:<' + str(single_title_width) + '}']
+            if isinstance(column, tuple):
+                table_line_format += ['  {:>' + str(single_title_width - 10) + '} {:>+8}B']
+            else:
+                table_line_format += ['  {:>' + str(single_title_width) + '}']
+
+        titles = ' '.join([f.format(title) for f, title in zip(table_title_format, self.title_row)])
+        content_lines = []
+        for row in self.content_rows:
+            content_lines.append(' '.join([f.format(*s)
+                                           if isinstance(s, tuple)
+                                           else f.format(s)
+                                           for f, s in zip(table_line_format, row)]))
+
+        return '\n'.join([titles] + content_lines)
+
 def gen_comparison_table(base: Configuration, other_configs: list[Configuration], bl_stage: str):
     base_sizes = base.get_size_report_flattened_types()[bl_stage]
     total_row = ['Total', sum_sizes(base_sizes)]
 
     table_titles = [bl_stage] + base.name_diff(other_configs)
 
-    single_title_width = 0
-    for title in table_titles:
-        if single_title_width < len(title):
-            single_title_width = len(title)
-
-    table_title_format = ['{:<40}', '{:<' + str(single_title_width) + '}']
-    table_line_format = ['{:<40}', '{:>' + str(single_title_width) + '}']
-
     other_configs_sizes = []
     for config in other_configs:
         config_sizes = config.get_size_report_flattened_types()[bl_stage]
-        total_row.append(sum_sizes(config_sizes))
+        total_size = sum_sizes(config_sizes)
         # Calculate and append the difference from the base config
-        total_row.append(total_row[-1] - sum_sizes(base_sizes))
+        total_diff = total_size - sum_sizes(base_sizes)
+        total_row.append((total_size, total_diff))
         other_configs_sizes.append(config_sizes)
-
-        table_title_format = table_title_format + ['  {:<' + str(single_title_width) + '}']
-        table_line_format = table_line_format + ['  {:>' + str(single_title_width - 10) + '}' ,'{:>+8}B']
 
     interesting_syms = symbols_of_interest(base_sizes, other_configs_sizes)
 
@@ -312,19 +334,13 @@ def gen_comparison_table(base: Configuration, other_configs: list[Configuration]
         sym_row = [sym, size_if_there(sym, base_sizes)]
 
         for config_sizes in other_configs_sizes:
-            sym_row.append(size_if_there(sym, config_sizes))
+            sym_size = size_if_there(sym, config_sizes)
             sym_diff = diff_if_there(sym, config_sizes, base_sizes)
-            sym_row.append(sym_diff)
+            sym_row.append((sym_size, sym_diff))
 
         sym_rows.append(sym_row)
 
-    final_table = [[f.format(title) for f, title in zip(table_title_format, table_titles)]]
-    final_table.append([f.format(total) for f, total in zip(table_line_format, total_row)])
-
-    for row in sym_rows:
-        final_table.append([f.format(s) for f, s in zip(table_line_format, row)])
-
-    return final_table
+    return Table(table_titles, [total_row] + sym_rows)
 
 def main():
 
@@ -369,14 +385,12 @@ def main():
         confs.append(conf)
 
     bl1_tab = gen_comparison_table(confs[0], confs[1:], 'bl1')
-    for line in bl1_tab:
-        print(' '.join(line))
+    print(bl1_tab.format_table_cli())
+
     print()
 
     bl2_tab = gen_comparison_table(confs[0], confs[1:], 'bl2')
-    for line in bl2_tab:
-        print(' '.join(line))
-    print()
+    print(bl2_tab.format_table_cli())
 
 if __name__ == '__main__':
     sys.exit(main())
