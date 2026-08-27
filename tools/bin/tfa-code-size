@@ -382,6 +382,8 @@ def main():
                         help='Path to tf-a-ci-scripts repository')
     parser.add_argument('--mbedtls-dir', nargs='?', default=None,
                         help='Path to Mbed TLS repository to build with')
+    parser.add_argument('--md', action='store_true',
+                        help='Generate a markdown table rather than a CLI-printed one')
 
     parser.add_argument('config', nargs='+',
                         help='Config to build, of the form: '
@@ -414,12 +416,18 @@ def main():
         confs.append(conf)
 
     bl1_tab = gen_comparison_table(confs[0], confs[1:], 'bl1')
-    print(bl1_tab.format_table_md())
+    if args.md:
+        print(bl1_tab.format_table_md())
+    else:
+        print(bl1_tab.format_table_cli())
 
     print()
 
     bl2_tab = gen_comparison_table(confs[0], confs[1:], 'bl2')
-    print(bl2_tab.format_table_md())
+    if args.md:
+        print(bl2_tab.format_table_md())
+    else:
+        print(bl2_tab.format_table_cli())
 
 if __name__ == '__main__':
     sys.exit(main())
