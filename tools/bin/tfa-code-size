@@ -230,7 +230,9 @@ class Configuration:
             if mbedtls_commit_in_title:
                 title += 'MbedTLS@' + config.mbedtls_commit_name
             if title == '':
-                title = '[Equal]'
+                # If they are all the same, use the
+                # TF-A name by default
+                title = 'TF-A@' + config.tfa_commit_name
             title = title.strip()
             return title
 
