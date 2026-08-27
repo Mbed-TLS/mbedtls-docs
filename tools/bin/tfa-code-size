@@ -376,7 +376,16 @@ def gen_comparison_table(base: Configuration, other_configs: list[Configuration]
 def main():
 
     parser = argparse.ArgumentParser(prog=sys.argv[0],
-                                     description='Generate a code size report for TF-A')
+                                     description=(
+                                         'Generate a code size comparison for TF-A'
+                                         ' for the given configs, where \'config\''
+                                         ' means a combination of TF-A commit,'
+                                         ' TF-A build config and Mbed TLS commit.'
+                                         ' The TF-A build config names can be'
+                                         ' found in the tf_config directory of the'
+                                         ' tf-a-ci-scripts repository.'
+                                     )
+                                     )
 
     parser.add_argument('--tfa-dir', nargs='?', default=None,
                         help='Path to trusted-firmware-a repository')
