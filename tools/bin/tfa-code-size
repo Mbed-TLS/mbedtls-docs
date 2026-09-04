@@ -1,0 +1,444 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+
+TFA_URL = 'https://review.trustedfirmware.org/TF-A/trusted-firmware-a'
+TFA_CI_URL = 'https://review.trustedfirmware.org/ci/tf-a-ci-scripts'
+MBEDTLS_URL = 'https://github.com/Mbed-TLS/mbedtls.git'
+
+class Configuration:
+    def __init__(self,
+                 tfa_build_config, tfa_dir, tfa_ci_dir, mbedtls_dir,
+                 tfa_commit=None, mbedtls_commit=None):
+        self.tfa_build_config = tfa_build_config
+        self.tfa_dir = tfa_dir
+        self.tfa_ci_dir = tfa_ci_dir
+        self.mbedtls_dir = mbedtls_dir
+        # Keep track of the user-specified names of commits
+        # - this will be important when we pretty-print
+        # tables, since 'development' is more recognizable than
+        # 'a5f325c64'.
+        self.tfa_commit_name = tfa_commit
+        self.mbedtls_commit_name = mbedtls_commit
+
+        # Set up working directory
+        self.working_dir = self.ensure_working_dir()
+
+        if self.tfa_dir == None:
+            self.tfa_dir = self.ensure_cloned(TFA_URL, 'trusted-firmware-a')
+        if self.tfa_ci_dir == None:
+            self.tfa_ci_dir = self.ensure_cloned(TFA_CI_URL, 'tf-a-ci-scripts')
+        if self.mbedtls_dir == None:
+            self.mbedtls_dir = self.ensure_cloned(MBEDTLS_URL, 'mbedtls')
+
+        if self.tfa_commit_name == None:
+            self.tfa_commit = self.get_git_commit(self.tfa_dir)
+        else:
+            self.tfa_commit = self.get_git_short_ref(self.tfa_dir, self.tfa_commit_name)
+        if self.mbedtls_commit_name == None:
+            self.mbedtls_commit = self.get_git_commit(self.mbedtls_dir)
+        else:
+            self.mbedtls_commit = self.get_git_short_ref(self.mbedtls_dir, self.mbedtls_commit_name)
+
+    def ensure_working_dir(self):
+        working_dir_name = 'TF-A-code-size'
+        if not os.path.isdir(working_dir_name):
+            os.mkdir(working_dir_name)
+        return working_dir_name
+
+    def ensure_cloned(self, url: str, name: str):
+        clone_dir = self.working_dir + '/' + name
+        if not os.path.isdir(clone_dir):
+            git_cmd = ['git', 'clone', url, clone_dir]
+            subprocess.check_call(git_cmd)
+
+            git_cmd = ['git', 'submodule', 'update',
+                       '--init', '--recursive']
+            subprocess.check_call(git_cmd)
+
+        # In all cases ensure we have fresh information
+        git_cmd = ['git', 'fetch', '--all']
+        subprocess.check_call(git_cmd, cwd=clone_dir)
+
+        return clone_dir
+
+    def get_git_commit(self, directory: str):
+        git_cmd = ['git', 'rev-parse', '--short', 'HEAD']
+        return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
+
+    def get_git_short_ref(self, directory: str, ref: str):
+        git_cmd = ['git', 'rev-parse', '--short', ref]
+        try:
+            return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
+        except:
+            # The commit may be a branch name in origin. Try prepending 'origin/'.
+            git_cmd = ['git', 'rev-parse', '--short', 'origin/' + ref]
+            return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
+
+    def build_tfa(self, options: list[str], tfa_dir: str):
+        tfa_build = ['make'] + options + 'all fip fiptool'.split()
+
+        try:
+            subprocess.check_call(tfa_build, cwd=tfa_dir)
+        except:
+            pass
+
+    def bl_subpaths(self, options: list[str]):
+        debug_or_release = 'debug' if 'DEBUG=1' in options else 'release'
+
+        bl1 = 'build/fvp/' + debug_or_release + '/bl1/bl1.elf'
+        bl2 = 'build/fvp/' + debug_or_release + '/bl2/bl2.elf'
+
+        return bl1, bl2
+
+    def ensure_git_ref_checked_out(self, directory, ref):
+        if self.get_git_commit(directory) != ref:
+            ref = self.get_git_short_ref(directory, ref)
+            git_cmd = ['git', 'checkout', ref]
+            subprocess.check_call(git_cmd, cwd=directory)
+            # Update submodules, just in case
+            git_cmd = ['git', 'submodule', 'update',
+                       '--init', '--recursive']
+            subprocess.check_call(git_cmd)
+
+    def is_start_end_symbol(self, symbol: str):
+        START_END_SYMBOL = r'^[A-Z0-9_]+(START|END)[A-Z0-9_]*$'
+
+        return re.match(START_END_SYMBOL, symbol)
+
+
+    def measure_size(self, binary: str, cwd: str):
+        size_cmd = 'aarch64-none-elf-nm --size-sort --radix=d --print-size'.split()
+        cmd = size_cmd + [binary]
+        out = str(subprocess.check_output(cmd, cwd=cwd), 'utf-8')
+
+        symbol_sizes = {
+                'T': {},
+                'R': {},
+                'D': {},
+                'B': {}
+        }
+        for line in out.splitlines():
+            size_line = line.split()
+            if len(size_line) != 4:
+                continue
+
+            sym_type = size_line[2].upper()
+            if (sym_type == 'T'
+                or sym_type == 'R'
+                or sym_type == 'D'
+                or sym_type == 'B'):
+
+                sym_name = size_line[3]
+
+                if not self.is_start_end_symbol(sym_name):
+                    sym_size = int(size_line[1])
+                    symbol_sizes[sym_type][sym_name] = sym_size
+
+        return symbol_sizes
+
+    def save_sizes(self, sizes, filename):
+        with open(filename, 'w') as f:
+            f.write(json.dumps(sizes, sort_keys=True, indent=4))
+
+    def make_opts_from_tf_config(self, tf_config_name: str, tfa_ci_dir: str):
+        opts_filename = tfa_ci_dir + '/tf_config/' + tf_config_name
+
+        with open(opts_filename) as opts_file:
+            make_opts = opts_file.read().splitlines()
+
+        return make_opts
+
+    def code_size_report_name(self):
+        return ('code-size-' +
+                'tfa-' + self.tfa_commit +
+                '-mbedtls-' + self.mbedtls_commit +
+                '-' + self.tfa_build_config +
+                '-sizes.json')
+
+    def generate_size_report_if_required(self):
+        code_size_report = self.working_dir + '/' + self.code_size_report_name()
+        if not os.path.exists(code_size_report):
+            self.ensure_git_ref_checked_out(self.tfa_dir, self.tfa_commit)
+            self.ensure_git_ref_checked_out(self.mbedtls_dir, self.mbedtls_commit)
+
+            opts = self.make_opts_from_tf_config(self.tfa_build_config, self.tfa_ci_dir)
+
+            abs_mbedtls_dir = os.path.abspath(self.mbedtls_dir)
+
+            opts = opts + ['MBEDTLS_DIR=' + abs_mbedtls_dir]
+            self.build_tfa(opts, self.tfa_dir)
+
+            bl1, bl2 = self.bl_subpaths(opts)
+
+            sizes = {}
+            sizes['bl1'] = self.measure_size(bl1, self.tfa_dir)
+            sizes['bl2'] = self.measure_size(bl2, self.tfa_dir)
+            self.save_sizes(sizes, code_size_report)
+
+    def get_size_report(self):
+        self.generate_size_report_if_required()
+
+        with open(self.working_dir + '/' + self.code_size_report_name()) as f:
+            report = json.loads(f.read())
+        return report
+
+    def get_size_report_flattened_types(self):
+        # Flatten out the report to remove the symbol type
+        # (which denotes if the symbol appears in text, bss, etc).
+        # We may use this so we should store it but it may
+        # not always be relevant.
+        report = self.get_size_report()
+        flattened_report = {}
+        for bl_stage in report:
+            flattened_stage = {}
+            for sym_type in report[bl_stage]:
+                flattened_stage = flattened_stage | report[bl_stage][sym_type]
+
+            flattened_report[bl_stage] = flattened_stage
+
+        return flattened_report
+
+    def name_diff(self, others: list):
+        # Work out which elements of the configs of 'others' differ from 'self'.
+        # Return a list of sensible table headings based on the differing parts.
+        # For example, if the configs all differ only in their mbedtls commit
+        # then we can title each row based on that, but if they differ in
+        # multiple elements all of them will need to be included.
+        tfa_commit_in_title = False
+        tfa_config_in_title = False
+        mbedtls_commit_in_title = False
+        for other in others:
+            if other.tfa_commit_name != self.tfa_commit_name:
+                tfa_commit_in_title = True
+            if other.mbedtls_commit_name != self.mbedtls_commit_name:
+                mbedtls_commit_in_title = True
+            if other.tfa_build_config != self.tfa_build_config:
+                tfa_config_in_title = True
+
+        def create_title(config):
+            title = ''
+            if tfa_commit_in_title:
+                title += 'TF-A@' + config.tfa_commit_name + ' '
+            if tfa_config_in_title:
+                title += config.tfa_build_config + ' '
+            if mbedtls_commit_in_title:
+                title += 'MbedTLS@' + config.mbedtls_commit_name
+            if title == '':
+                # If they are all the same, use the
+                # TF-A name by default
+                title = 'TF-A@' + config.tfa_commit_name
+            title = title.strip()
+            return title
+
+        titles = [create_title(self)]
+        for other in others:
+            titles.append(create_title(other))
+
+        return titles
+
+def symbols_of_interest(base_sym_sizes: dict, other_sym_sizes_list: list[dict]):
+    interesting_symbols = set()
+    for other_sym_sizes in other_sym_sizes_list:
+        base_syms = base_sym_sizes.keys()
+        other_syms = other_sym_sizes.keys()
+
+        # Any symbols not shared with the base config are interesting
+        non_common_symbols = base_syms ^ other_syms
+        interesting_symbols = interesting_symbols | non_common_symbols
+
+        # Any symbols whose sizes differ from the base config are interesting
+        for sym in base_syms & other_syms:
+            if base_sym_sizes[sym] != other_sym_sizes[sym]:
+                interesting_symbols.add(sym)
+
+    return interesting_symbols
+
+def sum_sizes(symbol_sizes):
+    total = 0
+    for sym in symbol_sizes:
+        total += symbol_sizes[sym]
+
+    return total
+
+
+class Table:
+    def __init__(self, title_row: list, content_rows: list[list]):
+        self.title_row = title_row
+        self.content_rows = content_rows
+
+    def format_table_cli(self):
+        single_title_width = 0
+        for title in self.title_row:
+            if single_title_width < len(title):
+                single_title_width = len(title)
+
+        table_title_format = ['{:<40}']
+        table_line_format = ['{:<40}']
+
+        for column in self.content_rows[0][1:]:
+            table_title_format += ['  {:<' + str(single_title_width) + '}']
+            if isinstance(column, tuple):
+                table_line_format += ['  {:>' + str(single_title_width - 10) + '} {:>+8}B']
+            else:
+                table_line_format += ['  {:>' + str(single_title_width) + '}']
+
+        titles = ' '.join([f.format(title) for f, title in zip(table_title_format, self.title_row)])
+        content_lines = []
+        for row in self.content_rows:
+            content_lines.append(' '.join([f.format(*s)
+                                           if isinstance(s, tuple)
+                                           else f.format(s)
+                                           for f, s in zip(table_line_format, row)]))
+
+        return '\n'.join([titles] + content_lines)
+
+    def format_table_md(self):
+        # For Markdown we must have exactly the same number of columns on each
+        # row (which is not true for CLI) so we must add a 'diff' column behind
+        # each size column
+        md_titles = []
+
+        for i in range(len(self.content_rows[0])):
+            md_titles.append(self.title_row[i])
+            if isinstance(self.content_rows[0][i], tuple):
+                md_titles.append('diff')
+
+        lines = ['| ' + ' | '.join(md_titles) + ' |']
+        lines += ['| ' + ' | '.join(['---' for t in md_titles]) + ' |']
+
+        content_row_format = []
+        for col in self.content_rows[0]:
+            if isinstance(col, tuple):
+                content_row_format += ['{} | {:+}B']
+            else:
+                content_row_format += ['{}']
+        for row in self.content_rows:
+            lines += ['| ' + ' | '.join([f.format(*c)
+                                         if isinstance(c, tuple)
+                                         else f.format(c)
+                                         for f, c in zip(content_row_format, row)])
+                      + ' |']
+
+        return '\n'.join(lines)
+
+def gen_comparison_table(base: Configuration, other_configs: list[Configuration], bl_stage: str):
+    base_sizes = base.get_size_report_flattened_types()[bl_stage]
+    total_row = ['Total', sum_sizes(base_sizes)]
+
+    table_titles = [bl_stage] + base.name_diff(other_configs)
+
+    other_configs_sizes = []
+    for config in other_configs:
+        config_sizes = config.get_size_report_flattened_types()[bl_stage]
+        total_size = sum_sizes(config_sizes)
+        # Calculate and append the difference from the base config
+        total_diff = total_size - sum_sizes(base_sizes)
+        total_row.append((total_size, total_diff))
+        other_configs_sizes.append(config_sizes)
+
+    interesting_syms = symbols_of_interest(base_sizes, other_configs_sizes)
+
+    def size_if_there(sym, sizes: dict):
+        if sym in sizes:
+            return sizes[sym]
+        else:
+            return '-'
+
+    def diff_if_there(sym, sizes: dict, base: dict):
+        if sym in sizes and sym in base:
+            return sizes[sym] - base[sym]
+        elif sym in sizes and sym not in base:
+            return sizes[sym]
+        elif sym in base and sym not in sizes:
+            return -base[sym]
+        else:
+            return 0
+
+    sym_rows = []
+    for sym in interesting_syms:
+        sym_row = [sym, size_if_there(sym, base_sizes)]
+
+        for config_sizes in other_configs_sizes:
+            sym_size = size_if_there(sym, config_sizes)
+            sym_diff = diff_if_there(sym, config_sizes, base_sizes)
+            sym_row.append((sym_size, sym_diff))
+
+        sym_rows.append(sym_row)
+
+    return Table(table_titles, [total_row] + sym_rows)
+
+def main():
+
+    parser = argparse.ArgumentParser(prog=sys.argv[0],
+                                     description=(
+                                         'Generate a code size comparison for TF-A'
+                                         ' for the given configs, where \'config\''
+                                         ' means a combination of TF-A commit,'
+                                         ' TF-A build config and Mbed TLS commit.'
+                                         ' The TF-A build config names can be'
+                                         ' found in the tf_config directory of the'
+                                         ' tf-a-ci-scripts repository.'
+                                     )
+                                     )
+
+    parser.add_argument('--tfa-dir', nargs='?', default=None,
+                        help='Path to trusted-firmware-a repository')
+    parser.add_argument('--tfa-ci-dir', nargs='?', default=None,
+                        help='Path to tf-a-ci-scripts repository')
+    parser.add_argument('--mbedtls-dir', nargs='?', default=None,
+                        help='Path to Mbed TLS repository to build with')
+    parser.add_argument('--md', action='store_true',
+                        help='Generate a markdown table rather than a CLI-printed one')
+
+    parser.add_argument('config', nargs='+',
+                        help='Config to build, of the form: '
+                        'tfa:<TF-A commit>:<TF-A config>+mbedtls:<Mbed TLS commit>')
+    args = parser.parse_args()
+
+    confs = []
+
+    for config in args.config:
+        conf_parts = config.split('+')
+        if len(conf_parts) != 2:
+            print('Error: Invalid config \'' + config + '\'')
+            return 1
+
+        mbedtls_conf = conf_parts[1].split(':')
+        if len(mbedtls_conf) != 2 or mbedtls_conf[0] != 'mbedtls':
+            print('Error: Invalid config \'' + config + '\'')
+            return 1
+        mbedtls_commit = mbedtls_conf[1]
+
+        tfa_conf = conf_parts[0].split(':')
+        if len(tfa_conf) != 3 or tfa_conf[0] != 'tfa':
+            print('Error: Invalid config \'' + config + '\'')
+            return 1
+        tfa_commit = tfa_conf[1]
+        tfa_build_config = tfa_conf[2]
+
+        conf = Configuration(tfa_build_config, args.tfa_dir, args.tfa_ci_dir, args.mbedtls_dir,
+                             tfa_commit, mbedtls_commit)
+        confs.append(conf)
+
+    bl1_tab = gen_comparison_table(confs[0], confs[1:], 'bl1')
+    if args.md:
+        print(bl1_tab.format_table_md())
+    else:
+        print(bl1_tab.format_table_cli())
+
+    print()
+
+    bl2_tab = gen_comparison_table(confs[0], confs[1:], 'bl2')
+    if args.md:
+        print(bl2_tab.format_table_md())
+    else:
+        print(bl2_tab.format_table_cli())
+
+if __name__ == '__main__':
+    sys.exit(main())
