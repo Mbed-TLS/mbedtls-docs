@@ -1,4 +1,4 @@
-# TLS 1.3 early data integrity failure due to buffered plaintext across key change (CVE pending)
+# TLS 1.3 early data integrity failure due to buffered plaintext across key change (CVE-2026-73096)
 
 **Title** | TLS 1.3 early data integrity failure due to buffered plaintext across key change
 --------- | ----------------------------------------------------------
