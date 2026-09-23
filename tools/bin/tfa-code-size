@@ -113,7 +113,7 @@ class Configuration:
             # Update submodules, just in case
             git_cmd = ['git', 'submodule', 'update',
                        '--init', '--recursive']
-            subprocess.check_call(git_cmd)
+            subprocess.check_call(git_cmd, cwd=directory)
 
     def is_start_end_symbol(self, symbol: str):
         START_END_SYMBOL = r'^[A-Z0-9_]+(START|END)[A-Z0-9_]*$'
