@@ -174,6 +174,9 @@ class Configuration:
         code_size_report = self.working_dir + '/' + self.code_size_report_name()
         if not os.path.exists(code_size_report):
             self.ensure_git_ref_checked_out(self.tfa_dir, self.tfa_commit)
+            # Note: We must checkout mbedtls afterwards since it is a submodule
+            # of TF-A and when we checkout we do 'submodule update'. If we check
+            # out TF-A afterwards we will discard the selected mbedtls commit.
             self.ensure_git_ref_checked_out(self.mbedtls_dir, self.mbedtls_commit)
 
             opts = self.make_opts_from_tf_config(self.tfa_build_config, self.tfa_ci_dir)
