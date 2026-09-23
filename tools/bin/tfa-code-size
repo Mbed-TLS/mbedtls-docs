@@ -80,6 +80,11 @@ class Configuration:
             return str(subprocess.check_output(git_cmd, cwd=directory), 'utf-8').strip()
 
     def build_tfa(self, options: list[str], tfa_dir: str):
+
+        # Clean the directory first since crypto changes
+        # don't seem to be detected.
+        subprocess.check_call(['make', 'clean'], cwd=tfa_dir)
+
         tfa_build = ['make'] + options + 'all fip fiptool'.split()
 
         try:
