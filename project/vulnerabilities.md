@@ -9,6 +9,10 @@ If you think you have found a security vulnerability in Mbed TLS or in TF-PSA-Cr
 - The nature of Mbed TLS and TF-PSA-Crypto often means that security fixes reveal enough information for a skilled attacker to re-construct the originally reported exploit. This combined with the previous caveat means we often expect to have to withhold security fixes until the public disclosure date.
 - Mbed TLS and TF-PSA-Crypto are subject to a lot of scrutiny by security researchers who often have their own disclosure timelines when reporting vulnerabilities. As a result, the default 90 days public embargo period may often not apply.
 
+### Proof-of-concept
+
+Submitting a proof-of-concept (PoC) with a vulnerability report is not required, but it can help. Please read our [proof-of-concept guidelines](../kb/attacks/poc-guidelines.md) for advice on writing a useful PoC.
+
 ## Advisories
 
 Please see [the security advisories page](../security-advisories/index.md) for a complete list of Mbed TLS and TF-PSA-Crypto security advisories.
