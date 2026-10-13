@@ -9,17 +9,9 @@ If you think you have found a security vulnerability in Mbed TLS or in TF-PSA-Cr
 - The nature of Mbed TLS and TF-PSA-Crypto often means that security fixes reveal enough information for a skilled attacker to re-construct the originally reported exploit. This combined with the previous caveat means we often expect to have to withhold security fixes until the public disclosure date.
 - Mbed TLS and TF-PSA-Crypto are subject to a lot of scrutiny by security researchers who often have their own disclosure timelines when reporting vulnerabilities. As a result, the default 90 days public embargo period may often not apply.
 
-## Bug bounty program
+### Proof-of-concept
 
-Mbed TLS and TF-PSA-Crypto are part of Arm's Trusted Firmware [bug bounty program](https://app.intigriti.com/programs/arm/trustedfirmware/detail).
-
-Please report your findings either through the bug bounty program, or via the security alias above - but preferably not both, to simplify tracking on our side.
-
-Here are a few differences between those two ways of reporting:
-- Only the bug bounty gives out money.
-- If you go through the bug bounty program, you abandon control over disclosure, per the program's [terms and conditions](https://kb.intigriti.com/en/articles/5466165-researcher-terms-conditions#h_aa5c8fa808).
-- The bug bounty program requires a proof of concept (PoC). Reporting to the alias lets you choose how to establish the report's credibility.
-- Reports through the bug bounty program have an intake delay. The alias reaches the developers directly.
+Submitting a proof-of-concept (PoC) with a vulnerability report is not required, but it can help. Please read our [proof-of-concept guidelines](../kb/attacks/poc-guidelines.md) for advice on writing a useful PoC.
 
 ## Advisories
 
