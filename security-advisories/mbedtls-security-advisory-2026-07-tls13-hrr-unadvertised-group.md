@@ -4,8 +4,8 @@
 --------- | ----------------------------------------------------------
 **CVE** | CVE-2026-25832
 **Date** | 7th of July, 2026
-**Affects** | Mbed TLS 3.5.0 through 3.6.6, all Mbed TLS 4 versions up to 4.1.1
-**Not affected** | all versions up to and including 3.4.1, Mbed TLS 3.6.7 and later, and Mbed TLS 4.1.2 and later.
+**Affects** | Mbed TLS 3.5.0 through 3.6.6, all Mbed TLS 4 versions up to 4.1.0
+**Not affected** | all versions up to and including 3.4.1, Mbed TLS 3.6.7 and later, and Mbed TLS 4.1.1 and later.
 **Impact** | TLS 1.3 client group policy bypass; Limited denial of service in some configurations
 **Severity** | LOW
 **Credits** | Din Asotic / Xiangdong Li, Beijing University of Posts and Telecommunications (BUPT) / Bin Luo, University of Electronic Science and Technology of China (UESTC)
@@ -24,7 +24,7 @@ The impact is low: a malicious/misbehaving server can bypass a TLS 1.3 client's 
 
 ## Affected versions
 
-All Mbed TLS 3.5 versions, all 3.6 versions up to 3.6.6,  all Mbed TLS 4 versions up to 4.1.1.
+All Mbed TLS 3.5 versions, all 3.6 versions up to 3.6.6,  all Mbed TLS 4 versions up to 4.1.0.
 
 Applications are affected when all of the following are true:
 
@@ -41,7 +41,7 @@ Applications are not affected if they do not enable TLS 1.3 client support, use 
 
 ## Resolution
 
-Affected users of the 3.6 LTS branch should upgrade to 3.6.7 or later. Affected users of the 4.x series should upgrade to 4.1.2 or later.
+Affected users of the 3.6 LTS branch should upgrade to 3.6.7 or later. Affected users of the 4.x series should upgrade to 4.1.1 or later.
 
 ## Fix commits
 
