@@ -27,8 +27,12 @@ def get_branch_base(tip):
     return out
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('tip')
+    parser = argparse.ArgumentParser(
+            prog='mbedtls-get-relevant-commits',
+            description=('Given the tip of a branch, get the commit hashes '
+                         'of all of commits that do not only touch tests '
+                         'and documentation.'))
+    parser.add_argument('tip', help='The tip of the branch to get the library commits from')
     args = parser.parse_args()
 
     base = get_branch_base(args.tip)
