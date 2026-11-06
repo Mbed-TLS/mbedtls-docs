@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+import sys
+
+def get_rev_list(base, tip):
+    git_cmd = ['git', 'rev-list',
+               base + '..' + tip]
+    out = str(subprocess.check_output(git_cmd), 'utf-8')
+    revisions = out.splitlines()
+    return revisions
+
+def get_files_changed(revision):
+    git_cmd = ['git', 'diff-tree',
+               '--no-commit-id', '--name-only', '-r',
+               revision]
+    out = str(subprocess.check_output(git_cmd), 'utf-8')
+    files = out.splitlines()
+    return files
+
+def get_branch_base(tip):
+    git_cmd = ['git', 'log',
+               '-n1', '--merges', '--format=%H',
+               tip]
+    out = str(subprocess.check_output(git_cmd), 'utf-8').strip()
+    return out
+
+def main():
+    parser = argparse.ArgumentParser(
+            prog='mbedtls-get-library-commits',
+            description=('Given the tip of a branch, get the commit hashes '
+                         'of all of commits that do not only touch tests '
+                         'and documentation.'))
+    parser.add_argument('tip', help='The tip of the branch to get the library commits from')
+    args = parser.parse_args()
+
+    base = get_branch_base(args.tip)
+
+    relevant_revs = []
+    for rev in get_rev_list(base, args.tip):
+        for file in get_files_changed(rev):
+            if (not file.startswith('tests/')
+                and not file.startswith('docs/')
+                and not file.startswith('programs/')
+                and not file == 'framework'
+                and not file.startswith('ChangeLog.d/')):
+                relevant_revs.append(rev)
+                break
+
+    print(' '.join(reversed(relevant_revs)))
+
+if __name__ == '__main__':
+    sys.exit(main())
