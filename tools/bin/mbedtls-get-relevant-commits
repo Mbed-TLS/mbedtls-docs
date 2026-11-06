@@ -43,6 +43,7 @@ def main():
             if (not file.startswith('tests/')
                 and not file.startswith('docs/')
                 and not file.startswith('programs/')
+                and not file == 'framework'
                 and not file.startswith('ChangeLog.d/')):
                 relevant_revs.append(rev)
                 break
