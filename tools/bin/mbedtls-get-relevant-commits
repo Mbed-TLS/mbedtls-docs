@@ -19,14 +19,22 @@ def get_files_changed(revision):
     files = out.splitlines()
     return files
 
+def get_branch_base(tip):
+    git_cmd = ['git', 'log',
+               '-n1', '--merges', '--format=%H',
+               tip]
+    out = str(subprocess.check_output(git_cmd), 'utf-8').strip()
+    return out
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('base')
     parser.add_argument('tip')
     args = parser.parse_args()
 
+    base = get_branch_base(args.tip)
+
     relevant_revs = []
-    for rev in get_rev_list(args.base, args.tip):
+    for rev in get_rev_list(base, args.tip):
         for file in get_files_changed(rev):
             if (not file.startswith('tests/')
                 and not file.startswith('docs/')
