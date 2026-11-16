@@ -1,4 +1,4 @@
-Unbounded iteration count in PKCS5/PKCS12 (CVE-2026-50582)
+# Unbounded iteration count in PKCS5/PKCS12 (CVE-2026-50582)
 
 **Title** | Unbounded iteration count in PKCS5/PKCS12
 --------- | ----------------------------------------------------------
