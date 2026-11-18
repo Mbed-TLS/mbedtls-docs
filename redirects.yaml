@@ -1,9 +1,12 @@
 # Readthedocs redirects
 # See https://docs.readthedocs.io/en/stable/user-defined-redirects.html
 #
-# In order to prevent exposing the API token, PR jobs do not update the
-# redirects - changes to this file are only applied when they are merged
-# into the main branch.
+# The post-build hook in `.readthedocs.yaml` normally applies changes on
+# `main`. PR builds skip the hook to protect the API token.
+#
+# As of November 2026, the hook is temporarily disabled. While it is
+# disabled, apply any changes to this file manually in the Read the Docs
+# project dashboard under Admin > Redirects.
 
 - type: html_to_clean_url
   from_url: /
