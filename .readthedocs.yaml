@@ -10,6 +10,20 @@ build:
   os: ubuntu-26.04
   tools:
     python: "3.9"
+# This updates the live project's "redirects" configuration with the current
+# contents of `redirects.yaml`. Unfortunately this started failing consistently
+# mid-October 2026, preventing any update of "latest" (when merging PRs).
+#
+# As a stop-gap measure restoring our ability to publish documentation including
+# advisories, disable that hook. That means that updating `redirects.yaml` in
+# this repo will no longer update the live redirects. Existing redirects will
+# stay in place.
+#
+# Once the sync works again, restore this hook and remove the note in
+# `redirects.yaml`.
+#  jobs:
+#    post_build:
+#    - '[ "$READTHEDOCS_VERSION" != "latest" ] || "$READTHEDOCS_VIRTUALENV_PATH/bin/rtd" projects "Mbed TLS" redirects sync --wet-run -f redirects.yaml'
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
