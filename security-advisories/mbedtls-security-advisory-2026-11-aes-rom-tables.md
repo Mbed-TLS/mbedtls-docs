@@ -5,7 +5,7 @@
 **CVE** | CVE-2026-115492
 **Date** | 16 November 2026
 **Affects** | All versions of Mbed TLS; all versions of TF-PSA-Crypto
-+**Necessary mitigation** | Affected users must apply the changes described under “[Resolution](#resolution)”
+**Necessary mitigation** | Affected users must apply the changes described under “[Resolution](#resolution)”
 **Impact** | Key leakage to external observers
 **CWE** | CWE-208: Observable Timing Discrepancy
 **CAPEC** | CAPEC-97: Cryptanalysis

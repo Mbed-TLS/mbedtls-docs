@@ -68,7 +68,7 @@ using the CRL chain and any pointers into it after an allocation failure.
 
 ## Resolution
 
-Affected users should upgrade to Mbed TLS 3.6.8 or a later 3.6.x version, 
+Affected users should upgrade to Mbed TLS 3.6.8 or a later 3.6.x version,
 Mbed TLS 4.1.2 or a later 4.1.x version, or Mbed TLS 4.3.0 or a later version.
 
 ## Fix commits
