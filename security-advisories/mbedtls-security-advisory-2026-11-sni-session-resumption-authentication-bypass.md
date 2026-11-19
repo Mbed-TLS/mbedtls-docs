@@ -11,7 +11,7 @@
 **CWE** | CWE-287: Improper Authentication
 **CAPEC** | CAPEC-115: Authentication Bypass
 **Severity** | HIGH
-**Credits** | Younghyo Cho, CIS Lab, Seoultech; Jaehun Lee, Pohang University of Science and Technology (POSTECH); Bhabani Sankar Das; Shuaigangran Yue (Southeast University, QAX corp.) and Han Qiu (Southeast University)
+**Credits** | Younghyo Cho, CIS Lab, Seoultech; Jaehun Lee, Pohang University of Science and Technology (POSTECH); Bhabani Sankar Das; Shuaigangran Yue (Southeast University, QAX corp.) and Han Qiu (Southeast University); Giovanni Mancino
 
 ## Vulnerability
 

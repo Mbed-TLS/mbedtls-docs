@@ -10,7 +10,7 @@
 **CWE** | CWE-303: Incorrect Implementation of Authentication Algorithm
 **CAPEC** | CAPEC-272: Protocol Manipulation
 **Severity** | HIGH
-**Credits** | saikumar279 and Duong Gia Huy
+**Credits** | saikumar279, Duong Gia Huy and Giovanni Mancino
 
 ## Vulnerability
 
